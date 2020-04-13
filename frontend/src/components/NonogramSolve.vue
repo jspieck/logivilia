@@ -5,6 +5,26 @@
       <h1>{{name}}</h1>
     </div>
     <div id="puzzle" class="puzzleBody">
+      <div id="buttonBar">
+        <button id="zoomIn" class="nonoButton largerIcon"><ion-icon v-pre name="ios-add"></ion-icon></button>
+        <button id="zoomOut" class="nonoButton largerIcon"><ion-icon v-pre name="ios-remove"></ion-icon></button>
+        <button id="revert" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
+        <button id="restore" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
+        <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
+        <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button>
+      </div>
+      <div id="nonoArea">
+        <table>
+          <tr>
+            <td></td>
+            <td><div id="verticalInformation" ref="verticalInformation"></div></td>
+          </tr>
+          <tr>
+            <td><div id="horizontalInformation" ref="horizontalInformation"></div></td>
+            <td><div id="mainArea" ref="mainArea"></div></td>
+          </tr>
+        </table>
+      </div>
       <div id='checkSolutionBox'>
         <button id='checkButton' class='loes' @click="checkSolution">Check</button>
         <img v-if="!solved" class="checking" src='@/assets/cross.png' width='40' height='40'/>
@@ -25,73 +45,291 @@ export default {
     return {
       name: 'Nonogram Test',
       solved: false,
-      imgName: 'biene.jpg',
-      description: 'This is a description',
-      logicalQuestion: 'Who did what?',
-      clues: [
-        'Clue 1',
-        'Clue 2',
-      ],
-      attributes: [
-        {
-          name: 'Color',
-          values: ['Red', 'Green', 'Blue'],
-        },
-        {
-          name: 'Age',
-          values: ['10', '13', '15'],
-        },
-        {
-          name: 'Points',
-          values: ['1', '2', '3'],
-        },
-      ],
-      attrInputs: {
-        '0_0': '',
-        '0_1': '',
-        '1_0': '',
-        '1_1': '',
-        '2_0': '',
-        '2_1': '',
-      },
+      height: 5,
+      width: 5,
       solution: [
-        ['Red', '13', '1'],
-        ['Green', '10', '3'],
-        ['Blue', '15', '2'],
+        [0,0,1,0,0],
+        [0,1,1,1,0],
+        [1,1,1,1,1],
+        [0,1,0,1,0],
+        [0,0,1,0,0]
       ],
-      gridState: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
       cellWidth: 25,
       tableVisible: true,
-      selectedColor: 0,
-      colors: ["#fff", "#333", "#fff"],
+      selectedColor: 1,
+      colors: ["#ffffff", "#333333", "#ffffff"],
+      startMouseDown: [0, 0],
+      lastMouseOver: [0, 0],
+      gridCells: [],
+      isMouseDown: false,
     };
   },
   computed: {
-    numCells() {
-      return this.attributes[0].values.length;
+    gridState() {
+      return Array(this.width * this.height).fill(0);
     },
-    numBlocks() {
-      return this.attributes.length;
+    horizontalInfo() {
+      const horizontalInfo = [];
+      for (let i = 0; i < this.height; i++) {
+        const rowInfo = [];
+        let currentNumber = this.solution[i][0];
+        let currentNumberCounter = 1;
+        for (let j = 1; j < this.width; j++) {
+          if (this.solution[i][j] != currentNumber) {
+            if (currentNumber != 0) {
+              rowInfo.push([currentNumber, currentNumberCounter]);
+            }
+            currentNumber = this.solution[i][j];
+            currentNumberCounter = 1;
+          } else {
+            currentNumberCounter += 1;
+          }
+        }
+        if (currentNumber > 0) {
+          rowInfo.push([currentNumber, currentNumberCounter]);
+        }
+        horizontalInfo.push(rowInfo);
+      }
+      return horizontalInfo;
     },
-    blockWidth() {
-      return this.numCells * this.cellWidth;
+   verticalInfo() {
+      const verticalInfo = [];
+      for (let i = 0; i < this.width; i++) {
+        const columnInfo = [];
+        let currentNumber = this.solution[0][i];
+        let currentNumberCounter = 1;
+        for (let j = 1; j < this.height; j++) {
+          if (this.solution[j][i] != currentNumber) {
+            if (currentNumber != 0) {
+              columnInfo.push([currentNumber, currentNumberCounter]);
+            }
+            currentNumber = this.solution[j][i];
+            currentNumberCounter = 1;
+          } else {
+            currentNumberCounter += 1;
+          }
+        }
+        if (currentNumber > 0) {
+          columnInfo.push([currentNumber, currentNumberCounter]);
+        }
+        verticalInfo.push(columnInfo);
+      }
+      return verticalInfo;
     },
-    paddingLeft() {
-      return 50;
+    maxBlockHorizontal() {
+      let longest = 0;
+      for (const row of this.horizontalInfo) {
+        longest = Math.max(longest, row.length);
+      }
+      return longest;
     },
-    paddingTop() {
-      return 50;
-    },
-    svgWidth() {
-      const margin = 20;
-      return this.paddingLeft + margin + (this.numBlocks - 1) * this.blockWidth;
-    },
-    svgHeight() {
-      const margin = 20;
-      return this.paddingTop + margin + (this.numBlocks - 1) * this.blockWidth;
+    maxBlockVertical() {
+      let longest = 0;
+      for (const column of this.verticalInfo) {
+        longest = Math.max(longest, column.length);
+      }
+      return longest;
     },
   },
+  mounted() {
+    this.createHorizontalInformation();
+    this.createVerticalInformation();
+    this.createMainArea();
+  },
   methods: {
+    getLighting(color) {
+      const colorInfo = color.substring(1);      // strip #
+      const rgb = parseInt(colorInfo, 16);   // convert rrggbb to decimal
+      const r = (rgb >> 16) & 0xff;  // extract red
+      const g = (rgb >>  8) & 0xff;  // extract green
+      const b = (rgb >>  0) & 0xff;  // extract blue
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b; // per ITU-R BT.709
+    },
+    createHorizontalInformation() {
+      const hoDiv = this.$refs.horizontalInformation;
+      hoDiv.innerHTML = "";
+      for(let a = 0; a < this.height; a+=5){
+        const gridGroupRow = document.createElement("div");
+        gridGroupRow.setAttribute("class", "gridRow");
+        const gridGroup = document.createElement("div");
+        gridGroup.setAttribute("class", "gridGroup");
+        for(let i = a; i < Math.min(a + 5, this.height); i++){
+          const gridRow = document.createElement("div");
+          gridRow.setAttribute("id", "row" + i);
+          gridRow.setAttribute("class", "gridRow");
+          for(let j = 0; j < this.maxBlockHorizontal; j++){
+            const gridCell = document.createElement("div");
+            gridCell.setAttribute("id", "cellH" + i + "_" + j);
+            gridCell.setAttribute("class", "gridCell noselect");
+            gridCell.setAttribute("data-x", j);
+            gridCell.setAttribute("data-y", i);
+            /*gridCell.addEventListener("mousedown", mouseDownInfoEvent, false);
+            gridCell.addEventListener("mouseover", mouseOverInfoEvent, false);
+            gridCell.addEventListener("mouseout", mouseOutInfoEvent, false);
+            gridCell.addEventListener("mouseup", mouseUpInfoEvent, false);*/
+            if(this.horizontalInfo[i][j] != null){
+              const [colorNumber, innerBlockLength] = this.horizontalInfo[i][j];
+              gridCell.style.color = this.colors[colorNumber];
+              if (this.getLighting(this.colors[colorNumber]) > 200) {
+                gridCell.style.background = "rgb(60, 60, 60)";
+              }
+              const cellNumber = document.createTextNode(innerBlockLength);
+              gridCell.appendChild(cellNumber);
+            }
+            gridRow.appendChild(gridCell);
+          }
+          //add one box for correctly solved
+          const correctlySolved = document.createElement("div");
+          correctlySolved.setAttribute("id", "rowCorrect" + i);
+          correctlySolved.setAttribute("class", "correctRow");
+          gridRow.appendChild(correctlySolved);
+          gridGroup.appendChild(gridRow);
+          gridGroupRow.appendChild(gridGroup);
+        }
+        hoDiv.appendChild(gridGroupRow);
+      }
+      /* hoDiv.addEventListener("touchstart", touchDownInfoEvent, false);
+      hoDiv.addEventListener("touchmove", touchOverInfoEvent, false);
+      hoDiv.addEventListener("touchleave", touchOutInfoEvent, false);
+      hoDiv.addEventListener("touchend", touchUpInfoEvent, false); */
+    },
+    createVerticalInformation() {
+      const veDiv = this.$refs.verticalInformation;
+      veDiv.innerHTML = "";
+      for(let a = 0; a < this.width; a+=5){
+        const gridGroupRow = document.createElement("div");
+        gridGroupRow.setAttribute("class", "gridRow");
+        const gridGroup = document.createElement("div");
+        gridGroup.setAttribute("class", "gridGroup");
+        for(let i = 0; i < this.maxBlockVertical; i++){
+          const gridRow = document.createElement("div");
+          gridRow.setAttribute("id", "row" + i);
+          gridRow.setAttribute("class", "gridRow");
+          for(let j = a; j < Math.min(a + 5, this.width); j++){
+            const gridCell = document.createElement("div");
+            gridCell.setAttribute("id", "cellV" + i + "_" + j);
+            gridCell.setAttribute("class", "gridCell noselect");
+            gridCell.setAttribute("data-x", j);
+            gridCell.setAttribute("data-y", i);
+            /*gridCell.addEventListener("mousedown", mouseDownInfoEvent, false);
+            gridCell.addEventListener("mouseover", mouseOverInfoEvent, false);
+            gridCell.addEventListener("mouseout", mouseOutInfoEvent, false);
+            gridCell.addEventListener("mouseup", mouseUpInfoEvent, false);*/
+            if(this.verticalInfo[j][i] != null){
+              const [colorNumber, innerBlockLength] = this.verticalInfo[j][i];
+              gridCell.style.color = this.colors[colorNumber];
+              if (this.getLighting(this.colors[colorNumber]) > 200) {
+                gridCell.style.background = "rgb(60, 60, 60)";
+              }
+              const cellNumber = document.createTextNode(innerBlockLength);
+              gridCell.appendChild(cellNumber);
+            }
+            gridRow.appendChild(gridCell);
+          }
+          //add one box for correctly solved
+          const correctlySolved = document.createElement("div");
+          correctlySolved.setAttribute("id", "columnCorrect" + i);
+          correctlySolved.setAttribute("class", "correctColumn");
+          gridRow.appendChild(correctlySolved);
+          gridGroup.appendChild(gridRow);
+          gridGroupRow.appendChild(gridGroup);
+        }
+        veDiv.appendChild(gridGroupRow);
+      }
+      /* hoDiv.addEventListener("touchstart", touchDownInfoEvent, false);
+      hoDiv.addEventListener("touchmove", touchOverInfoEvent, false);
+      hoDiv.addEventListener("touchleave", touchOutInfoEvent, false);
+      hoDiv.addEventListener("touchend", touchUpInfoEvent, false); */
+    },
+    cellMouseDown(e, i, j) {
+      this.startMouseDown = [i, j];
+      this.lastMouseOver = this.startMouseDown;
+      this.isMouseDown = true;
+      this.gridCells[j * this.width + i].style.background = this.colors[this.selectedColor];
+    },
+    cellMouseEnter(e, i1, j1) {
+      if (this.isMouseDown) {
+        const [i2, j2] = this.startMouseDown;
+        const [i3, j3] = this.lastMouseOver;
+        if (i1 !== i3) {
+          for (let a = Math.min(j2, j3); a <= Math.max(j2, j3); a++) {
+            const ind = a * this.width + i3;
+            console.log(i3, a);
+            this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
+          }
+        }
+        if (j1 !== j3) {
+          for (let a = Math.min(i2, i3); a <= Math.max(i2, i3); a++) {
+            const ind = j3 * this.width + a;
+            console.log(a, j3);
+            this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
+          }
+        }
+        for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
+          for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
+            this.gridCells[b * this.width + a].style.background = this.colors[this.selectedColor];
+          }
+        }
+        this.lastMouseOver = [i1, j1];
+      }
+    },
+    mainGridMouseUp() {
+      // TODO handle mouse leave
+      const [i1, j1] = this.startMouseDown;
+      const [i2, j2] = this.lastMouseOver;
+      for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
+        for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
+          this.gridState[b * this.width + a] = this.selectedColor;
+        }
+      }
+      this.isMouseDown = false;
+    },
+    createMainArea() {
+      const mainArea = this.$refs.mainArea;
+      mainArea.innerHTML = "";
+      for(let i = 0; i < this.height; i += 5){
+        const gridGroupRow = document.createElement("div");
+        gridGroupRow.setAttribute("class", "gridRow");
+        for(let j = 0; j < this.width; j += 5){
+          const gridGroup = document.createElement("div");
+          gridGroup.setAttribute("class", "gridGroup");
+          for(let k = i; k < Math.min(i + 5, this.height); k++){
+            const gridRow = document.createElement("div");
+            gridRow.setAttribute("class", "gridRow");
+            for(let l = j; l < Math.min(j + 5, this.width); l++){
+              const gridCell = document.createElement("div");
+              gridCell.setAttribute("id", "cell" + k + "_" + l);
+              gridCell.setAttribute("data-x", l);
+              gridCell.setAttribute("data-y", k);
+              gridCell.setAttribute("class", "gridCell noselect");
+              gridRow.appendChild(gridCell);
+              this.gridCells.push(gridCell);
+              gridCell.addEventListener("mousedown", e => {this.cellMouseDown(e, l, k)}, false);
+              gridCell.addEventListener("mouseenter", e => {this.cellMouseEnter(e, l, k)}, false);
+            }
+            gridGroup.appendChild(gridRow);
+          }
+          gridGroupRow.appendChild(gridGroup);
+        }
+        mainArea.appendChild(gridGroupRow);
+      }
+      document.addEventListener("mouseup", this.mainGridMouseUp, false);
+    /*touch events on canvas
+    canvasGrid.addEventListener("touchstart", doTouchDownEvent, false);
+    canvasGrid.addEventListener("touchmove", doTouchOverEvent, false);
+    canvasGrid.addEventListener("touchleave", doTouchOutEvent, false);
+    canvasGrid.addEventListener("touchend", doTouchUpEvent, false);
+
+    //Problem if not outside but not over cell
+    if(typ == "none" || typ == "create"){
+        document.getElementById("alignKapsel").addEventListener("mouseleave", doMouseOutEvent, false);
+    }else
+        canvasGrid.addEventListener("mouseleave", doMouseOutEvent, false);
+
+    jQuery('body').on('contextmenu', '#gridRid', function(e){ return false; });
+    jQuery('body').on('mouseup', function(e){mouseDown = false;});
+    zoom();*/
+    },
     checkSolution() {
       for(let i = 0; i < this.solution.length; i++) {
         for(let j = 1; j < this.solution[i].length; j++) {
@@ -102,23 +340,6 @@ export default {
         }
       }
       this.solved = true;
-    },
-    getImg() {
-      // eslint-disable-next-line global-require, import/no-dynamic-require
-      return require(`@/assets/${this.imgName}`);
-    },
-    drawOutline() {
-      // draw horizontal lines
-      let pathStr = `M0 0H${this.blockWidth * (this.numBlocks - 1)}`;
-      for(let i = 0; i < this.numBlocks - 1; i++){
-          pathStr += `M0 ${this.blockWidth * (i + 1)}H${this.blockWidth * (this.numBlocks - 1 - i)}`;
-      }
-      // draw vertical lines
-      pathStr += `M0 0V${this.blockWidth * (this.numBlocks - 1)}`;
-      for(let i = 0; i < this.numBlocks - 1; i++){
-          pathStr += `M${this.blockWidth * (i + 1)} 0V${this.blockWidth * (this.numBlocks - 1 - i)}`;
-      }
-      return pathStr;
     },
     setCell(i, j, k) {
       const index = this.cellIndex(i, j, k);
@@ -141,59 +362,11 @@ export default {
     selectColor(i) {
       this.selectedColor = i;
     }
-    /*drawHtmlGrid(numCells, numAttributes) {
-        let textWidthMax = 0;
-        const textHorizontal = [];
-        svg.appendChild(horizontalTextGroup);
-        const textWidths = [];
-        for(let i = 0; i < textHorizontal.length; i++){
-          const bbox = textHorizontal[i].getBBox();
-          textWidths.push(bbox.width);
-          textWidthMax = Math.max(textWidthMax, bbox.width);
-        }
-        paddingLeft = textWidthMax + 10;
-        // now align text right
-        for(let i = 0; i < textHorizontal.length; i++){
-          textHorizontal[i].setAttribute('x', textWidthMax - textWidths[i]);
-        }
-        const textHeights = [];
-        let textHeightMax = 0;
-        for(let i = 0; i < textHorizontal.length; i++){
-            const bbox = textVertical[i].getBBox();
-            textHeights.push(bbox.height);
-            textHeightMax = Math.max(textHeightMax, bbox.height);
-        }
-        paddingTop = textHeightMax + 10;
-        // now align text bottom
-        for(let i = 0; i < textVertical.length; i++){
-          textVertical[i].setAttribute('y', textHeightMax - textHeights[i]);
-        }
-        horizontalTextGroup.setAttribute('transform', 'translate(0,'+(paddingTop)+')');
-        for(let i = 0; i < numAttributes - 1; i++){
-            for(let j = 0; j < numAttributes - 1 - i; j++){
-                const rectGroup = createBlockGroup(i, j, numCells);
-                rectGroup.setAttribute('transform', `translate(${paddingLeft + blockWidth * i},${paddingTop + blockWidth * j})`);
-                svg.appendChild(rectGroup);
-            }
-        }
-        svg.appendChild(drawBlockOutline(numAttributes - 1, numCells, paddingLeft, paddingTop));
-        svg.style.height = (paddingTop + (numAttributes - 1) * blockWidth + 20) + 'px';
-        container.style.display = 'none';
-    },*/
   },
 };
 </script>
 
 <style lang="scss">
-body {
-  font-size: 16px;
-}
-
-h1 {
-  margin-bottom: 30px;
-  font-size: 26px;
-}
-
 #solutionGrid {
   margin: 30px 0;
 }
@@ -210,12 +383,6 @@ h1 {
   pointer-events: all;
 }
 
-#headerImage {
-  position: absolute;
-  right: 20px;
-  top: 20px;
-}
-
 .puzzleContainer {
   /* background: white; */
   overflow: hidden;
@@ -225,92 +392,47 @@ h1 {
   position: relative;
 }
 
-.puzzleBody {
-  position: relative;
-  padding: 20px;
-  background: #ffffffab;
+#nonoArea {
+  margin: 30px 0;
 }
 
-#puzzleHeader {
-  /*padding: 10px;*/
-  height: 60px;
-  width: 100%;
-  line-height: 60px;
-  border-bottom: 1px solid #262664;
+.gridCell {
+  display: inline-block;
+  vertical-align: top;
+  width: 25px;
+  height: 25px;
+  border-left: 1px solid #A0A0A0;
+  border-top: 1px solid #A0A0A0;
+  text-align: center;
+  line-height: 25px;
+  font-size: 18px;
+  color: #111111;
 }
 
-#puzzleHeader h1 {
-  margin: 0;
-  /* margin-left: 10px; */
+.gridGroup .gridRow:first-child .gridCell {
+  border-top: none;
 }
 
-#clues {
-  margin: 20px 0;
-  padding: 1em;
-  padding-left: 2em;
-  background-color: #fe4f6c; /* #f5c2c2 #D6EBFF; */
-  box-shadow: 0px 0px 20px 3px rgb(211, 211, 211);
-  box-shadow: 0 2px 6px rgba(154,153,153,0.75);
-  color: white;
-  border-radius: 4px;
-  width: 60%;
+.gridGroup .gridRow .gridCell:first-child {
+  border-left: none;
+}
+
+.gridRow .gridGroup:last-child {
+  border-right: 2px solid #222222;
+}
+
+.gridRow:last-child .gridGroup {
+  border-bottom: 2px solid #222222;
+}
+
+.gridGroup {
+  display: inline-block;
+  border-top: 2px solid #222222;
+  border-left: 2px solid #222222;
 }
 
 .bold {
   font-weight: bold;
-}
-
-.clue {
-  margin-top: 5px;
-}
-
-thead {
-  background: #fe4f6c;
-  line-height: 1;
-  border-radius: .4em;
-}
-
-tbody tr {
-  margin-bottom: 1em;
-  border: 2px solid #1d96b2;
-}
-
-tbody{
-  th {
-    color: #5e5d52;
-    text-align: left;
-  }
-  td {
-    padding: 8px 10px;
-  }
-}
-
-th, td {
-  line-height: 13px;
-  padding: .5em;
-  vertical-align: middle;
-}
-
-th {
-  color: white;
-  padding: 10px;
-  text-align: center;
-  font-weight: normal;
-}
-
-table {
-  white-space: nowrap;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin: 20px 0;
-}
-
-tbody tr:nth-child(2n-1) {
-  background-color: #f5f5f5;
-}
-
-tbody tr:nth-of-type(even) {
-  background-color: rgba(94, 93, 82, 0.1);
 }
 
 input {
@@ -319,22 +441,31 @@ input {
   height: 30px;
 }
 
-button {
-  background: #fe4f6c; /*rgb(52, 73, 94);*/
-  color: white;
-  border-radius: 5px;
-  height: 40px;
-  padding: 10px;
+.nonoButton {
+  display: inline-block;
+  font-size: 21px;
+  background-color: #f7f7f7;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#f7f7f7), to(#e7e7e7));
+  color: black;
+  padding: 2px;
+  width: 35px;
+  height: 35px;
+  line-height: 35px;
+  position: relative;
+  text-align: center;
+  border-radius: 50%;
   border: none;
   cursor: pointer;
+  
+  vertical-align: top;
+  margin-right: 20px;
+}
+
+.largerIcon {
+  font-size: 28px;
 }
 
 .checking {
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 10px;
-}
-.solutionToggle {
   display: inline-block;
   vertical-align: middle;
   margin-left: 10px;

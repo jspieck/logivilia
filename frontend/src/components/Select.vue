@@ -1,7 +1,8 @@
 <template>
-  <div class="selectBox" :disabled="isDisabled">
+  <div :class="clicked ? 'selectBox clicked' : 'selectBox'" :disabled="isDisabled">
     <select class="fpfSelect" v-model="selectedOption" :disabled="isDisabled"
-      @input="event => { $emit('input', event.target.value) }">
+      @click="clicked = !clicked"
+      @input="event => {$emit('input', event.target.value)}">
       <option v-for="option in options" :value="option"
         v-bind:key="option">{{option}}</option>
     </select>
@@ -18,6 +19,7 @@ export default {
   data() {
     return {
       selectedOption: '',
+      clicked: false
     };
   },
   watch: {
@@ -69,6 +71,9 @@ select{
     transition: .3s all;
     transform: rotate(0deg);
     pointer-events: none;
+  }
+  &.clicked:after {
+    transform: rotate(180deg);
   }
   &[disabled=disabled]:after{
     content: "";

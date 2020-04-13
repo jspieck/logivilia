@@ -3,7 +3,7 @@
     <div id="mainContainer">
       <div class="header">
         <div class="headerContainer">
-          <img src="./assets/logo.png" class="logo" height="20">
+          <img class="logo" width=35 src="@/assets/logo.svg">
           <!--<div>
             <router-link :to="{ name: 'Dashboard'}">Dashboard</router-link>
             <router-link :to="{ name: 'Login'}">Login</router-link>
@@ -63,6 +63,8 @@ html, body {
 
 body {
   margin: 0;
+  font-size: 15px;
+  line-height: 23px;
 }
 
 h1, h2, h3, h4 {
@@ -72,7 +74,6 @@ h1, h2, h3, h4 {
 #mainContainer {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .footer {
@@ -87,7 +88,6 @@ h1, h2, h3, h4 {
   text-align: left;
   color: #2c3e50;
   background: #f5f5f5;
-  height: 100%;
 }
 
 .body {
@@ -103,13 +103,15 @@ h1, h2, h3, h4 {
 }
 
 .headerContainer, .bodyContainer {
-  max-width: 1200px;
+  max-width: 1000px;
   padding: 0;
   margin: auto;
 }
 
 .logo {
   vertical-align: middle;
+  font-size: 24px;
+  color: #2128bd;
 }
 
 .navMenu {

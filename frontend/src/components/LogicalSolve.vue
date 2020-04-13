@@ -5,9 +5,9 @@
       <h1 class="puzzleTitle">{{name}}</h1>
       <span class="difficulty">{{difficulty}}/<strong>5</strong></span>
     </div>
+    <img id='headerImage' :src="getImg()" alt='header image' width='320'/>
     <div id="puzzle" class="puzzleBody">
-      <img id='headerImage' :src="getImg()" alt='header image' height='275'/>
-      <h3>Beschreibung</h3>
+      <h3 id="descrHeader">Beschreibung</h3>
       <p id="description">{{description}}</p>
       <label class="logicalQuestion"><strong>{{logicalQuestion}}</strong></label>
       <h3>Hinweise</h3>
@@ -28,27 +28,9 @@
       <h3>Lösung</h3>
       <div class="eitherOr">
         <div id="wrapMe" class="wrapMe">
-          <label id="nummerierung">Ändere Lösungsmodus:</label>
+          <label id="nummerierung">Zeige die Attributenmatrix:</label>
           <MToggle class="solutionToggle" v-model="tableVisible"/>
         </div>
-        <table v-if="tableVisible" id="solTable" class="dataTable sortable responsive-table">
-          <thead>
-            <tr>
-              <th v-for="attr in attributes" v-bind:key='attr.name' scope='col' class='tableH'>
-                {{attr.name}}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="[i, v] in attributes[0].values.entries()" v-bind:key='i'>
-              <th scope='row'>{{v}}</th>
-              <td v-for="[j, attr] in attributes.slice(1).entries()"
-                v-bind:key='j' :data-title='attr.name'>
-                <MSelect :options='attributes[j + 1].values' v-model='attrInputs[i + "_" + j]'/>
-              </td>
-            </tr>
-          </tbody>
-        </table>
         <div v-if="!tableVisible" id="solutionGrid">
           <div id="cDiv">
             <svg id="colors" height="50" width="150">
@@ -81,7 +63,7 @@
                       <g v-for="k in numAttrValues * numAttrValues" v-bind:key="`cell${k}`"
                       :transform="`translate(${Math.floor((k - 1) / numAttrValues) * cellWidth}, ${((k - 1) % numAttrValues) * cellWidth})`">
                         <rect :width="cellWidth" :height="cellWidth" class="blockGroups" :fill="colors[gridState[cellIndex(i, j, k)]]"
-                        stroke="#c5c5c5" @click="setCell(i, j, k)"/>
+                        stroke="#c5c5c5" @mousedown="mouseDown(i, j, k)" @mouseenter="mouseEnter(i, j, k)"/>
                         <path v-if="gridState[cellIndex(i, j, k)] == 0" class="crossPath"
                         :d="`M5 5L${cellWidth - 5} ${cellWidth - 5}M5 ${cellWidth - 5}L${cellWidth - 5} 5`" stroke="#565656"/>
                       </g>
@@ -93,13 +75,30 @@
             </div>
           </div>
         </div>
+        <table id="solTable" class="dataTable sortable responsive-table">
+          <thead>
+            <tr>
+              <th v-for="attr in attributes" v-bind:key='attr.name' scope='col' class='tableH'>
+                {{attr.name}}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="[i, v] in attributes[0].values.entries()" v-bind:key='i'>
+              <td scope='row'>{{v}}</td>
+              <td v-for="[j, attr] in attributes.slice(1).entries()"
+                v-bind:key='j' :data-title='attr.name'>
+                <MSelect :options='attributes[j + 1].values' v-model='attrInputs[i + "_" + j]'/>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
       <div id='checkSolutionBox'>
-        <button id='checkButton' class='loes' @click="checkSolution">Check</button>
-        <img v-if="!solved" class="checking" src='@/assets/cross.png' width='40' height='40'/>
+        <button id='checkButton' class='loes' @click="checkSolution">Überprüfen</button>
         <img v-if="solved" class="checking" src='@/assets/haken.png' width='40' height='40'/>
       </div>
-      <h4 v-if="solved" id="solved">Gratulation, dieses Rätsel ist gelöst!</h4>
+      <h4 id="solved">{{solveLabel}}</h4>
     </div>
   </div>
 </div>
@@ -129,12 +128,14 @@ export default {
       attrInputs: {},
       solved: false,
       gridState: [],
+      gridStateCopy: [],
       cellWidth: 25,
       paddingLeft: 50,
       paddingTop: 50,
       tableVisible: false,
       selectedColor: 0,
       colors: ["#fff", "#333", "#fff"],
+      solveLabel: ""
     };
   },
   mounted() {
@@ -150,6 +151,7 @@ export default {
     this.tableVisible = true;
     this.paddingLeft = maxLabelWidth + 10;
     this.paddingTop = maxLabelHeight + 10;
+    document.addEventListener("mouseup", this.mainGridMouseUp, false);
   },
   computed: {
     numAttrValues() {
@@ -172,15 +174,89 @@ export default {
   },
   methods: {
     checkSolution() {
+      this.solved = true;
       for(let i = 0; i < this.solution.length; i++) {
         for(let j = 1; j < this.solution[i].length; j++) {
+          if (this.attrInputs[`${i}_${j - 1}`] == null) {
+            this.solved = false;
+            this.solveLabel = "Es sind Attribute noch nicht zugewiesen!";
+            return;
+          }
           if (this.solution[i][j] != this.attrInputs[`${i}_${j - 1}`]) {
             this.solved = false;
-            return;
           }
         }
       }
-      this.solved = true;
+      if (this.solved) {
+        this.solveLabel = "Gratulation, das Rätsel ist gelöst!";
+      } else {
+        this.solveLabel = "Es existieren noch Fehler!";
+      }
+    },
+    toXY(i, j, k) {
+      // i = row, j = column (block), k = cell in nxn block
+      const x = (j - 1) * this.numAttrValues + Math.floor((k - 1) / this.numAttrValues);
+      const y = (i - 1) * this.numAttrValues + (k - 1) % this.numAttrValues;
+      return [x, y];
+    },
+    toIJK(x, y) {
+      const i = Math.floor(y / this.numAttrValues);
+      const j = Math.floor(x / this.numAttrValues);
+      const k = (x % this.numAttrValues) * this.numAttrValues + (y % this.numAttrValues);
+      return [i + 1, j + 1, k + 1];
+    },
+    mouseDown(i, j, k) {
+      const [x, y] = this.toXY(i, j, k);
+      // create a copy of the grid state before the mouse down
+      this.gridStateCopy = [...this.gridState];
+      this.startMouseDown = [x, y];
+      this.lastMouseOver = this.startMouseDown;
+      this.isMouseDown = true;
+      this.$set(this.gridState, this.cellIndex(i, j, k), this.selectedColor);
+    },
+    mouseEnter(i, j, k) {
+      /* const index = this.cellIndex(i, j, k);
+      this.$set(this.gridState, index, this.selectedColor);
+      const row = (k - 1) % this.numAttrValues;
+      if (this.selectedColor == 0) {
+        if (i == 1) {
+          this.attrInputs[`${row}_${j - 1}`] = this.attributes[j].values[Math.floor((k - 1) / this.numAttrValues)];
+        }
+      } */
+      if (this.isMouseDown) {
+        const [i1, j1] = this.toXY(i, j, k);
+        const [i2, j2] = this.startMouseDown;
+        const [i3, j3] = this.lastMouseOver;
+        // first reset not marked cells
+        if (i1 !== i3) {
+          for (let a = Math.min(j2, j3); a <= Math.max(j2, j3); a += 1) {
+            const [i, j, k] = this.toIJK(i3, a);
+            const cellIndex = this.cellIndex(i, j, k);
+            this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+          }
+        }
+        if (j1 !== j3) {
+          for (let a = Math.min(i2, i3); a <= Math.max(i2, i3); a += 1) {
+            const [i, j, k] = this.toIJK(a, j3);
+            const cellIndex = this.cellIndex(i, j, k);
+            // this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
+            this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+          }
+        }
+        // then mark nearly marked cells
+        for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a += 1) {
+          for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b += 1) {
+            // this.gridCells[b * this.width + a].style.background = this.colors[this.selectedColor];
+            const [i, j, k] = this.toIJK(a, b);
+            const cellIndex = this.cellIndex(i, j, k);
+            this.$set(this.gridState, cellIndex, this.selectedColor);
+          }
+        }
+        this.lastMouseOver = [i1, j1];
+      }
+    },
+    mainGridMouseUp() {
+      this.isMouseDown = false;
     },
     getImg() {
       // eslint-disable-next-line global-require, import/no-dynamic-require
@@ -225,13 +301,16 @@ export default {
 </script>
 
 <style lang="scss">
-body {
-  font-size: 16px;
-}
+$logicalColor: #c6c6c6; /* #78c0fa; #fe4f6c*/
+$textColor: black; /*white;*/
 
 h1 {
   margin-bottom: 30px;
   font-size: 26px;
+}
+
+#descrHeader {
+  margin-top: 0;
 }
 
 .puzzleTitle {
@@ -240,7 +319,7 @@ h1 {
 
 .difficulty {
   float: right;
-  font-size: 24px;
+  font-size: 22px;
 }
 
 #solutionGrid {
@@ -260,9 +339,12 @@ h1 {
 }
 
 #headerImage {
-  position: absolute;
-  right: 20px;
-  top: 20px;
+  /* position: absolute;
+  right: 30px;
+  top: 30px; */
+  width: 1000px;
+  height: 200px;
+  object-fit: cover;
 }
 
 .puzzleContainer {
@@ -272,37 +354,45 @@ h1 {
   margin-top: 20px;
   margin-bottom: 20px;
   position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .puzzleBody {
   position: relative;
-  padding: 20px;
+  padding: 30px;
   background: #ffffffab;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 #puzzleHeader {
   /*padding: 10px;*/
-  height: 60px;
-  width: 100%;
-  line-height: 60px;
-  border-bottom: 1px solid #262664;
+  background: white;
+  height: 50px;
+  line-height: 50px;
+  padding: 10px 30px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 }
 
 #puzzleHeader h1 {
   margin: 0;
-  /* margin-left: 10px; */
+  font-size: 22px;
 }
 
 #clues {
   margin: 20px 0;
   padding: 1em;
   padding-left: 2em;
-  background-color: #fe4f6c; /* #f5c2c2 #D6EBFF; */
-  box-shadow: 0px 0px 20px 3px rgb(211, 211, 211);
-  box-shadow: 0 2px 6px rgba(154,153,153,0.75);
-  color: white;
+  /* background-color: $logicalColor; */
+  background: #f5f5f5;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+
+  /* box-shadow: 0px 0px 20px 3px rgb(211, 211, 211);
+  box-shadow: 0 2px 6px rgba(154,153,153,0.75); */
+  color: $textColor;
   border-radius: 4px;
-  width: 60%;
 }
 
 .bold {
@@ -310,24 +400,24 @@ h1 {
 }
 
 .clue {
-  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+.clue:last-child {
+ margin-bottom: 0px;
 }
 
 thead {
-  background: #fe4f6c;
-  line-height: 1;
-  border-radius: .4em;
-}
-
-tbody tr {
-  margin-bottom: 1em;
-  border: 2px solid #1d96b2;
+  background: white;
 }
 
 tbody{
   th {
     color: #5e5d52;
-    text-align: left;
+  }
+  tr {
+    margin-bottom: 1em;
+    border: 2px solid #1d96b2;
   }
   td {
     padding: 8px 10px;
@@ -335,15 +425,13 @@ tbody{
 }
 
 th, td {
-  line-height: 13px;
-  padding: .5em;
+  text-align: center;
   vertical-align: middle;
 }
 
 th {
-  color: white;
-  padding: 10px;
-  text-align: center;
+  color: $textColor;
+  padding: 8px 10px;
   font-weight: normal;
 }
 
@@ -352,6 +440,23 @@ table {
   border-collapse: separate;
   border-spacing: 0;
   margin: 20px 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+thead th:first-child {
+  border-top-left-radius: 8px;
+}
+
+thead th:last-child {
+  border-top-right-radius: 8px;
+}
+
+table tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+table tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
 }
 
 tbody tr:nth-child(2n-1) {
@@ -359,7 +464,7 @@ tbody tr:nth-child(2n-1) {
 }
 
 tbody tr:nth-of-type(even) {
-  background-color: rgba(94, 93, 82, 0.1);
+  background-color: rgb(236, 235, 234);
 }
 
 input {
@@ -369,8 +474,8 @@ input {
 }
 
 button {
-  background: #fe4f6c; /*rgb(52, 73, 94);*/
-  color: white;
+  color: black;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 5px;
   height: 40px;
   padding: 10px;
