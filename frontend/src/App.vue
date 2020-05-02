@@ -3,20 +3,92 @@
     <div id="mainContainer">
       <div class="header">
         <div class="headerContainer">
-          <img class="logo" width=35 src="@/assets/logo.svg">
-          <!--<div>
+          <!--<img class="logo" width=35 src="@/assets/logo.svg">
+          <div>
             <router-link :to="{ name: 'Dashboard'}">Dashboard</router-link>
             <router-link :to="{ name: 'Login'}">Login</router-link>
             <router-link :to="{ name: 'Logical'}">Logical</router-link>
             <a href="#" v-on:click="logout">Logout</a>
           </div>-->
-          <nav class="navMenu">
+          <!--<nav class="navMenu">
             <ul id="navList" class="navList">
               <li v-for="page in pages" :id="page.id" v-bind:key="page.id" class="navItem">
                 <router-link :to="{ name: page.link}" class="navLink">{{page.name}}</router-link>
               </li>
             </ul>
-          </nav>
+          </nav>-->
+          <b-navbar>
+            <template slot="brand">
+              <b-navbar-item tag="router-link" :to="{ path: '/' }">
+                <img
+                    src="@/assets/logo.svg"
+                    alt="Logivilia"
+                >
+              </b-navbar-item>
+            </template>
+            <template slot="start">
+              <b-navbar-item>
+                <router-link :to="{ name: 'Home'}" class="navLink">Home</router-link>
+              </b-navbar-item>
+              <b-navbar-item tag="router-link" :to="{ path: '/nonogram-overview' }">
+                Nonogramm
+              </b-navbar-item>
+              <b-navbar-item tag="router-link" :to="{ path: '/logical-overview' }">
+                Logical
+              </b-navbar-item>
+              <!-- <b-navbar-dropdown label="Logical">
+                <b-navbar-item tag="router-link" :to="{ path: '/logicalSolve' }">
+                  Logical
+                </b-navbar-item>
+                <b-navbar-item tag="router-link" :to="{ path: '/logical-overview' }">
+                  LogicalOverview
+                </b-navbar-item>
+              </b-navbar-dropdown> -->
+            </template>
+
+            <!--<template slot="end">
+              <b-dropdown position="is-bottom-left" append-to-body aria-role="menu" trap-focus>
+                <a
+                  class="navbar-item"
+                  slot="trigger"
+                  role="button">
+                  <span>Login</span>
+                  <b-icon icon="menu-down"></b-icon>
+                </a>
+                <b-dropdown-item
+                  aria-role="menu-item"
+                  :focusable="false"
+                  custom
+                  paddingless>
+                  <form action="">
+                    <div class="modal-card" style="width:300px;">
+                      <section class="modal-card-body">
+                        <b-field label="Email">
+                          <b-input
+                            type="email"
+                            placeholder="Your email"
+                            required>
+                          </b-input>
+                        </b-field>
+                        <b-field label="Password">
+                          <b-input
+                            type="password"
+                            password-reveal
+                            placeholder="Your password"
+                            required>
+                          </b-input>
+                        </b-field>
+                        <b-checkbox>Remember me</b-checkbox>
+                      </section>
+                      <footer class="modal-card-foot">
+                          <button class="button is-primary">Login</button>
+                      </footer>
+                    </div>
+                  </form>
+                </b-dropdown-item>
+              </b-dropdown>
+            </template>-->
+          </b-navbar>
         </div>
       </div>
       <div class="body">
@@ -24,7 +96,13 @@
           <router-view/>
         </div>
       </div>
-      <div class="footer"/>
+      <footer class="logFooter">
+        <div class="content has-text-centered">
+          <p>
+            <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}
+          </p>
+        </div>
+      </footer>
     </div>
   </div>
 </template>
@@ -65,6 +143,9 @@ body {
   margin: 0;
   font-size: 15px;
   line-height: 23px;
+  font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4 {
@@ -74,32 +155,37 @@ h1, h2, h3, h4 {
 #mainContainer {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
-.footer {
-  height: 100px;
-  background: #2b2b2b;
+.logFooter {
+  background: #fcfcfc;
+  border-top: 2px solid #f2f2f2;
+  flex-grow: 0;
+  flex-shrink: 1;
 }
 
 #app {
-  font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   text-align: left;
   color: #2c3e50;
   background: #f5f5f5;
+  height: 100%;
 }
 
 .body {
   flex-grow: 1;
+  flex-shrink: 1;
+  background: #f5f5f5;
 }
 
 .header {
-  height: 60px;
+  /* height: 60px;
   line-height: 60px;
+  padding: 0 100px; */
   border-bottom: 2px solid #f2f2f2;
-  padding: 0 100px;
   background: #fff; /* #fe4f6c; */
+  flex-grow: 0;
+  flex-shrink: 1;
 }
 
 .headerContainer, .bodyContainer {
@@ -141,7 +227,6 @@ h1, h2, h3, h4 {
   letter-spacing: 0;
   font-style: normal;
   text-decoration: none;
-  text-transform: uppercase;
 }
 
 .navLink:hover {

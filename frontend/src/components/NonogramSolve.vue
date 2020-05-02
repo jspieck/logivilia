@@ -6,28 +6,85 @@
     </div>
     <div id="puzzle" class="puzzleBody">
       <div id="buttonBar">
-        <button id="zoomIn" class="nonoButton largerIcon"><ion-icon v-pre name="ios-add"></ion-icon></button>
-        <button id="zoomOut" class="nonoButton largerIcon"><ion-icon v-pre name="ios-remove"></ion-icon></button>
-        <button id="revert" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
-        <button id="restore" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
-        <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
-        <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button>
+        <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
+          <ion-icon v-pre name="ios-add"></ion-icon>
+        </button>
+        <button id="zoomOut" @click="zoomOut" class="nonoButton largerIcon">
+          <ion-icon v-pre name="ios-remove"></ion-icon>
+        </button>
+        <button id="revert" @click="revertState" class="nonoButton"><ion-icon class="rotate" v-pre name="ios-refresh"></ion-icon></button>
+        <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
+        <!-- <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
+        <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button> -->
       </div>
       <div id="nonoArea">
-        <table>
+        <svg id="colors" :height="cellWidth + 25" :width="colors.length * (cellWidth + 10) + 15">
+          <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
+            <rect :fill="color" stroke="black" :width="cellWidth" :height="cellWidth" @click="selectColor(i)"/>
+            <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
+            <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3" :y="cellWidth + 4"/> 
+          </g>
+        </svg>
+        <table class="nonoGrid">
           <tr>
             <td></td>
-            <td><div id="verticalInformation" ref="verticalInformation"></div></td>
+            <td>
+              <div id="verticalInformation" ref="verticalInformation">
+                <div class="gridRow">
+                  <div v-for="[i, group] in verticalInfo.entries()" v-bind:key="`group${i}`" class="gridGroup">
+                    <div v-for="[j, row] in group.entries()" v-bind:key="`column${j}`" :id="`column${j}`" class="gridColumn">
+                      <div v-for="[k, cell] in row.entries()" v-bind:key="`cellCol${cell.id}`" :id="cell.id" class="gridCellVert noSelect" @click="selectColor(cell.colorId)"
+                        :data-x="k" :data-y="j" :style="`background: ${cell.background}; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
+                        {{cell.blockLength}}
+                      </div>
+                      <div class="correctColumn" :style="`width: ${cellWidth}px; background: ${indicatorColors[indicatorVertical[i * 5 + j]]};`"/>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
           </tr>
           <tr>
-            <td><div id="horizontalInformation" ref="horizontalInformation"></div></td>
-            <td><div id="mainArea" ref="mainArea"></div></td>
+            <td>
+              <div id="horizontalInformation">
+                <div v-for="[i, group] in horizontalInfo.entries()" v-bind:key="`group${i}`" class="gridRow">
+                  <div class="gridGroup">
+                    <div v-for="[j, row] in group.entries()" v-bind:key="`row${j}`" :id="`row${j}`" class="gridRow">
+                      <div v-for="[k, cell] in row.entries()" v-bind:key="`cell${cell.id}`" :id="cell.id" class="gridCell noSelect" @click="selectColor(cell.colorId)"
+                        :data-x="k" :data-y="j" :style="`background: ${cell.background}; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
+                        {{cell.blockLength}}
+                      </div>
+                      <!--<svg :height="cellWidth" width="5">
+                        <rect class="correctRow" :height="cellWidth" :fill="indicatorColors[indicatorHorizontal[i * 5 + j]]"/>
+                      </svg>-->
+                      <div class="correctRow" :style="`height: ${cellWidth}px; background: ${indicatorColors[indicatorHorizontal[i * 5 + j]]}`"/>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div id="mainArea">
+                <div v-for="[i, groupRow] in mainArea.entries()" v-bind:key="`groupRow${i}`" class="gridRow">
+                  <div v-for="[j, group] in groupRow.entries()" v-bind:key="`group${j}`" class="gridGroup">
+                    <div v-for="[k, row] in group.entries()" v-bind:key="`row${k}`" :id="`row${k}`" class="gridRow">
+                      <div v-for="[l, cell] in row.entries()" v-bind:key="`cellMain${cell.id}`" :id="cell.id" class="gridCell noSelect" 
+                        :data-x="cell.x" :data-y="cell.y" :style="`width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px; background: ${colors[gridState[cell.y * width + cell.x]]}`"
+                        @mousedown="e => {cellMouseDown(e, cell.x, cell.y)}" @mouseenter="e => {cellMouseEnter(e, cell.x, cell.y)}">
+                        <svg :width="cellWidth" :height="cellWidth">
+                          <circle v-if="gridState[cell.y * width + cell.x] == colors.length - 1" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
           </tr>
         </table>
       </div>
       <div id='checkSolutionBox'>
-        <button id='checkButton' class='loes' @click="checkSolution">Check</button>
-        <img v-if="!solved" class="checking" src='@/assets/cross.png' width='40' height='40'/>
+        <!--<button id='checkButton' class='loes' @click="checkSolution">Überprüfen</button>-->
         <img v-if="solved" class="checking" src='@/assets/haken.png' width='40' height='40'/>
       </div>
       <h4 v-if="solved" id="solved">Gratulation, dieses Rätsel ist gelöst!</h4>
@@ -37,106 +94,320 @@
 </template>
 
 <script>
-
+import nono from '../assets/nonograms.json';
 
 export default {
   name: 'NonogramSolve',
+  props: ['id'],
   data() {
     return {
-      name: 'Nonogram Test',
-      solved: false,
-      height: 5,
-      width: 5,
-      solution: [
-        [0,0,1,0,0],
-        [0,1,1,1,0],
-        [1,1,1,1,1],
-        [0,1,0,1,0],
-        [0,0,1,0,0]
-      ],
+      revertHistory: [],
+      revertIndex: 0,
       cellWidth: 25,
       tableVisible: true,
-      selectedColor: 1,
-      colors: ["#ffffff", "#333333", "#ffffff"],
+      selectedColor: 0,
+      solved: false,
       startMouseDown: [0, 0],
       lastMouseOver: [0, 0],
       gridCells: [],
       isMouseDown: false,
+      gridState: [],
+      gridStateCopy: [],
+      indicatorColors: ["#ff0000", "#00ff00"],
+      indicatorHorizontal: [],
+      indicatorVertical: [],
+      darkColor: '#000000',
+      lightColor: '#ffffff',
+      /* solution: [[1,1,1,1,1], [1,1,1,1,1], [1,1,1,1,1], [1,1,0,1,1], [1,1,1,1,1]] */
     };
   },
+  mounted() {
+    this.gridState = new Array(this.width * this.height).fill(this.backgroundNumber);
+    this.indicatorHorizontal = new Array(this.height).fill(0);
+    this.indicatorVertical = new Array(this.width).fill(0);
+    this.checkTotalNonogram();
+    document.addEventListener("mouseup", () => {this.mainGridMouseUp()});
+  },
+  watch: {
+    id() {
+      this.gridState = new Array(this.width * this.height).fill(this.backgroundNumber);
+      this.indicatorHorizontal = new Array(this.height).fill(0);
+      this.indicatorVertical = new Array(this.width).fill(0);
+      this.checkTotalNonogram();
+    },
+  },
   computed: {
-    gridState() {
-      return Array(this.width * this.height).fill(0);
+    height() {
+      return nono[parseInt(this.id)].height;
+    },
+    width() {
+      return nono[parseInt(this.id)].width;
+    },
+    colors() {
+      const baseColors = [...nono[parseInt(this.id)].colors];
+      baseColors.push('#FFFFFF');
+      return baseColors;
+    },
+    backgroundNumber() {
+      return this.colors.length - 2;
+    },
+    solution() {
+      // turn 0 into the background color
+      const solution = nono[parseInt(this.id)].solution;
+      const adaptedSolution = [];
+      for (const row of solution) {
+        const adaptedRow = [];
+        for (let i = 0; i < row.length; i++) {
+          if (row[i] == 0) {
+            adaptedRow.push(this.colors.length - 2);
+          } else {
+            adaptedRow.push(row[i] - 1);
+          }
+        }
+        adaptedSolution.push(adaptedRow);
+      }
+      return adaptedSolution;
+    },
+    name() {
+      return nono[parseInt(this.id)].name;
     },
     horizontalInfo() {
       const horizontalInfo = [];
-      for (let i = 0; i < this.height; i++) {
-        const rowInfo = [];
-        let currentNumber = this.solution[i][0];
-        let currentNumberCounter = 1;
-        for (let j = 1; j < this.width; j++) {
-          if (this.solution[i][j] != currentNumber) {
-            if (currentNumber != 0) {
-              rowInfo.push([currentNumber, currentNumberCounter]);
-            }
-            currentNumber = this.solution[i][j];
-            currentNumberCounter = 1;
-          } else {
-            currentNumberCounter += 1;
+      let cellId = 0;
+      let longestRow = 0;
+      for (let a = 0; a < this.height; a += 5) {
+        const infoGroup = [];
+        for (let b = 0; b < 5; b += 1) {
+          const i = a + b;
+          if (i >= this.height) {
+            break;
           }
+          const rowInfo = [];
+          let currentNumber = this.solution[i][0];
+          let currentNumberCounter = 1;
+          for (let j = 1; j < this.width; j++) {
+            if (this.solution[i][j] != currentNumber) {
+              if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
+                rowInfo.push({
+                  'colorId': currentNumber,
+                  'id': cellId,
+                  'color': this.fontColors[currentNumber],
+                  'blockLength': currentNumberCounter,
+                  background: this.colors[currentNumber]
+                });
+                cellId += 1;
+              }
+              currentNumber = this.solution[i][j];
+              currentNumberCounter = 1;
+            } else {
+              currentNumberCounter += 1;
+            }
+          }
+          if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
+            rowInfo.push({
+              'colorId': currentNumber,
+              'id': cellId,
+              'color': this.fontColors[currentNumber],
+              'blockLength': currentNumberCounter,
+              background: this.colors[currentNumber]
+            });
+            cellId += 1;
+          }
+          infoGroup.push(rowInfo);
+          longestRow = Math.max(longestRow, rowInfo.length);
         }
-        if (currentNumber > 0) {
-          rowInfo.push([currentNumber, currentNumberCounter]);
+        horizontalInfo.push(infoGroup);
+      }
+  
+      // fill row with empty cells
+      for (const group of horizontalInfo) {
+        for (const row of group) {
+          for (let o = row.length; o < longestRow; o += 1) {
+            row.unshift({
+              'colorId:': this.backgroundNumber,
+              'color': '#fff',
+              'id': cellId,
+              blockLength: 0,
+              background: '#fff'
+            });
+            cellId += 1;
+          } 
         }
-        horizontalInfo.push(rowInfo);
       }
       return horizontalInfo;
     },
-   verticalInfo() {
-      const verticalInfo = [];
-      for (let i = 0; i < this.width; i++) {
-        const columnInfo = [];
-        let currentNumber = this.solution[0][i];
+    horizontalClues() {
+      const rowInfos = [];
+      for (let b = 0; b < this.height; b++) {
+        const rowInfo = [];
+        let currentNumber = this.solution[b][0];
         let currentNumberCounter = 1;
-        for (let j = 1; j < this.height; j++) {
-          if (this.solution[j][i] != currentNumber) {
-            if (currentNumber != 0) {
-              columnInfo.push([currentNumber, currentNumberCounter]);
+        for (let a = 1; a < this.width; a++) {
+          if (this.solution[b][a] != currentNumber) {
+            if (currentNumber != this.backgroundNumber) {
+              rowInfo.push({currentNumber, currentNumberCounter});
             }
-            currentNumber = this.solution[j][i];
+            currentNumber = this.solution[b][a];
             currentNumberCounter = 1;
           } else {
             currentNumberCounter += 1;
           }
         }
-        if (currentNumber > 0) {
-          columnInfo.push([currentNumber, currentNumberCounter]);
+        if (currentNumber != this.backgroundNumber) {
+          rowInfo.push({currentNumber, currentNumberCounter});
         }
-        verticalInfo.push(columnInfo);
+        rowInfos.push(rowInfo);
+      }
+      return rowInfos;
+    },
+    verticalClues() {
+      const columnInfos = [];
+      for (let b = 0; b < this.width; b++) {
+        const columnInfo = [];
+        let currentNumber = this.solution[0][b];
+        let currentNumberCounter = 1;
+        for (let a = 1; a < this.height; a++) {
+          if (this.solution[a][b] != currentNumber) {
+            if (currentNumber != this.backgroundNumber) {
+              columnInfo.push({currentNumber, currentNumberCounter});
+            }
+            currentNumber = this.solution[a][b];
+            currentNumberCounter = 1;
+          } else {
+            currentNumberCounter += 1;
+          }
+        }
+        if (currentNumber != this.backgroundNumber) {
+          columnInfo.push({currentNumber, currentNumberCounter});
+        }
+        columnInfos.push(columnInfo);
+      }
+      return columnInfos;
+    },
+    verticalInfo() {
+      const verticalInfo = [];
+      let cellId = 0;
+      let longestColumn = 0;
+      for (let a = 0; a < this.width; a += 5) {
+        const infoGroup = [];
+        for (let b = 0; b < 5; b += 1) {
+          const i = a + b;
+          if (i >= this.width) {
+            break;
+          }
+          const columnInfo = [];
+          let currentNumber = this.solution[0][i];
+          let currentNumberCounter = 1;
+          for (let j = 1; j < this.height; j += 1) {
+            if (this.solution[j][i] != currentNumber) {
+              if (currentNumber != this.backgroundNumber) {
+                columnInfo.push({
+                  'colorId': currentNumber,
+                  'id': cellId,
+                  'color': this.fontColors[currentNumber],
+                  'blockLength': currentNumberCounter,
+                  background: this.colors[currentNumber]
+                });
+                cellId += 1;
+              }
+              currentNumber = this.solution[j][i];
+              currentNumberCounter = 1;
+            } else {
+              currentNumberCounter += 1;
+            }
+          }
+          if (currentNumber != this.backgroundNumber) {
+            columnInfo.push({
+              'colorId': currentNumber,
+              'id': cellId,
+              'color': this.fontColors[currentNumber],
+              'blockLength': currentNumberCounter,
+              background: this.colors[currentNumber]
+            });
+            cellId += 1;
+          }
+          infoGroup.push(columnInfo);
+          longestColumn = Math.max(longestColumn, columnInfo.length);
+        }
+        verticalInfo.push(infoGroup);
+      }
+      // fill row with empty cells
+      for (const group of verticalInfo) {
+        for (const row of group) {
+          for (let o = row.length; o < longestColumn; o += 1) {
+            row.unshift({
+              'colorId:': this.backgroundNumber,
+              'color': '#fff',
+              'id': cellId,
+              blockLength: 0,
+              background: '#fff'
+            });
+            cellId += 1;
+          } 
+        }
       }
       return verticalInfo;
     },
-    maxBlockHorizontal() {
-      let longest = 0;
-      for (const row of this.horizontalInfo) {
-        longest = Math.max(longest, row.length);
+    mainArea() {
+      const mainArea = [];
+      let cellId = 0;
+      for(let i = 0; i < this.height; i += 5){
+        const gridGroupRow = [];
+        for(let j = 0; j < this.width; j += 5){
+          const gridGroup = [];
+          for(let k = i; k < Math.min(i + 5, this.height); k++){
+            const gridRow = [];
+            for(let l = j; l < Math.min(j + 5, this.width); l++){
+              gridRow.push({
+                'x': l, 'y': k, 'id': cellId
+              })
+              cellId += 1;
+            }
+            gridGroup.push(gridRow);
+          }
+          gridGroupRow.push(gridGroup);
+        }
+        mainArea.push(gridGroupRow);
       }
-      return longest;
+      return mainArea;
     },
-    maxBlockVertical() {
-      let longest = 0;
-      for (const column of this.verticalInfo) {
-        longest = Math.max(longest, column.length);
+    fontColors() {
+      const fontColors = [];
+      for (const color of this.colors) {
+        fontColors.push(this.pickTextColorBasedOnBgColor(color));
       }
-      return longest;
-    },
-  },
-  mounted() {
-    this.createHorizontalInformation();
-    this.createVerticalInformation();
-    this.createMainArea();
+      return fontColors;
+    }
   },
   methods: {
+    revertState() {
+      if (this.revertIndex > 0) {
+        const state = this.revertHistory[this.revertIndex - 1];
+        for (let b = state['x0']; b <= state['x1']; b++) {
+          for (let a = state['y0']; a <= state['y1']; a++) {
+            this.$set(this.gridState, a * this.width + b, state['colorsBefore'][b - state['x0']][a - state['y0']]);
+          }
+        }
+        this.revertIndex -= 1;
+      }
+    },
+    restoreState() {
+      if (this.revertIndex < this.revertHistory.length) {
+        const state = this.revertHistory[this.revertIndex];
+        for (let b = state['x0']; b <= state['x1']; b++) {
+          for (let a = state['y0']; a <= state['y1']; a++) {
+            this.$set(this.gridState, a * this.width + b, state['colorAfter']);
+          }
+        }
+        this.revertIndex += 1;
+      }
+    },
+    zoomIn() {
+      this.cellWidth = (this.cellWidth + 5);
+    },
+    zoomOut() {
+      this.cellWidth = Math.max((this.cellWidth - 5), 20);
+    },
     getLighting(color) {
       const colorInfo = color.substring(1);      // strip #
       const rgb = parseInt(colorInfo, 16);   // convert rrggbb to decimal
@@ -145,144 +416,175 @@ export default {
       const b = (rgb >>  0) & 0xff;  // extract blue
       return 0.2126 * r + 0.7152 * g + 0.0722 * b; // per ITU-R BT.709
     },
-    createHorizontalInformation() {
-      const hoDiv = this.$refs.horizontalInformation;
-      hoDiv.innerHTML = "";
-      for(let a = 0; a < this.height; a+=5){
-        const gridGroupRow = document.createElement("div");
-        gridGroupRow.setAttribute("class", "gridRow");
-        const gridGroup = document.createElement("div");
-        gridGroup.setAttribute("class", "gridGroup");
-        for(let i = a; i < Math.min(a + 5, this.height); i++){
-          const gridRow = document.createElement("div");
-          gridRow.setAttribute("id", "row" + i);
-          gridRow.setAttribute("class", "gridRow");
-          for(let j = 0; j < this.maxBlockHorizontal; j++){
-            const gridCell = document.createElement("div");
-            gridCell.setAttribute("id", "cellH" + i + "_" + j);
-            gridCell.setAttribute("class", "gridCell noselect");
-            gridCell.setAttribute("data-x", j);
-            gridCell.setAttribute("data-y", i);
-            /*gridCell.addEventListener("mousedown", mouseDownInfoEvent, false);
-            gridCell.addEventListener("mouseover", mouseOverInfoEvent, false);
-            gridCell.addEventListener("mouseout", mouseOutInfoEvent, false);
-            gridCell.addEventListener("mouseup", mouseUpInfoEvent, false);*/
-            if(this.horizontalInfo[i][j] != null){
-              const [colorNumber, innerBlockLength] = this.horizontalInfo[i][j];
-              gridCell.style.color = this.colors[colorNumber];
-              if (this.getLighting(this.colors[colorNumber]) > 200) {
-                gridCell.style.background = "rgb(60, 60, 60)";
-              }
-              const cellNumber = document.createTextNode(innerBlockLength);
-              gridCell.appendChild(cellNumber);
-            }
-            gridRow.appendChild(gridCell);
-          }
-          //add one box for correctly solved
-          const correctlySolved = document.createElement("div");
-          correctlySolved.setAttribute("id", "rowCorrect" + i);
-          correctlySolved.setAttribute("class", "correctRow");
-          gridRow.appendChild(correctlySolved);
-          gridGroup.appendChild(gridRow);
-          gridGroupRow.appendChild(gridGroup);
+    pickTextColorBasedOnBgColor(bgColor) {
+      const color = (bgColor.charAt(0) === '#') ? bgColor.substring(1, 7) : bgColor;
+      const r = parseInt(color.substring(0, 2), 16); // hexToR
+      const g = parseInt(color.substring(2, 4), 16); // hexToG
+      const b = parseInt(color.substring(4, 6), 16); // hexToB
+      const uicolors = [r / 255, g / 255, b / 255];
+      const c = uicolors.map((col) => {
+        if (col <= 0.03928) {
+          return col / 12.92;
         }
-        hoDiv.appendChild(gridGroupRow);
-      }
-      /* hoDiv.addEventListener("touchstart", touchDownInfoEvent, false);
-      hoDiv.addEventListener("touchmove", touchOverInfoEvent, false);
-      hoDiv.addEventListener("touchleave", touchOutInfoEvent, false);
-      hoDiv.addEventListener("touchend", touchUpInfoEvent, false); */
-    },
-    createVerticalInformation() {
-      const veDiv = this.$refs.verticalInformation;
-      veDiv.innerHTML = "";
-      for(let a = 0; a < this.width; a+=5){
-        const gridGroupRow = document.createElement("div");
-        gridGroupRow.setAttribute("class", "gridRow");
-        const gridGroup = document.createElement("div");
-        gridGroup.setAttribute("class", "gridGroup");
-        for(let i = 0; i < this.maxBlockVertical; i++){
-          const gridRow = document.createElement("div");
-          gridRow.setAttribute("id", "row" + i);
-          gridRow.setAttribute("class", "gridRow");
-          for(let j = a; j < Math.min(a + 5, this.width); j++){
-            const gridCell = document.createElement("div");
-            gridCell.setAttribute("id", "cellV" + i + "_" + j);
-            gridCell.setAttribute("class", "gridCell noselect");
-            gridCell.setAttribute("data-x", j);
-            gridCell.setAttribute("data-y", i);
-            /*gridCell.addEventListener("mousedown", mouseDownInfoEvent, false);
-            gridCell.addEventListener("mouseover", mouseOverInfoEvent, false);
-            gridCell.addEventListener("mouseout", mouseOutInfoEvent, false);
-            gridCell.addEventListener("mouseup", mouseUpInfoEvent, false);*/
-            if(this.verticalInfo[j][i] != null){
-              const [colorNumber, innerBlockLength] = this.verticalInfo[j][i];
-              gridCell.style.color = this.colors[colorNumber];
-              if (this.getLighting(this.colors[colorNumber]) > 200) {
-                gridCell.style.background = "rgb(60, 60, 60)";
-              }
-              const cellNumber = document.createTextNode(innerBlockLength);
-              gridCell.appendChild(cellNumber);
-            }
-            gridRow.appendChild(gridCell);
-          }
-          //add one box for correctly solved
-          const correctlySolved = document.createElement("div");
-          correctlySolved.setAttribute("id", "columnCorrect" + i);
-          correctlySolved.setAttribute("class", "correctColumn");
-          gridRow.appendChild(correctlySolved);
-          gridGroup.appendChild(gridRow);
-          gridGroupRow.appendChild(gridGroup);
-        }
-        veDiv.appendChild(gridGroupRow);
-      }
-      /* hoDiv.addEventListener("touchstart", touchDownInfoEvent, false);
-      hoDiv.addEventListener("touchmove", touchOverInfoEvent, false);
-      hoDiv.addEventListener("touchleave", touchOutInfoEvent, false);
-      hoDiv.addEventListener("touchend", touchUpInfoEvent, false); */
+        return Math.pow((col + 0.055) / 1.055, 2.4);
+      });
+      const L = (0.2126 * c[0]) + (0.7152 * c[1]) + (0.0722 * c[2]);
+      return (L > 0.179) ? this.darkColor : this.lightColor;
     },
     cellMouseDown(e, i, j) {
       this.startMouseDown = [i, j];
       this.lastMouseOver = this.startMouseDown;
       this.isMouseDown = true;
-      this.gridCells[j * this.width + i].style.background = this.colors[this.selectedColor];
+      // TODO
+      // this.gridCells[j * this.width + i].style.background = this.colors[this.selectedColor];
+      this.gridStateCopy = [...this.gridState];
+      this.$set(this.gridState, j * this.width + i, this.selectedColor);
     },
     cellMouseEnter(e, i1, j1) {
       if (this.isMouseDown) {
         const [i2, j2] = this.startMouseDown;
         const [i3, j3] = this.lastMouseOver;
         if (i1 !== i3) {
-          for (let a = Math.min(j2, j3); a <= Math.max(j2, j3); a++) {
-            const ind = a * this.width + i3;
-            console.log(i3, a);
-            this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
+          for (let b = Math.min(i1, i3); b <= Math.max(i1, i3); b++) {
+            for (let a = Math.min(j2, j3); a <= Math.max(j2, j3); a++) {
+              const ind = a * this.width + b;
+              // this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
+              this.$set(this.gridState, ind, this.gridStateCopy[ind]);
+            }
           }
         }
         if (j1 !== j3) {
-          for (let a = Math.min(i2, i3); a <= Math.max(i2, i3); a++) {
-            const ind = j3 * this.width + a;
-            console.log(a, j3);
-            this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
+          for (let b = Math.min(j1, j3); b <= Math.max(j1, j3); b++) {
+            for (let a = Math.min(i2, i3); a <= Math.max(i2, i3); a++) {
+              const ind = b * this.width + a;
+              // this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
+              this.$set(this.gridState, ind, this.gridStateCopy[ind]);
+            }
           }
         }
         for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
-            this.gridCells[b * this.width + a].style.background = this.colors[this.selectedColor];
+            // this.gridCells[b * this.width + a].style.background = this.colors[this.selectedColor];
+            this.$set(this.gridState, b * this.width + a, this.selectedColor);
           }
         }
         this.lastMouseOver = [i1, j1];
       }
     },
-    mainGridMouseUp() {
-      // TODO handle mouse leave
-      const [i1, j1] = this.startMouseDown;
-      const [i2, j2] = this.lastMouseOver;
-      for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
-        for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
-          this.gridState[b * this.width + a] = this.selectedColor;
+    checkRow(b) {
+      let rowInfo = this.horizontalClues[b];
+      let checkIndex = 0;
+      const startIndex = b * this.width;
+      let currentNumber = this.gridState[startIndex];
+      let currentNumberCounter = 1;
+      for (let a = 1; a < this.width; a++) {
+        if (this.gridState[startIndex + a] != currentNumber) {
+          if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
+            if (currentNumber != rowInfo[checkIndex].currentNumber || currentNumberCounter != rowInfo[checkIndex].currentNumberCounter) {
+              return 0;
+            }
+            checkIndex += 1;
+          }
+          currentNumber = this.gridState[startIndex + a];
+          currentNumberCounter = 1;
+        } else {
+          currentNumberCounter += 1;
         }
       }
-      this.isMouseDown = false;
+      if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
+        if (currentNumber != rowInfo[checkIndex].currentNumber || currentNumberCounter != rowInfo[checkIndex].currentNumberCounter) {
+          return 0;
+        }
+        checkIndex += 1;
+      }
+      if (checkIndex != rowInfo.length) {
+        return 0;
+      }
+      return 1;
+    },
+    checkColumn(b) {
+      let columnInfo = this.verticalClues[b];
+      let checkIndex = 0;
+      let currentNumber = this.gridState[b];
+      let currentNumberCounter = 1;
+      for (let a = 1; a < this.height; a++) {
+        if (this.gridState[this.width * a + b] != currentNumber) {
+          if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
+            if (currentNumber != columnInfo[checkIndex].currentNumber || currentNumberCounter != columnInfo[checkIndex].currentNumberCounter) {
+              return 0;
+            }
+            checkIndex += 1;
+          }
+          currentNumber = this.gridState[this.width * a + b];
+          currentNumberCounter = 1;
+        } else {
+          currentNumberCounter += 1;
+        }
+      }
+      if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
+        if (currentNumber != columnInfo[checkIndex].currentNumber || currentNumberCounter != columnInfo[checkIndex].currentNumberCounter) {
+          return 0;
+        }
+        checkIndex += 1;
+      }
+      if (checkIndex != columnInfo.length) {
+        return 0;
+      }
+      return 1;
+    },
+    mainGridMouseUp() {
+      // TODO handle mouse leave
+      if (this.isMouseDown) {
+        const [i1, j1] = this.startMouseDown;
+        const [i2, j2] = this.lastMouseOver;
+        const stateBefore = [];
+        for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
+          const stateBeforeRow = [];
+          for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
+            const ind = b * this.width + a;
+            stateBeforeRow.push(this.gridStateCopy[ind]);
+            this.gridState[ind] = this.selectedColor;
+          }
+          stateBefore.push(stateBeforeRow);
+        }
+        const revertObj = {
+          'x0': Math.min(i1, i2),
+          'x1': Math.max(i1, i2),
+          'y0': Math.min(j1, j2),
+          'y1': Math.max(j1, j2),
+          'colorAfter': this.selectedColor,
+          'colorsBefore': stateBefore
+        }
+        
+        if (this.revertIndex < this.revertHistory.length) {
+          this.revertHistory[this.revertIndex] = revertObj;
+          this.revertHistory.length = this.revertIndex + 1;
+        } else {
+          this.revertHistory.push(revertObj);
+        }
+        this.revertIndex += 1;
+        
+        for (let b = Math.min(i1, i2); b <= Math.max(i1, i2); b++) {
+          this.$set(this.indicatorVertical, b, this.checkColumn(b));
+        }
+        for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
+          this.$set(this.indicatorHorizontal, b, this.checkRow(b));
+        }
+        // check if finished
+        if (this.indicatorHorizontal.every( v => v === 1 ) &&
+          this.indicatorVertical.every( v => v === 1 ) ) {
+          this.solved = true;
+        }
+        this.isMouseDown = false;
+      }
+    },
+    checkTotalNonogram() {
+      for (let i = 0; i < this.width; i++) {
+        this.$set(this.indicatorVertical, i, this.checkColumn(i));
+      }
+       for (let i = 0; i < this.height; i++) {
+        this.$set(this.indicatorHorizontal, i, this.checkRow(i));
+      }
     },
     createMainArea() {
       const mainArea = this.$refs.mainArea;
@@ -371,7 +673,7 @@ export default {
   margin: 30px 0;
 }
 
-.crossPath {
+.crossPath, .circlePath {
   pointer-events: none;
 }
 
@@ -392,29 +694,86 @@ export default {
   position: relative;
 }
 
+.correctRow {
+  background: red;
+  width: 5px;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.correctColumn {
+  background: red;
+  height: 5px;
+}
+
+#buttonBar {
+  border: 1px solid #dbdde0;
+  display: inline-block;
+  padding: 10px;
+  border-radius: 8px;
+}
+
 #nonoArea {
   margin: 30px 0;
+}
+
+#mainArea .gridRow .gridCell:last-child {
+  border-right: none;
+}
+
+.noSelect {
+  user-select: none;
 }
 
 .gridCell {
   display: inline-block;
   vertical-align: top;
-  width: 25px;
-  height: 25px;
-  border-left: 1px solid #A0A0A0;
-  border-top: 1px solid #A0A0A0;
+  border-right: 1px solid #d7dadd;
   text-align: center;
   line-height: 25px;
   font-size: 18px;
   color: #111111;
 }
 
-.gridGroup .gridRow:first-child .gridCell {
+.gridGroup .gridRow {
+  border-top: 1px solid #d7dadd;
+}
+
+.gridGroup .gridRow:first-child {
   border-top: none;
 }
 
-.gridGroup .gridRow .gridCell:first-child {
-  border-left: none;
+.gridGroup .gridColumn {
+  border-right: 1px solid #d7dadd;
+}
+
+.gridGroup .gridColumn:last-child {
+  border-right: none;
+}
+
+.rotate {
+  transform: scaleX(-1);
+}
+
+.gridCellVert {
+  display: block;
+  border-bottom: 1px solid #d7dadd;
+  text-align: center;
+  line-height: 25px;
+  font-size: 18px;
+  color: #111111;
+}
+
+.gridColumn {
+  display: inline-block;
+}
+
+.gridGroup .gridColumn .gridCellVert:first-child {
+  border-top: none;
+}
+
+.gridGroup .gridColumn:last-child .gridCellVert {
+  border-right: none;
 }
 
 .gridRow .gridGroup:last-child {
@@ -431,6 +790,10 @@ export default {
   border-left: 2px solid #222222;
 }
 
+.nonoGrid {
+  border: none;
+}
+
 .bold {
   font-weight: bold;
 }
@@ -444,8 +807,6 @@ input {
 .nonoButton {
   display: inline-block;
   font-size: 21px;
-  background-color: #f7f7f7;
-  background-image: -webkit-gradient(linear, left top, left bottom, from(#f7f7f7), to(#e7e7e7));
   color: black;
   padding: 2px;
   width: 35px;
@@ -453,12 +814,16 @@ input {
   line-height: 35px;
   position: relative;
   text-align: center;
-  border-radius: 50%;
   border: none;
   cursor: pointer;
-  
   vertical-align: top;
   margin-right: 20px;
+  outline: none;
+  border-radius: 50%;
+}
+
+.nonoButton:last-child {
+  margin-right: 0;
 }
 
 .largerIcon {

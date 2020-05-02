@@ -28,7 +28,7 @@
       <h3>Lösung</h3>
       <div class="eitherOr">
         <div id="wrapMe" class="wrapMe">
-          <label id="nummerierung">Zeige die Attributenmatrix:</label>
+          <label id="nummerierung">Zeige die erweiterte Tabelle:</label>
           <MToggle class="solutionToggle" v-model="tableVisible"/>
         </div>
         <div v-if="!tableVisible" id="solutionGrid">
@@ -107,24 +107,17 @@
 <script>
 import Toggle from './Toggle';
 import Select from './Select';
-import logical from '../assets/logicalTransformed.json';
+import logical from '../assets/logicals.json';
 
 export default {
   name: 'LogicalSolve',
+  props: ['id'],
   components: {
     MToggle: Toggle,
     MSelect: Select,
   },
   data() {
     return {
-      name: logical[54].name,
-      imgName: 'biene.jpg',
-      difficulty: logical[54].difficulty,
-      description: logical[54].description,
-      logicalQuestion: logical[54].question,
-      clues: logical[54].clues,
-      attributes: logical[54].attributes,
-      solution: logical[54].solution,
       attrInputs: {},
       solved: false,
       gridState: [],
@@ -138,6 +131,23 @@ export default {
       solveLabel: ""
     };
   },
+  watch: {
+    id() {
+      this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
+      this.$nextTick(() => {
+        let maxLabelWidth = 0;
+        for(let label of this.$refs.horizontalLabels) {
+          maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
+        }
+        let maxLabelHeight = 0;
+        for(let label of this.$refs.verticalLabels) {
+          maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
+        }
+        this.paddingLeft = maxLabelWidth + 10;
+        this.paddingTop = maxLabelHeight + 10;
+      });
+    },
+  },
   mounted() {
     this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
     let maxLabelWidth = 0;
@@ -148,12 +158,37 @@ export default {
     for(let label of this.$refs.verticalLabels) {
       maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
     }
-    this.tableVisible = true;
     this.paddingLeft = maxLabelWidth + 10;
     this.paddingTop = maxLabelHeight + 10;
+
+    this.tableVisible = true;
     document.addEventListener("mouseup", this.mainGridMouseUp, false);
   },
   computed: {
+    name() {
+      return logical[parseInt(this.id)].name;
+    },
+    difficulty() {
+      return logical[parseInt(this.id)].difficulty;
+    },
+    description() {
+      return logical[parseInt(this.id)].description;
+    },
+    logicalQuestion() {
+      return logical[parseInt(this.id)].question;
+    },
+    clues() {
+      return logical[parseInt(this.id)].clues;
+    },
+    attributes() {
+      return logical[parseInt(this.id)].attributes;
+    },
+    solution() {
+      return logical[parseInt(this.id)].solution;
+    },
+    imgPath() {
+      return logical[parseInt(this.id)].image;
+    },
     numAttrValues() {
       return this.attributes[0].values.length;
     },
@@ -260,7 +295,8 @@ export default {
     },
     getImg() {
       // eslint-disable-next-line global-require, import/no-dynamic-require
-      return require(`@/assets/${this.imgName}`);
+      // return require(`@/assets/${this.imgName}`);
+      return this.imgPath;
     },
     drawOutline() {
       // draw horizontal lines
@@ -368,9 +404,9 @@ h1 {
 
 #puzzleHeader {
   /*padding: 10px;*/
-  background: white;
-  height: 50px;
-  line-height: 50px;
+  background: #fcfcfc;
+  height: 40px;
+  line-height: 40px;
   padding: 10px 30px;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
@@ -481,6 +517,10 @@ button {
   padding: 10px;
   border: none;
   cursor: pointer;
+
+  &:hover {
+    background: #c6c6c6;
+  }
 }
 
 .checking {
