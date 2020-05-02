@@ -66,7 +66,7 @@ export default {
   data() {
     return {
       data: nonogram,
-      title: "Nonogram Overview",
+      title: "Nonogramm Auswahl",
       solved: {},
       showDetailIcon: true,
       rate: 4.5,
