@@ -89,17 +89,45 @@
        d="M 564.19812,838.9802 335.78459,976.33579"
        id="path4142-7"
        inkscape:connector-curvature="0" />
-    <text
-       xml:space="preserve"
+    <g
        style="font-style:normal;font-weight:normal;font-size:45.18834305px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#272727;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="795.24634"
-       y="844.08795"
-       id="text3337"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan3339"
-         x="795.24634"
-         y="844.08795"
-         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1">LOGIVILIA</tspan></text>
+       id="text3337">
+      <path
+         d="m 891.22743,777.48038 0,-266.84398 -67.02128,0 0,333.45155 201.06385,0 0,-66.60757 -134.04257,0 z"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1"
+         id="path4140" />
+      <path
+         d="m 1212.0608,850.50048 c 95.5674,0 173.7589,-77.77778 173.7589,-172.72459 0,-95.77424 -78.1915,-173.96574 -173.5521,-173.96574 -95.3605,0 -173.3451,78.1915 -173.3451,173.96574 0,94.94681 77.9846,172.72459 173.1383,172.72459 z m 0,-67.8487 c -58.1265,0 -105.4965,-47.36998 -105.4965,-105.28961 0,-58.33333 47.37,-105.91017 105.4965,-105.91017 58.3333,0 105.9102,47.57684 105.9102,105.91017 0,57.91963 -47.5769,105.28961 -105.9102,105.28961 z"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1"
+         id="path4143" />
+      <path
+         d="m 1747.6105,656.88345 -156.7967,0 0,61.84988 86.2588,0 c -2.2754,40.13003 -36.4066,64.53902 -83.9834,64.53902 -65.1596,0 -110.2542,-47.57684 -110.2542,-105.49646 0,-62.2636 52.3346,-106.11703 104.0485,-106.11703 29.7872,0 59.5745,14.4799 85.6383,39.92317 l 37.2341,-55.64421 c -32.6833,-31.8558 -78.8121,-51.71395 -122.045,-52.12767 -95.3605,0 -173.1383,78.60521 -173.1383,173.96574 0,95.15367 77.3641,172.93145 175.6206,172.93145 86.8794,0 159.0721,-61.02246 159.0721,-165.6915 0,-9.10166 -0.6206,-18.41017 -1.6548,-28.13239 z"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1"
+         id="path4145" />
+      <path
+         d="m 1793.1187,844.08795 67.0213,0 0,-333.45155 -67.0213,0 0,333.45155 z"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1"
+         id="path4147" />
+      <path
+         d="m 2135.4651,510.6364 -85.6383,193.61703 -85.4314,-193.61703 -70.9516,0 155.3487,341.72578 2.4823,0 155.9693,-341.72578 -71.779,0 z"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1"
+         id="path4149" />
+      <path
+         d="m 2240.7547,844.08795 67.0213,0 0,-333.45155 -67.0213,0 0,333.45155 z"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1"
+         id="path4151" />
+      <path
+         d="m 2432.7169,777.48038 0,-266.84398 -67.0212,0 0,333.45155 201.0638,0 0,-66.60757 -134.0426,0 z"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1"
+         id="path4153" />
+      <path
+         d="m 2604.8209,844.08795 67.0213,0 0,-333.45155 -67.0213,0 0,333.45155 z"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1"
+         id="path4155" />
+      <path
+         d="m 2953.3729,844.08795 72.6064,0 -159.4858,-341.72579 -2.0686,0 -159.2789,341.72579 72.3995,0 21.3062,-46.54255 133.4219,0 21.0993,46.54255 z m -128.4574,-103.63476 40.7506,-89.15485 40.5437,89.15485 -81.2943,0 z"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:423.64068604px;font-family:'LEMON MILK';-inkscape-font-specification:'LEMON MILK Medium';fill:#272727;fill-opacity:1"
+         id="path4157" />
+    </g>
   </g>
 </svg>

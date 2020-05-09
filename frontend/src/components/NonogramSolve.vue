@@ -35,7 +35,7 @@
                     <div v-for="[i, group] in verticalInfo.entries()" v-bind:key="`group${i}`" class="gridGroup">
                       <div v-for="[j, row] in group.entries()" v-bind:key="`column${j}`" :id="`column${j}`" class="gridColumn">
                         <div v-for="[k, cell] in row.entries()" v-bind:key="`cellCol${cell.id}`" :id="cell.id" class="gridCellVert noSelect" @click="selectColor(cell.colorId)"
-                          :data-x="k" :data-y="j" :style="`background: ${cell.background}; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
+                          :data-x="k" :data-y="j" :style="`background: ${cell.background}; font-size: ${fontSize}px; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
                           {{cell.blockLength}}
                         </div>
                         <div class="correctColumn" :style="`width: ${cellWidth}px; background: ${indicatorColors[indicatorVertical[i * 5 + j]]};`"/>
@@ -50,9 +50,9 @@
                 <div id="horizontalInformation">
                   <div v-for="[i, group] in horizontalInfo.entries()" v-bind:key="`group${i}`" class="gridRow">
                     <div class="gridGroup">
-                      <div v-for="[j, row] in group.entries()" v-bind:key="`row${j}`" :id="`row${j}`" class="gridRow">
+                      <div v-for="[j, row] in group.entries()" v-bind:key="`row${j}`" :id="`row${j}`" class="gridRow" :style="`line-height: ${cellWidth}px;`">
                         <div v-for="[k, cell] in row.entries()" v-bind:key="`cell${cell.id}`" :id="cell.id" class="gridCell noSelect" @click="selectColor(cell.colorId)"
-                          :data-x="k" :data-y="j" :style="`background: ${cell.background}; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
+                          :data-x="k" :data-y="j" :style="`background: ${cell.background}; font-size: ${fontSize}px; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
                           {{cell.blockLength}}
                         </div>
                         <!--<svg :height="cellWidth" width="5">
@@ -68,7 +68,7 @@
                 <div id="mainArea">
                   <div v-for="[i, groupRow] in mainArea.entries()" v-bind:key="`groupRow${i}`" class="gridRow">
                     <div v-for="[j, group] in groupRow.entries()" v-bind:key="`group${j}`" class="gridGroup">
-                      <div v-for="[k, row] in group.entries()" v-bind:key="`row${k}`" :id="`row${k}`" class="gridRow">
+                      <div v-for="[k, row] in group.entries()" v-bind:key="`row${k}`" :id="`row${k}`" class="gridRow" :style="`line-height: ${cellWidth}px;`">
                         <div v-for="[l, cell] in row.entries()" v-bind:key="`cellMain${cell.id}`" :id="cell.id" class="gridCell noSelect" 
                           :data-x="cell.x" :data-y="cell.y" :style="`width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px; background: ${colors[gridState[cell.y * width + cell.x]]}`"
                           @mousedown="e => {cellMouseDown(e, cell.x, cell.y)}" @mouseenter="e => {cellMouseEnter(e, cell.x, cell.y)}">
@@ -120,6 +120,7 @@ export default {
       indicatorVertical: [],
       darkColor: '#000000',
       lightColor: '#ffffff',
+      fontSize: 18
       /* solution: [[1,1,1,1,1], [1,1,1,1,1], [1,1,1,1,1], [1,1,0,1,1], [1,1,1,1,1]] */
     };
   },
@@ -406,9 +407,11 @@ export default {
     },
     zoomIn() {
       this.cellWidth = (this.cellWidth + 5);
+      this.fontSize += 3;
     },
     zoomOut() {
-      this.cellWidth = Math.max((this.cellWidth - 5), 20);
+      this.cellWidth = Math.max((this.cellWidth - 5), 15);
+      this.fontSize = Math.max((this.fontSize - 3), 12);
     },
     getLighting(color) {
       const colorInfo = color.substring(1);      // strip #
