@@ -17,71 +17,73 @@
         <!-- <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
         <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button> -->
       </div>
-      <div id="nonoArea">
-        <svg id="colors" :height="cellWidth + 25" :width="colors.length * (cellWidth + 10) + 15">
-          <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
-            <rect :fill="color" stroke="black" :width="cellWidth" :height="cellWidth" @click="selectColor(i)"/>
-            <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
-            <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3" :y="cellWidth + 4"/> 
-          </g>
-        </svg>
-        <table class="nonoGrid">
-          <tr>
-            <td></td>
-            <td>
-              <div id="verticalInformation" ref="verticalInformation">
-                <div class="gridRow">
-                  <div v-for="[i, group] in verticalInfo.entries()" v-bind:key="`group${i}`" class="gridGroup">
-                    <div v-for="[j, row] in group.entries()" v-bind:key="`column${j}`" :id="`column${j}`" class="gridColumn">
-                      <div v-for="[k, cell] in row.entries()" v-bind:key="`cellCol${cell.id}`" :id="cell.id" class="gridCellVert noSelect" @click="selectColor(cell.colorId)"
-                        :data-x="k" :data-y="j" :style="`background: ${cell.background}; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
-                        {{cell.blockLength}}
-                      </div>
-                      <div class="correctColumn" :style="`width: ${cellWidth}px; background: ${indicatorColors[indicatorVertical[i * 5 + j]]};`"/>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <div id="horizontalInformation">
-                <div v-for="[i, group] in horizontalInfo.entries()" v-bind:key="`group${i}`" class="gridRow">
-                  <div class="gridGroup">
-                    <div v-for="[j, row] in group.entries()" v-bind:key="`row${j}`" :id="`row${j}`" class="gridRow">
-                      <div v-for="[k, cell] in row.entries()" v-bind:key="`cell${cell.id}`" :id="cell.id" class="gridCell noSelect" @click="selectColor(cell.colorId)"
-                        :data-x="k" :data-y="j" :style="`background: ${cell.background}; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
-                        {{cell.blockLength}}
-                      </div>
-                      <!--<svg :height="cellWidth" width="5">
-                        <rect class="correctRow" :height="cellWidth" :fill="indicatorColors[indicatorHorizontal[i * 5 + j]]"/>
-                      </svg>-->
-                      <div class="correctRow" :style="`height: ${cellWidth}px; background: ${indicatorColors[indicatorHorizontal[i * 5 + j]]}`"/>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </td>
-            <td>
-              <div id="mainArea">
-                <div v-for="[i, groupRow] in mainArea.entries()" v-bind:key="`groupRow${i}`" class="gridRow">
-                  <div v-for="[j, group] in groupRow.entries()" v-bind:key="`group${j}`" class="gridGroup">
-                    <div v-for="[k, row] in group.entries()" v-bind:key="`row${k}`" :id="`row${k}`" class="gridRow">
-                      <div v-for="[l, cell] in row.entries()" v-bind:key="`cellMain${cell.id}`" :id="cell.id" class="gridCell noSelect" 
-                        :data-x="cell.x" :data-y="cell.y" :style="`width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px; background: ${colors[gridState[cell.y * width + cell.x]]}`"
-                        @mousedown="e => {cellMouseDown(e, cell.x, cell.y)}" @mouseenter="e => {cellMouseEnter(e, cell.x, cell.y)}">
-                        <svg :width="cellWidth" :height="cellWidth">
-                          <circle v-if="gridState[cell.y * width + cell.x] == colors.length - 1" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
-                        </svg>
+        <div id="nonoArea">
+          <svg id="colors" :height="cellWidth + 25" :width="colors.length * (cellWidth + 10) + 15">
+            <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
+              <rect :fill="color" stroke="black" :width="cellWidth" :height="cellWidth" @click="selectColor(i)"/>
+              <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
+              <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3" :y="cellWidth + 4"/> 
+            </g>
+          </svg>
+          <div id="nonoMainArea">
+          <table class="nonoGrid">
+            <tr>
+              <td></td>
+              <td>
+                <div id="verticalInformation" ref="verticalInformation">
+                  <div class="gridRow">
+                    <div v-for="[i, group] in verticalInfo.entries()" v-bind:key="`group${i}`" class="gridGroup">
+                      <div v-for="[j, row] in group.entries()" v-bind:key="`column${j}`" :id="`column${j}`" class="gridColumn">
+                        <div v-for="[k, cell] in row.entries()" v-bind:key="`cellCol${cell.id}`" :id="cell.id" class="gridCellVert noSelect" @click="selectColor(cell.colorId)"
+                          :data-x="k" :data-y="j" :style="`background: ${cell.background}; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
+                          {{cell.blockLength}}
+                        </div>
+                        <div class="correctColumn" :style="`width: ${cellWidth}px; background: ${indicatorColors[indicatorVertical[i * 5 + j]]};`"/>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </td>
-          </tr>
-        </table>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div id="horizontalInformation">
+                  <div v-for="[i, group] in horizontalInfo.entries()" v-bind:key="`group${i}`" class="gridRow">
+                    <div class="gridGroup">
+                      <div v-for="[j, row] in group.entries()" v-bind:key="`row${j}`" :id="`row${j}`" class="gridRow">
+                        <div v-for="[k, cell] in row.entries()" v-bind:key="`cell${cell.id}`" :id="cell.id" class="gridCell noSelect" @click="selectColor(cell.colorId)"
+                          :data-x="k" :data-y="j" :style="`background: ${cell.background}; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
+                          {{cell.blockLength}}
+                        </div>
+                        <!--<svg :height="cellWidth" width="5">
+                          <rect class="correctRow" :height="cellWidth" :fill="indicatorColors[indicatorHorizontal[i * 5 + j]]"/>
+                        </svg>-->
+                        <div class="correctRow" :style="`height: ${cellWidth}px; background: ${indicatorColors[indicatorHorizontal[i * 5 + j]]}`"/>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div id="mainArea">
+                  <div v-for="[i, groupRow] in mainArea.entries()" v-bind:key="`groupRow${i}`" class="gridRow">
+                    <div v-for="[j, group] in groupRow.entries()" v-bind:key="`group${j}`" class="gridGroup">
+                      <div v-for="[k, row] in group.entries()" v-bind:key="`row${k}`" :id="`row${k}`" class="gridRow">
+                        <div v-for="[l, cell] in row.entries()" v-bind:key="`cellMain${cell.id}`" :id="cell.id" class="gridCell noSelect" 
+                          :data-x="cell.x" :data-y="cell.y" :style="`width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px; background: ${colors[gridState[cell.y * width + cell.x]]}`"
+                          @mousedown="e => {cellMouseDown(e, cell.x, cell.y)}" @mouseenter="e => {cellMouseEnter(e, cell.x, cell.y)}">
+                          <svg :width="cellWidth" :height="cellWidth">
+                            <circle v-if="gridState[cell.y * width + cell.x] == colors.length - 1" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
       </div>
       <div id='checkSolutionBox'>
         <!--<button id='checkButton' class='loes' @click="checkSolution">Überprüfen</button>-->
@@ -683,15 +685,6 @@ export default {
 
 .blockGroups {
   pointer-events: all;
-}
-
-.puzzleContainer {
-  /* background: white; */
-  overflow: hidden;
-  border-radius: 10px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  position: relative;
 }
 
 .correctRow {

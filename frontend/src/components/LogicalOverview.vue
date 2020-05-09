@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="overviewPage">
   <h2 class="tableTitle">{{title}}</h2>
   <!-- <table id="solTable" class="dataTable sortable responsive-table">
     <thead>
@@ -131,7 +131,8 @@ export default {
 
 <style lang="scss">
 .tableTitle {
-  margin-top: 30px;
+  margin-top: 0;
+  padding-top: 30px;
   margin-bottom: 30px;
 }
 </style>

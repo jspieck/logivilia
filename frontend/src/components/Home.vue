@@ -11,7 +11,7 @@
     <div class="subtile">
       <h2 class="tileHeadline">Nonogramme</h2>
       <div id="puzzle" class="puzzleBody">
-        <img class="subimg" width="300" src="../assets/nonoExample.png"/>
+        <img class="subimg" src="../assets/nonoExample.png"/>
       </div>
     </div>
     <div class="subtile">
@@ -98,7 +98,6 @@ export default {
   display: inline-block;
   box-sizing: border-box;
   vertical-align: top;
-  height: 450px;
   box-sizing: border-box;
 }
 .subimg {
@@ -107,7 +106,6 @@ export default {
   display: block;
 }
 .subtile .puzzleBody {
-  height: 375px;
   background: none;
   box-shadow: none;
 }
@@ -116,6 +114,7 @@ export default {
 }
 .homeScreen {
   height: 100%;
+  width: 100%;
   background: #ffffffab;
 }
 </style>

@@ -27,8 +27,8 @@
               </b-navbar-item>
             </template>
             <template slot="start">
-              <b-navbar-item>
-                <router-link :to="{ name: 'Home'}" class="navLink">Home</router-link>
+              <b-navbar-item tag="router-link" :to="{ path: '/' }">
+                Startseite
               </b-navbar-item>
               <b-navbar-item tag="router-link" :to="{ path: '/nonogram-overview' }">
                 Nonogramm
@@ -176,6 +176,7 @@ h1, h2, h3, h4 {
   flex-grow: 1;
   flex-shrink: 1;
   background: #f5f5f5;
+  overflow-y: overlay;
 }
 
 .header {
@@ -192,6 +193,48 @@ h1, h2, h3, h4 {
   max-width: 1000px;
   padding: 0;
   margin: auto;
+}
+
+@media (max-width: 1000px) {
+  #app {
+    background: #ffffffab;
+  }
+  .body {
+    background: inherit;
+  }
+  .bodyContainer {
+    max-width: 100%;
+  }
+  .overviewPage {
+    padding: 20px;
+  }
+  .puzzleContainer {
+    margin: 0;
+    border: none;
+  }
+  .websiteText {
+    margin: 0;
+  }
+  .imgCard {
+    height: 300px;
+    background-size: auto;
+  }
+  .subtile {
+    display: block;
+    width: 100%;
+    padding: 0px;
+  }
+  .puzzleBody {
+    background: none;
+  }
+}
+.subimg {
+  width: 300px;
+}
+@media (max-width: 350px) {
+  .subimg {
+    width: 100%;
+  }
 }
 
 .logo {

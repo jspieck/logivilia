@@ -75,24 +75,26 @@
             </div>
           </div>
         </div>
-        <table id="solTable" class="dataTable sortable responsive-table">
-          <thead>
-            <tr>
-              <th v-for="attr in attributes" v-bind:key='attr.name' scope='col' class='tableH'>
-                {{attr.name}}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="[i, v] in attributes[0].values.entries()" v-bind:key='i'>
-              <td scope='row'>{{v}}</td>
-              <td v-for="[j, attr] in attributes.slice(1).entries()"
-                v-bind:key='j' :data-title='attr.name'>
-                <MSelect :options='attributes[j + 1].values' v-model='attrInputs[i + "_" + j]'/>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="responsive-table">
+          <table id="solTable" class="dataTable sortable">
+            <thead>
+              <tr>
+                <th v-for="attr in attributes" v-bind:key='attr.name' scope='col' class='tableH'>
+                  {{attr.name}}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="[i, v] in attributes[0].values.entries()" v-bind:key='i'>
+                <td scope='row'>{{v}}</td>
+                <td v-for="[j, attr] in attributes.slice(1).entries()"
+                  v-bind:key='j' :data-title='attr.name'>
+                  <MSelect :options='attributes[j + 1].values' v-model='attrInputs[i + "_" + j]'/>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       <div id='checkSolutionBox'>
         <button id='checkButton' class='loes' @click="checkSolution">Überprüfen</button>
@@ -345,6 +347,10 @@ h1 {
   font-size: 26px;
 }
 
+.responsive-table, #solutionGridNonCanvas, #nonoMainArea {
+  overflow-x: overlay;
+}
+
 #descrHeader {
   margin-top: 0;
 }
@@ -390,7 +396,9 @@ h1 {
   margin-top: 20px;
   margin-bottom: 20px;
   position: relative;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(188, 188, 188, 0.08);
+  display: inline-block;
+  width: 100%;
 }
 
 .puzzleBody {
@@ -453,7 +461,6 @@ tbody{
   }
   tr {
     margin-bottom: 1em;
-    border: 2px solid #1d96b2;
   }
   td {
     padding: 8px 10px;

@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="overviewPage">
   <h2 class="tableTitle">{{title}}</h2>
   <b-table
     :data="data"
