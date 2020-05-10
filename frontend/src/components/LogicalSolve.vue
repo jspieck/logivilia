@@ -40,6 +40,8 @@
                 <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3" :y="cellWidth + 4"/> 
               </g>
             </svg>
+            <button id="revert" @click="revertState" class="nonoButton"><ion-icon class="rotate" v-pre name="ios-refresh"></ion-icon></button>
+            <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
           </div>
           <div id="classicGrid" class="gridContainer">
             <div id="solutionGridNonCanvas">
@@ -120,6 +122,8 @@ export default {
   },
   data() {
     return {
+      revertHistory: [],
+      revertIndex: 0,
       attrInputs: {},
       solved: false,
       gridState: [],
@@ -210,6 +214,32 @@ export default {
     },
   },
   methods: {
+    revertState() {
+      if (this.revertIndex > 0) {
+        const state = this.revertHistory[this.revertIndex - 1];
+        for (let b = state['x0']; b <= state['x1']; b++) {
+          for (let a = state['y0']; a <= state['y1']; a++) {
+            const [i, j, k] = this.toIJK(b, a);
+            const cellIndex = this.cellIndex(i, j, k);
+            this.$set(this.gridState, cellIndex, state['colorsBefore'][b - state['x0']][a - state['y0']]);
+          }
+        }
+        this.revertIndex -= 1;
+      }
+    },
+    restoreState() {
+      if (this.revertIndex < this.revertHistory.length) {
+        const state = this.revertHistory[this.revertIndex];
+        for (let b = state['x0']; b <= state['x1']; b++) {
+          for (let a = state['y0']; a <= state['y1']; a++) {
+            const [i, j, k] = this.toIJK(b, a);
+            const cellIndex = this.cellIndex(i, j, k);
+            this.$set(this.gridState, cellIndex, state['colorAfter']);
+          }
+        }
+        this.revertIndex += 1;
+      }
+    },
     checkSolution() {
       this.solved = true;
       for(let i = 0; i < this.solution.length; i++) {
@@ -239,6 +269,10 @@ export default {
     toIJK(x, y) {
       const i = Math.floor(y / this.numAttrValues);
       const j = Math.floor(x / this.numAttrValues);
+      if (j >= this.numAttributes - 1 - i) {
+        // block not in grid
+        return [-1, -1, -1];
+      }
       const k = (x % this.numAttrValues) * this.numAttrValues + (y % this.numAttrValues);
       return [i + 1, j + 1, k + 1];
     },
@@ -252,32 +286,32 @@ export default {
       this.$set(this.gridState, this.cellIndex(i, j, k), this.selectedColor);
     },
     mouseEnter(i, j, k) {
-      /* const index = this.cellIndex(i, j, k);
-      this.$set(this.gridState, index, this.selectedColor);
-      const row = (k - 1) % this.numAttrValues;
-      if (this.selectedColor == 0) {
-        if (i == 1) {
-          this.attrInputs[`${row}_${j - 1}`] = this.attributes[j].values[Math.floor((k - 1) / this.numAttrValues)];
-        }
-      } */
       if (this.isMouseDown) {
         const [i1, j1] = this.toXY(i, j, k);
         const [i2, j2] = this.startMouseDown;
         const [i3, j3] = this.lastMouseOver;
         // first reset not marked cells
         if (i1 !== i3) {
-          for (let a = Math.min(j2, j3); a <= Math.max(j2, j3); a += 1) {
-            const [i, j, k] = this.toIJK(i3, a);
-            const cellIndex = this.cellIndex(i, j, k);
-            this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+          for (let x = Math.min(i1, i3); x <= Math.max(i1, i3); x++) {
+            for (let y = Math.min(j2, j3); y <= Math.max(j2, j3); y += 1) {
+              const [i, j, k] = this.toIJK(x, y);
+              if (i != -1) {
+                const cellIndex = this.cellIndex(i, j, k);
+                this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+              }
+            }
           }
         }
         if (j1 !== j3) {
-          for (let a = Math.min(i2, i3); a <= Math.max(i2, i3); a += 1) {
-            const [i, j, k] = this.toIJK(a, j3);
-            const cellIndex = this.cellIndex(i, j, k);
-            // this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
-            this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+          for (let y = Math.min(j1, j3); y <= Math.max(j1, j3); y++) {
+            for (let x = Math.min(i2, i3); x <= Math.max(i2, i3); x += 1) {
+              const [i, j, k] = this.toIJK(x, y);
+              if (i != -1) {
+                const cellIndex = this.cellIndex(i, j, k);
+                // this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
+                this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+              }
+            }
           }
         }
         // then mark nearly marked cells
@@ -285,15 +319,50 @@ export default {
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b += 1) {
             // this.gridCells[b * this.width + a].style.background = this.colors[this.selectedColor];
             const [i, j, k] = this.toIJK(a, b);
-            const cellIndex = this.cellIndex(i, j, k);
-            this.$set(this.gridState, cellIndex, this.selectedColor);
+            if (i != -1) {
+              const cellIndex = this.cellIndex(i, j, k);
+              this.$set(this.gridState, cellIndex, this.selectedColor);
+            }
           }
         }
         this.lastMouseOver = [i1, j1];
       }
     },
     mainGridMouseUp() {
-      this.isMouseDown = false;
+      if (this.isMouseDown) {
+        this.isMouseDown = false;
+        const [i1, j1] = this.startMouseDown;
+        const [i2, j2] = this.lastMouseOver;
+        const stateBefore = [];
+        for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
+          const stateBeforeRow = [];
+          for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
+            const [i, j, k] = this.toIJK(a, b);
+            if (i != -1) {
+              const cellIndex = this.cellIndex(i, j, k);
+              stateBeforeRow.push(this.gridStateCopy[cellIndex]);
+              this.gridState[cellIndex] = this.selectedColor;
+            }
+          }
+          stateBefore.push(stateBeforeRow);
+        }
+        const revertObj = {
+          'x0': Math.min(i1, i2),
+          'x1': Math.max(i1, i2),
+          'y0': Math.min(j1, j2),
+          'y1': Math.max(j1, j2),
+          'colorAfter': this.selectedColor,
+          'colorsBefore': stateBefore
+        }
+        
+        if (this.revertIndex < this.revertHistory.length) {
+          this.revertHistory[this.revertIndex] = revertObj;
+          this.revertHistory.length = this.revertIndex + 1;
+        } else {
+          this.revertHistory.push(revertObj);
+        }
+        this.revertIndex += 1;
+      }
     },
     getImg() {
       // eslint-disable-next-line global-require, import/no-dynamic-require
@@ -325,6 +394,9 @@ export default {
       }
     },
     cellIndex(i, j, k) {
+      // i: y pos of block group of size (numAttrValues * numAttrValues)
+      // j: x pos of block group
+      // k: index in block group
       let index = 0;
       for(let c = 0; c < i - 1; c++) {
         index += this.numAttributes - 1 - c;

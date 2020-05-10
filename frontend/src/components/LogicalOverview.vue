@@ -97,7 +97,7 @@ export default {
     return {
       data: logical,
       extractLength: 100,
-      title: "Logical Auswahl",
+      title: "Logikrätsel Auswahl",
       solved: {},
       showDetailIcon: true,
       imgName: 'biene.jpg',
