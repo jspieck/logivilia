@@ -1,36 +1,34 @@
 <template>
 <div>
-  <div class="puzzleContainer">
+  <div class="puzzleContainer" draggable="false">
     <div id="puzzleHeader">
       <h1>{{name}}</h1>
     </div>
     <div id="puzzle" class="puzzleBody">
-      <div id="buttonBar">
-        <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
-          <ion-icon v-pre name="ios-add"></ion-icon>
-        </button>
-        <button id="zoomOut" @click="zoomOut" class="nonoButton largerIcon">
-          <ion-icon v-pre name="ios-remove"></ion-icon>
-        </button>
-        <button id="revert" @click="revertState" class="nonoButton"><ion-icon class="rotate" v-pre name="ios-refresh"></ion-icon></button>
-        <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
-        <!-- <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
-        <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button> -->
-      </div>
         <div id="nonoArea">
-          <svg id="colors" :height="cellWidth + 25" :width="colors.length * (cellWidth + 10) + 15">
-            <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
-              <rect :fill="color" stroke="black" :width="cellWidth" :height="cellWidth" @click="selectColor(i)"/>
-              <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
-              <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3" :y="cellWidth + 4"/> 
+          <svg id="colors" :height="cellWidthBase + 25" :width="colors.length * (cellWidthBase + 10) + 15">
+            <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidthBase + 10)}, 5)`">
+              <rect :fill="color" stroke="black" :width="cellWidthBase" :height="cellWidthBase" @click="selectColor(i)"/>
+              <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidthBase / 2" :cy="cellWidthBase / 2" r="3"/>
+              <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidthBase" height="3" :y="cellWidthBase + 4"/> 
             </g>
           </svg>
+          <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
+            <ion-icon v-pre name="ios-add"></ion-icon>
+          </button>
+          <button id="zoomOut" @click="zoomOut" class="nonoButton largerIcon">
+            <ion-icon v-pre name="ios-remove"></ion-icon>
+          </button>
+          <button id="revert" @click="revertState" class="nonoButton"><ion-icon class="rotate" v-pre name="ios-refresh"></ion-icon></button>
+          <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
+          <!-- <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
+          <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button> -->
           <div id="nonoMainArea">
           <table class="nonoGrid">
             <tr>
               <td></td>
               <td>
-                <div id="verticalInformation" ref="verticalInformation">
+                <div id="verticalInformation" ref="verticalInformation" draggable="false">
                   <div class="gridRow">
                     <div v-for="[i, group] in verticalInfo.entries()" v-bind:key="`group${i}`" class="gridGroup">
                       <div v-for="[j, row] in group.entries()" v-bind:key="`column${j}`" :id="`column${j}`" class="gridColumn">
@@ -47,7 +45,7 @@
             </tr>
             <tr>
               <td>
-                <div id="horizontalInformation">
+                <div id="horizontalInformation" draggable="false">
                   <div v-for="[i, group] in horizontalInfo.entries()" v-bind:key="`group${i}`" class="gridRow">
                     <div class="gridGroup">
                       <div v-for="[j, row] in group.entries()" v-bind:key="`row${j}`" :id="`row${j}`" class="gridRow" :style="`line-height: ${cellWidth}px;`">
@@ -65,7 +63,7 @@
                 </div>
               </td>
               <td>
-                <div id="mainArea">
+                <div id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'">
                   <div v-for="[i, groupRow] in mainArea.entries()" v-bind:key="`groupRow${i}`" class="gridRow">
                     <div v-for="[j, group] in groupRow.entries()" v-bind:key="`group${j}`" class="gridGroup">
                       <div v-for="[k, row] in group.entries()" v-bind:key="`row${k}`" :id="`row${k}`" class="gridRow" :style="`line-height: ${cellWidth}px;`">
@@ -106,6 +104,7 @@ export default {
       revertHistory: [],
       revertIndex: 0,
       cellWidth: 25,
+      cellWidthBase: 25,
       tableVisible: true,
       selectedColor: 0,
       solved: false,
@@ -130,6 +129,8 @@ export default {
     this.indicatorVertical = new Array(this.width).fill(0);
     this.checkTotalNonogram();
     document.addEventListener("mouseup", () => {this.mainGridMouseUp()});
+
+    window.ondragstart = function() { return false; } 
   },
   watch: {
     id() {
@@ -227,7 +228,7 @@ export default {
         for (const row of group) {
           for (let o = row.length; o < longestRow; o += 1) {
             row.unshift({
-              'colorId:': this.backgroundNumber,
+              'colorId': this.backgroundNumber,
               'color': '#fff',
               'id': cellId,
               blockLength: 0,
@@ -339,7 +340,7 @@ export default {
         for (const row of group) {
           for (let o = row.length; o < longestColumn; o += 1) {
             row.unshift({
-              'colorId:': this.backgroundNumber,
+              'colorId': this.backgroundNumber,
               'color': '#fff',
               'id': cellId,
               blockLength: 0,
@@ -485,7 +486,7 @@ export default {
       for (let a = 1; a < this.width; a++) {
         if (this.gridState[startIndex + a] != currentNumber) {
           if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
-            if (currentNumber != rowInfo[checkIndex].currentNumber || currentNumberCounter != rowInfo[checkIndex].currentNumberCounter) {
+            if (checkIndex >= rowInfo.length || currentNumber != rowInfo[checkIndex].currentNumber || currentNumberCounter != rowInfo[checkIndex].currentNumberCounter) {
               return 0;
             }
             checkIndex += 1;
@@ -497,7 +498,7 @@ export default {
         }
       }
       if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
-        if (currentNumber != rowInfo[checkIndex].currentNumber || currentNumberCounter != rowInfo[checkIndex].currentNumberCounter) {
+        if (checkIndex >= rowInfo.length || currentNumber != rowInfo[checkIndex].currentNumber || currentNumberCounter != rowInfo[checkIndex].currentNumberCounter) {
           return 0;
         }
         checkIndex += 1;
@@ -515,7 +516,7 @@ export default {
       for (let a = 1; a < this.height; a++) {
         if (this.gridState[this.width * a + b] != currentNumber) {
           if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
-            if (currentNumber != columnInfo[checkIndex].currentNumber || currentNumberCounter != columnInfo[checkIndex].currentNumberCounter) {
+            if (checkIndex >= columnInfo.length || currentNumber != columnInfo[checkIndex].currentNumber || currentNumberCounter != columnInfo[checkIndex].currentNumberCounter) {
               return 0;
             }
             checkIndex += 1;
@@ -527,7 +528,7 @@ export default {
         }
       }
       if (currentNumber != this.backgroundNumber && currentNumber != this.colors.length - 1) {
-        if (currentNumber != columnInfo[checkIndex].currentNumber || currentNumberCounter != columnInfo[checkIndex].currentNumberCounter) {
+        if (checkIndex >= columnInfo.length || currentNumber != columnInfo[checkIndex].currentNumber || currentNumberCounter != columnInfo[checkIndex].currentNumberCounter) {
           return 0;
         }
         checkIndex += 1;
@@ -666,8 +667,8 @@ export default {
       }
       return (index + j - 1) * this.numCells * this.numCells + (k - 1);
     },
-    selectColor(i) {
-      this.selectedColor = i;
+    selectColor(colorId) {
+      this.selectedColor = colorId;
     }
   },
 };
@@ -710,7 +711,7 @@ export default {
 }
 
 #nonoArea {
-  margin: 30px 0;
+  margin: 0;
 }
 
 #mainArea .gridRow .gridCell:last-child {
@@ -785,6 +786,11 @@ export default {
   border-top: 2px solid #222222;
   border-left: 2px solid #222222;
 }
+
+.solved .gridCell, .solved .gridGroup .gridRow, .solved .gridGroup .gridColumn, .solved .gridGroup, .solved .gridRow:last-child .gridGroup, .solved .gridRow .gridGroup:last-child  {
+  border: none;
+}
+
 
 .nonoGrid {
   border: none;
