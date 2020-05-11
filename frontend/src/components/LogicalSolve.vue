@@ -169,6 +169,7 @@ export default {
 
     this.tableVisible = true;
     document.addEventListener("mouseup", this.mainGridMouseUp, false);
+    window.ondragstart = function() { return false; };
   },
   computed: {
     name() {

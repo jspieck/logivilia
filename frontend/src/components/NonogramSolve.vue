@@ -71,7 +71,7 @@
                           :data-x="cell.x" :data-y="cell.y" :style="`width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px; background: ${colors[gridState[cell.y * width + cell.x]]}`"
                           @mousedown="e => {cellMouseDown(e, cell.x, cell.y)}" @mouseenter="e => {cellMouseEnter(e, cell.x, cell.y)}">
                           <svg :width="cellWidth" :height="cellWidth">
-                            <circle v-if="gridState[cell.y * width + cell.x] == colors.length - 1" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
+                            <circle v-if="gridState[cell.y * width + cell.x] == colors.length - 1 && !solved" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
                           </svg>
                         </div>
                       </div>
