@@ -28,56 +28,63 @@
             <tr>
               <td></td>
               <td>
-                <div id="verticalInformation" ref="verticalInformation" draggable="false">
-                  <div class="gridRow">
-                    <div v-for="[i, group] in verticalInfo.entries()" v-bind:key="`group${i}`" class="gridGroup">
-                      <div v-for="[j, row] in group.entries()" v-bind:key="`column${j}`" :id="`column${j}`" class="gridColumn">
-                        <div v-for="[k, cell] in row.entries()" v-bind:key="`cellCol${cell.id}`" :id="cell.id" class="gridCellVert noSelect" @click="selectColor(cell.colorId)"
-                          :data-x="k" :data-y="j" :style="`background: ${cell.background}; font-size: ${fontSize}px; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
-                          {{cell.blockLength}}
-                        </div>
-                        <div class="correctColumn" :style="`width: ${cellWidth}px; background: ${indicatorColors[indicatorVertical[i * 5 + j]]};`"/>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <svg id="verticalInformation" ref="verticalInformation" draggable="false" :height="verticalHeight * cellWidth + 8" :width="width * cellWidth + 1">
+                  <defs>
+                    <pattern id="smallGrid" :width="cellWidth" :height="cellWidth" patternUnits="userSpaceOnUse">
+                      <path :d="`M ${cellWidth} 0 L 0 0 0 ${cellWidth}`" fill="none" stroke="#d7dadd" stroke-width="1"/>
+                    </pattern>
+                    <pattern id="grid" :width="cellWidth * 5" :height="cellWidth * 5" patternUnits="userSpaceOnUse">
+                      <rect :width="cellWidth * 5" :height="cellWidth * 5" fill="url(#smallGrid)"/>
+                      <path :d="`M ${cellWidth * 5} 0 L 0 0 0 ${cellWidth * 5}`" fill="none" stroke="black" stroke-width="2"/>
+                    </pattern>
+                  </defs>
+
+                  <template v-for="[i, group] in verticalInfo.entries()">
+                    <template v-for="[j, row] in group.entries()">
+                      <g v-for="[k, cell] in row.entries()" v-bind:key="`cellCol${cell.id}`" :id="cell.id" :transform="`translate(${cellWidth * j + i * 5 * cellWidth}, ${cellWidth * k})`">
+                        <rect :data-x="k" :data-y="j" :width="cellWidth" :height="cellWidth" :fill="cell.background"/>
+                        <text :x="cellWidth / 2" :y="cellWidth / 2" :fill="cell.color" dominant-baseline="middle" text-anchor="middle" :style="`font-size: ${fontSize}px;`">{{cell.blockLength}}</text>
+                      </g>
+                      <rect v-bind:key="`correctCol${j + i * 5}}`" :y="verticalHeight * cellWidth" :x="cellWidth * (j + i * 5)" :width="cellWidth" height="7" :fill="indicatorColors[indicatorVertical[i * 5 + j]]"/>
+                    </template>
+                  </template>
+                  <rect width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
+                </svg>
               </td>
             </tr>
             <tr>
               <td>
-                <div id="horizontalInformation" draggable="false">
-                  <div v-for="[i, group] in horizontalInfo.entries()" v-bind:key="`group${i}`" class="gridRow">
-                    <div class="gridGroup">
-                      <div v-for="[j, row] in group.entries()" v-bind:key="`row${j}`" :id="`row${j}`" class="gridRow" :style="`line-height: ${cellWidth}px;`">
-                        <div v-for="[k, cell] in row.entries()" v-bind:key="`cell${cell.id}`" :id="cell.id" class="gridCell noSelect" @click="selectColor(cell.colorId)"
-                          :data-x="k" :data-y="j" :style="`background: ${cell.background}; font-size: ${fontSize}px; color: ${cell.color}; width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px;`">
-                          {{cell.blockLength}}
-                        </div>
-                        <!--<svg :height="cellWidth" width="5">
-                          <rect class="correctRow" :height="cellWidth" :fill="indicatorColors[indicatorHorizontal[i * 5 + j]]"/>
-                        </svg>-->
-                        <div class="correctRow" :style="`height: ${cellWidth}px; background: ${indicatorColors[indicatorHorizontal[i * 5 + j]]}`"/>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <svg id="horizontalInformation" draggable="false" :width="horizontalWidth * cellWidth + 8" :height="height * cellWidth + 1">
+                  <template v-for="[i, group] in horizontalInfo.entries()">
+                    <template v-for="[j, row] in group.entries()" :id="`row${j}`">
+                      <g v-for="[k, cell] in row.entries()" v-bind:key="`cell${cell.id}`" :id="cell.id" class="gridCell noSelect" @click="selectColor(cell.colorId)"
+                        :transform="`translate(${cellWidth * k}, ${cellWidth * j + i * 5 * cellWidth})`">
+                        <rect :width="cellWidth" :height="cellWidth" :fill="cell.background" stroke="transparent" :data-x="k" :data-y="j"/>
+                        <text :x="cellWidth / 2" :y="cellWidth / 2" :fill="cell.color" dominant-baseline="middle" text-anchor="middle" :style="`font-size: ${fontSize}px;`">{{cell.blockLength}}</text>
+                      </g>
+                      <rect v-bind:key="`correctRow${j + i * 5}`" :x="horizontalWidth * cellWidth" :y="cellWidth * (j + i * 5)" width="7" :height="cellWidth" :fill="indicatorColors[indicatorHorizontal[i * 5 + j]]"/>
+                    </template>
+                  </template>
+                  <rect width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
+                </svg>
               </td>
               <td>
-                <div id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'">
-                  <div v-for="[i, groupRow] in mainArea.entries()" v-bind:key="`groupRow${i}`" class="gridRow">
-                    <div v-for="[j, group] in groupRow.entries()" v-bind:key="`group${j}`" class="gridGroup">
-                      <div v-for="[k, row] in group.entries()" v-bind:key="`row${k}`" :id="`row${k}`" class="gridRow" :style="`line-height: ${cellWidth}px;`">
-                        <div v-for="[l, cell] in row.entries()" v-bind:key="`cellMain${cell.id}`" :id="cell.id" class="gridCell noSelect" 
-                          :data-x="cell.x" :data-y="cell.y" :style="`width: ${cellWidth}px; height: ${cellWidth}px; line-height: ${cellWidth}px; background: ${colors[gridState[cell.y * width + cell.x]]}`"
-                          @mousedown="e => {cellMouseDown(e, cell.x, cell.y)}" @mouseenter="e => {cellMouseEnter(e, cell.x, cell.y)}">
-                          <svg :width="cellWidth" :height="cellWidth">
-                            <circle v-if="gridState[cell.y * width + cell.x] == colors.length - 1 && !solved" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'" :width="width * cellWidth + 1" :height="height * cellWidth + 1">
+                  <template v-for="[i, groupRow] in mainArea.entries()">
+                    <template v-for="[j, group] in groupRow.entries()" class="gridGroup">
+                      <template v-for="[k, row] in group.entries()" :id="`row${k}`" class="gridRow">
+                        <g v-for="[l, cell] in row.entries()" v-bind:key="`cellMain${cell.id}`" :id="cell.id" class="gridCell noSelect"
+                          :transform="`translate(${cellWidth * cell.x}, ${cellWidth * cell.y})`">
+                          <rect :width="cellWidth" :height="cellWidth" :data-x="cell.x" :data-y="cell.y" :fill="`${colors[gridState[cell.y * width + cell.x]]}`" stroke="transparent"
+                          :style="`line-height: ${cellWidth}px;`"
+                          @mousedown="e => {cellMouseDown(e, cell.x, cell.y)}" @mouseenter="e => {cellMouseEnter(e, cell.x, cell.y)}"/>
+                          <circle v-if="gridState[cell.y * width + cell.x] == colors.length - 1 && !solved" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3"/>  
+                        </g>
+                      </template>
+                    </template>
+                  </template>
+                  <rect v-if="!solved" width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
+                </svg>
               </td>
             </tr>
           </table>
@@ -222,7 +229,6 @@ export default {
         }
         horizontalInfo.push(infoGroup);
       }
-  
       // fill row with empty cells
       for (const group of horizontalInfo) {
         for (const row of group) {
@@ -239,6 +245,9 @@ export default {
         }
       }
       return horizontalInfo;
+    },
+    horizontalWidth() {
+      return this.horizontalInfo[0][0].length;
     },
     horizontalClues() {
       const rowInfos = [];
@@ -351,6 +360,9 @@ export default {
         }
       }
       return verticalInfo;
+    },
+    verticalHeight() {
+      return this.verticalInfo[0][0].length;
     },
     mainArea() {
       const mainArea = [];
@@ -840,5 +852,15 @@ input {
 
 ul {
   margin-block-start: 5px;
+}
+
+#verticalInformation {
+  display: block;
+  margin-bottom: 3px;
+}
+
+#horizontalInformation {
+  display: block;
+  margin-right: 3px;
 }
 </style>
