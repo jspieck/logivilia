@@ -484,10 +484,9 @@ h1 {
 }
 
 #puzzleHeader {
-  /*padding: 10px;*/
-  background: #fcfcfc;
-  height: 40px;
-  line-height: 40px;
+  background: #e8e8e8;
+  height: 37px;
+  line-height: 35px;
   padding: 10px 30px;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;

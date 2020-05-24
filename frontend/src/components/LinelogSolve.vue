@@ -11,20 +11,20 @@
           role="alert">
           Dieser Rätseltyp befindet sich noch in der Testphase. Es kann zu Fehlern kommen.
         </b-notification>
-        <svg id="colors" :height="cellWidthBase + 25" :width="colors.length * (cellWidthBase + 10) + 15">
-          <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidthBase + 10)}, 5)`">
-            <rect :fill="color" stroke="black" :width="cellWidthBase" :height="cellWidthBase" @click="selectColor(i)"/>
-            <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidthBase" height="3" :y="cellWidthBase + 4"/> 
-          </g>
-        </svg>
         <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
           <ion-icon v-pre name="ios-add"></ion-icon>
         </button>
         <button id="zoomOut" @click="zoomOut" class="nonoButton largerIcon">
           <ion-icon v-pre name="ios-remove"></ion-icon>
         </button>
-        <button id="revert" @click="revertState" class="nonoButton"><ion-icon class="rotate" v-pre name="ios-refresh"></ion-icon></button>
-        <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
+        <!-- <button id="revert" @click="revertState" class="nonoButton"><ion-icon class="rotate" v-pre name="ios-refresh"></ion-icon></button>
+        <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button> -->
+        <svg id="colors" :height="cellWidthBase + 25" :width="colors.length * (cellWidthBase + 10) + 15">
+          <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidthBase + 10)}, 5)`">
+            <rect :fill="color" stroke="black" :width="cellWidthBase" :height="cellWidthBase" @click="selectColor(i)"/>
+            <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidthBase" height="3" :y="cellWidthBase + 4"/> 
+          </g>
+        </svg>
         <!-- <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
         <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button> -->
         <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'" :width="width * cellWidth + 1" :height="height * cellWidth + 1"
@@ -490,6 +490,11 @@ export default {
 <style lang="scss">
   #mainArea {
     display: block;
+    touch-action: none;
+  }
+  #colors {
+    display: block;
+    margin-top: 15px;
   }
   .noSelect {
     pointer-events: none;

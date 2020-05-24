@@ -6,13 +6,6 @@
     </div>
     <div id="puzzle" class="puzzleBody">
         <div id="nonoArea">
-          <svg id="colors" :height="cellWidthBase + 25" :width="colors.length * (cellWidthBase + 10) + 15">
-            <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidthBase + 10)}, 5)`">
-              <rect :fill="color" stroke="black" :width="cellWidthBase" :height="cellWidthBase" @click="selectColor(i)"/>
-              <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidthBase / 2" :cy="cellWidthBase / 2" r="3"/>
-              <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidthBase" height="3" :y="cellWidthBase + 4"/> 
-            </g>
-          </svg>
           <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
             <ion-icon v-pre name="ios-add"></ion-icon>
           </button>
@@ -23,6 +16,14 @@
           <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
           <!-- <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
           <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button> -->
+
+          <svg id="colors" :height="cellWidthBase + 25" :width="colors.length * (cellWidthBase + 10) + 15">
+            <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidthBase + 10)}, 5)`">
+              <rect :fill="color" stroke="black" :width="cellWidthBase" :height="cellWidthBase" @click="selectColor(i)"/>
+              <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidthBase / 2" :cy="cellWidthBase / 2" r="3"/>
+              <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidthBase" height="3" :y="cellWidthBase + 4"/> 
+            </g>
+          </svg>
           <div id="nonoMainArea">
           <table class="nonoGrid">
             <tr>

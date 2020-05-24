@@ -166,6 +166,7 @@ h1, h2, h3, h4 {
   border-top: 2px solid #f2f2f2;
   flex-grow: 0;
   flex-shrink: 1;
+  height: 55px;
 }
 
 #app {
