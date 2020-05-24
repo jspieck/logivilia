@@ -28,7 +28,7 @@
         <!-- <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
         <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button> -->
         <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'" :width="width * cellWidth + 1" :height="height * cellWidth + 1"
-          @mousedown="e => {mouseDown(e)}" @mousemove="e => {mouseMove(e)}">
+          @mousedown="e => {mouseDown(e)}" @mousemove="e => {mouseMove(e)}" @touchstart="e => {touchDown(e)}" @touchmove="e => {touchMove(e)}">
           <defs>
             <pattern id="smallGrid" :width="cellWidth" :height="cellWidth" patternUnits="userSpaceOnUse">
               <path :d="`M ${cellWidth} 0 L 0 0 0 ${cellWidth}`" fill="none" stroke="#d7dadd" stroke-width="1"/>
@@ -106,6 +106,7 @@ export default {
     }
     // this.checkTotalNonogram();
     document.addEventListener("mouseup", () => {this.mainGridMouseUp()});
+    document.addEventListener("touchend", () => {this.mainGridMouseUp()});
     window.ondragstart = function() { return false; } 
   },
   watch: {
@@ -249,6 +250,13 @@ export default {
       }
       return path;
     },
+    getCellFromTouchPos(e) {
+      const rect = e.target.getBoundingClientRect();
+      const x = e.touches[0].clientX - rect.left;
+      const y = e.touches[0].clientY - rect.top;
+      // console.log(x, y);
+      return [Math.floor(x / this.cellWidth), Math.floor(y / this.cellWidth)];
+    },
     getCellFromMousePos(e) {
       const rect = e.target.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -256,8 +264,15 @@ export default {
       // console.log(x, y);
       return [Math.floor(x / this.cellWidth), Math.floor(y / this.cellWidth)];
     },
+    touchDown(e) {
+      const [x, y] = this.getCellFromTouchPos(e);
+      this.downEvent(x, y);
+    },
     mouseDown(e) {
       const [x, y] = this.getCellFromMousePos(e);
+      this.downEvent(x, y);
+    },
+    downEvent(x, y) {
       const pathIndex = this.pathIndices[y * this.width + x];
       const [x0, y0] = pathIndex == -1 ? [0, 0] : this.paths[pathIndex].cells[0];
       const [x1, y1] = pathIndex == -1 ? [0, 0] : this.paths[pathIndex].cells[this.paths[pathIndex].cells.length - 1];
@@ -310,82 +325,91 @@ export default {
         }
       }
     },
+    touchMove(e) {
+      if (this.isMouseDown) {
+        const [x, y] = this.getCellFromTouchPos(e);
+        this.moveEvent(x, y);
+      }
+    },
     mouseMove(e) {
       if (this.isMouseDown) {
         const [x, y] = this.getCellFromMousePos(e);
-        if (x < 0 || y < 0 || x >= this.width || y >= this.height)
-          return;
-        if (x != this.lastMousePos[0] || y != this.lastMousePos[1]) {
-          // do nothing if already on path; except if second last, delete last cell
-          let count = 0;
-          for (const [xa, ya] of this.currentPath.cells) {
-            if (x == xa && y == ya) {
-              if (count == this.currentPath.cells.length - 2) {
-                this.currentPath.cells.pop();
-                this.lastSetCell = [x, y];
-                this.lastMousePos = [x, y];
-                this.cellMarkDisabled = false;
-              }
-              return;
-            }
-            count += 1;
-          }
-          const cellColor = this.gridState[y * this.width + x];
-          const pathIndex = this.pathIndices[y * this.width + x];
-          // empty field or start/ end of another path
-          const [x0, y0] = pathIndex == -1 ? [0, 0] : this.paths[pathIndex].cells[0];
-          const [x1, y1] = pathIndex == -1 ? [0, 0] : this.paths[pathIndex].cells[this.paths[pathIndex].cells.length - 1];
-          const correctLength = pathIndex == -1 ? this.information[y][x] : this.paths[pathIndex].correctLength;
-          let cellReachable = true;
-          if (this.cellMarkDisabled) {
-            this.errorMessage("Pfad schon komplett");
-            cellReachable = false;
-          }
-          // if end box, only if same color and same number (TODO) and unused
-          if (cellReachable && this.information[y][x] != 0 && this.selectedColor != this.solution[y][x]) {
-            this.errorMessage("Falsche Farbe");
-            cellReachable = false;
-          }
-          // TODO also do for paths that are connecting
-          if (cellReachable && this.currentPath.cells.length + 1 > this.currentPath.correctLength) {
-            this.errorMessage("Zu langer Pfad");
-            cellReachable = false;
-          }
-          if (cellReachable && this.information[y][x] != 0 && (correctLength != this.currentPath.correctLength || correctLength  - 1 != this.currentPath.cells.length)) {
-            this.errorMessage("Unterschiedliche Pfadlänge");
-            cellReachable = false;
-          }
-          // cell mustn't be of another color and if has to be the end or start of another path
-          if (cellReachable && cellColor != this.backgroundNumber && cellColor != this.selectedColor) {
-            this.errorMessage("Feld anders gefärbt");
-            cellReachable = false;
-          }
-          if (cellReachable && cellColor != this.backgroundNumber && pathIndex != -1 && !(x == x0 && y == y0) && !(x == x1 && y == y1)) {
-            this.errorMessage("Feld in der Mitte eines anderen Pfades");
-            cellReachable = false;
-          }
-          if (cellReachable && cellColor != this.backgroundNumber && pathIndex != -1 && ((x == x0 && y == y0) || (x == x1 && y == y1))) {
-            // check if paths can be merged
-            const mergeLength = this.currentPath.cells.length + this.paths[pathIndex].cells.length;
-            if (mergeLength != this.currentPath.correctLength) {
-              this.errorMessage("Falsche Länge des kombinierten Pfads");
-              cellReachable = false;
-            } else {
-              this.cellMarkDisabled = true;
-            }
-          }
-          if (cellReachable) {
-            // console.log([x, y], this.currentPath.cells);
-            // if not one position horizontal/vertical do nothing
-            if (Math.abs(x - this.lastSetCell[0]) + Math.abs(y - this.lastSetCell[1]) == 1) {
-              // add current field to path
-              this.currentPath.cells.push([x, y]);
+        this.moveEvent(x, y);
+      }
+    },
+    moveEvent(x, y) {
+      if (x < 0 || y < 0 || x >= this.width || y >= this.height)
+        return;
+      if (x != this.lastMousePos[0] || y != this.lastMousePos[1]) {
+        // do nothing if already on path; except if second last, delete last cell
+        let count = 0;
+        for (const [xa, ya] of this.currentPath.cells) {
+          if (x == xa && y == ya) {
+            if (count == this.currentPath.cells.length - 2) {
+              this.currentPath.cells.pop();
               this.lastSetCell = [x, y];
+              this.lastMousePos = [x, y];
+              this.cellMarkDisabled = false;
             }
+            return;
+          }
+          count += 1;
+        }
+        const cellColor = this.gridState[y * this.width + x];
+        const pathIndex = this.pathIndices[y * this.width + x];
+        // empty field or start/ end of another path
+        const [x0, y0] = pathIndex == -1 ? [0, 0] : this.paths[pathIndex].cells[0];
+        const [x1, y1] = pathIndex == -1 ? [0, 0] : this.paths[pathIndex].cells[this.paths[pathIndex].cells.length - 1];
+        const correctLength = pathIndex == -1 ? this.information[y][x] : this.paths[pathIndex].correctLength;
+        let cellReachable = true;
+        if (this.cellMarkDisabled) {
+          this.errorMessage("Pfad schon komplett");
+          cellReachable = false;
+        }
+        // if end box, only if same color and same number (TODO) and unused
+        if (cellReachable && this.information[y][x] != 0 && this.selectedColor != this.solution[y][x]) {
+          this.errorMessage("Falsche Farbe");
+          cellReachable = false;
+        }
+        // TODO also do for paths that are connecting
+        if (cellReachable && this.currentPath.cells.length + 1 > this.currentPath.correctLength) {
+          this.errorMessage("Zu langer Pfad");
+          cellReachable = false;
+        }
+        if (cellReachable && this.information[y][x] != 0 && (correctLength != this.currentPath.correctLength || correctLength  - 1 != this.currentPath.cells.length)) {
+          this.errorMessage("Unterschiedliche Pfadlänge");
+          cellReachable = false;
+        }
+        // cell mustn't be of another color and if has to be the end or start of another path
+        if (cellReachable && cellColor != this.backgroundNumber && cellColor != this.selectedColor) {
+          this.errorMessage("Feld anders gefärbt");
+          cellReachable = false;
+        }
+        if (cellReachable && cellColor != this.backgroundNumber && pathIndex != -1 && !(x == x0 && y == y0) && !(x == x1 && y == y1)) {
+          this.errorMessage("Feld in der Mitte eines anderen Pfades");
+          cellReachable = false;
+        }
+        if (cellReachable && cellColor != this.backgroundNumber && pathIndex != -1 && ((x == x0 && y == y0) || (x == x1 && y == y1))) {
+          // check if paths can be merged
+          const mergeLength = this.currentPath.cells.length + this.paths[pathIndex].cells.length;
+          if (mergeLength != this.currentPath.correctLength) {
+            this.errorMessage("Falsche Länge des kombinierten Pfads");
+            cellReachable = false;
+          } else {
+            this.cellMarkDisabled = true;
           }
         }
-        this.lastMousePos = [x, y];
+        if (cellReachable) {
+          // console.log([x, y], this.currentPath.cells);
+          // if not one position horizontal/vertical do nothing
+          if (Math.abs(x - this.lastSetCell[0]) + Math.abs(y - this.lastSetCell[1]) == 1) {
+            // add current field to path
+            this.currentPath.cells.push([x, y]);
+            this.lastSetCell = [x, y];
+          }
+        }
       }
+      this.lastMousePos = [x, y];
     },
     checkIfSolved() {
       let solved = true;
