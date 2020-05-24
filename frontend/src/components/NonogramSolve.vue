@@ -112,7 +112,6 @@ export default {
       revertIndex: 0,
       cellWidth: 25,
       cellWidthBase: 25,
-      tableVisible: true,
       selectedColor: 0,
       solved: false,
       startMouseDown: [0, 0],

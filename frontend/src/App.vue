@@ -36,6 +36,9 @@
               <b-navbar-item tag="router-link" :to="{ path: '/logical-overview' }">
                 Logikrätsel
               </b-navbar-item>
+              <b-navbar-item tag="router-link" :to="{ path: '/linelog-overview' }">
+                Linelog
+              </b-navbar-item>
               <!-- <b-navbar-dropdown label="Logical">
                 <b-navbar-item tag="router-link" :to="{ path: '/logicalSolve' }">
                   Logical
