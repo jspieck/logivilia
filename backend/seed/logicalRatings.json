@@ -1,0 +1,32 @@
+[
+  {
+    "UserId": 1,
+    "LogicalId": 1,
+    "rating": 5
+  },
+  {
+    "UserId": 2,
+    "LogicalId": 1,
+    "rating": 4
+  },
+  {
+    "UserId": 2,
+    "LogicalId": 2,
+    "rating": 5
+  },
+  {
+    "UserId": 2,
+    "LogicalId": 3,
+    "rating": 5
+  },
+  {
+    "UserId": 2,
+    "LogicalId": 5,
+    "rating": 5
+  },
+  {
+    "UserId": 1,
+    "LogicalId": 5,
+    "rating": 5
+  }
+]
