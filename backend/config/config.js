@@ -1,5 +1,7 @@
 const path = require('path');
 
+require('dotenv').config();
+
 module.exports = {
   port: process.env.PORT || 8081,
   db: {
