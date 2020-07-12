@@ -9,7 +9,7 @@ module.exports = {
     user: process.env.DB_USER || 'logivilia',
     password: process.env.DB_PASS || 'logivilia',
     options: {
-      dialect: process.env.DIAlECT || 'sqlite',
+      dialect: process.env.DIALECT || 'sqlite',
       host: process.env.HOST || 'localhost',
       storage: path.resolve(__dirname, '../logivilia.sqlite')
     }
@@ -18,3 +18,11 @@ module.exports = {
     jwtSecret: process.env.JWT_SECRET || 'secret'
   }
 };
+
+/* 
+DB_NAME=logivili_logivilia
+DB_USER=logivili_jan
+DB_PASS=T3ShwD4UgU4qj8Z
+DIALECT=mysql
+JWT_SECRET=$YG^F88^"@Uxj\dU
+*/
