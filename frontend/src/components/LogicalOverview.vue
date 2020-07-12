@@ -1,33 +1,13 @@
 <template>
 <div class="overviewPage">
   <h2 class="tableTitle">{{title}}</h2>
-  <!-- <table id="solTable" class="dataTable sortable responsive-table">
-    <thead>
-      <tr>
-        <th class="leftAlign">Name</th>
-        <th class="leftAlign">Extrakt</th>
-        <th>Schwierigkeit</th>
-        <th>Datum</th>
-        <th>Gelöst</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="log in logical" v-bind:key='log.name'>
-        <td class="logicalName leftAlign">{{log.name}}</td>
-        <td class="leftAlign">{{getExtract(log.description)}}</td>
-        <td>{{log.difficulty}}</td>
-        <td>{{(new Date(log.date)).toLocaleDateString('de-DE')}}</td>
-        <td>{{isSolved(log.id)}}</td>
-      </tr>
-    </tbody>
-  </table>
-  
-  detailed
-    detail-key="id"
-    :show-detail-icon="showDetailIcon"
-  -->
+  <Autocomplete 
+    :search="search"
+    placeholder="Suche nach einem Rätsel"
+    :defaultValue="defaultSearch"
+    @submit="handleSubmit"/>
   <b-table
-    :data="data"
+    :data="filteredLogicals"
     ref="table"
     paginated
     per-page="10"
@@ -47,7 +27,7 @@
           <b-table-column field="score" label="Bewertung" sortable>
             <template>
               <b-rate
-                v-model="rate"
+                v-model="logicalRatings[props.row.id]"
                 icon-pack="mdi"
                 icon="star"
                 :max="rateMax"
@@ -89,13 +69,13 @@
 </template>
 
 <script>
-import logical from '../assets/logicals.json';
+import LogicalService from '@/services/LogicalService';
+import LogicalRatingService from '@/services/LogicalRatingService';
 
 export default {
   name: 'LogicalOverview',
   data() {
     return {
-      data: logical,
       extractLength: 100,
       title: "Logikrätsel Auswahl",
       solved: {},
@@ -103,10 +83,47 @@ export default {
       imgName: 'biene.jpg',
       rate: 4.5,
       rateMax: 5,
+      defaultSearch: "",
+      searchString: "",
+      logicals: [],
+      logicalRatings: {}
     };
   },
   computed: {
-
+    logicalNames() {
+      const names = [];
+      for (const logical of this.logicals) {
+        names.push(logical.name);
+      }
+      return names;
+    },
+    filteredLogicals() {
+      if (this.searchString == null || this.searchString == "") {
+        return this.logicals;
+      }
+      return this.logicals.filter(logical => {
+        return logical.name.toLowerCase()
+          .startsWith(this.searchString.toLowerCase())
+      });
+    }
+  },
+  async mounted() {
+    this.logicals = (await LogicalService.index()).data;
+    const ratings = (await LogicalRatingService.index()).data;
+    const ratingDict = {};
+    for (const rating of ratings) {
+      ratingDict[rating.LogicalId] = rating.avgRating;
+    }
+    this.logicalRatings = ratingDict;
+  },
+  watch: {
+    '$route.query.search': {
+      immediate: true,
+      handler(value) {
+        this.searchString = value;
+        this.defaultSearch = value;
+      }
+    }
   },
   methods: {
     getExtract(text) {
@@ -125,6 +142,35 @@ export default {
       // eslint-disable-next-line global-require, import/no-dynamic-require
       return require(`@/assets/${this.imgName}`);
     },
+    pushRoute(rt) {
+      const route = {
+        name: 'Logical Overview'
+      };
+      if (rt !== '') {
+        route.query = {
+          search: rt
+        };
+      }
+      this.$router.push(route);
+    },
+    search(input) {
+      if (input != this.searchString) {
+        this.pushRoute(input);
+        this.searchString = this.input;
+      }
+      if (input.length < 1) { return [] }
+      return this.logicalNames.filter(name => {
+        return name.toLowerCase()
+          .startsWith(input.toLowerCase())
+      });
+    },
+    handleSubmit(result) {
+      if (result == null) {
+        return;
+      }
+      this.pushRoute(result);
+      this.searchString = result;
+    }
   }
 };
 </script>

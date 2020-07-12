@@ -1,26 +1,26 @@
 <template>
 <div>
-  <div class="puzzleContainer">
+  <div class="puzzleContainer" v-if="logical != null">
     <div id="puzzleHeader">
-      <h1 class="puzzleTitle">{{name}}</h1>
-      <span class="difficulty">{{difficulty}}/<strong>5</strong></span>
+      <h1 class="puzzleTitle">{{logical.name}}</h1>
+      <span class="difficulty">{{logical.difficulty}}/<strong>5</strong></span>
     </div>
-    <img id='headerImage' :src="getImg()" alt='header image' width='320'/>
+    <img id='headerImage' :src="logical.image" alt='header image' width='320'/>
     <div id="puzzle" class="puzzleBody">
       <h3 id="descrHeader">Beschreibung</h3>
-      <p id="description">{{description}}</p>
-      <label class="logicalQuestion"><strong>{{logicalQuestion}}</strong></label>
+      <p id="description">{{logical.description}}</p>
+      <label class="logicalQuestion"><strong>{{logical.question}}</strong></label>
       <h3>Hinweise</h3>
       <ol id="clues">
-        <li v-for="clue in clues" v-bind:key='clue' class="clue">{{clue}}</li>
+        <li v-for="[i, clue] in logical.clues.entries()" v-bind:key='`clueActual${i}`' class="clue">{{clue}}</li>
       </ol>
       <label class="bold">Attribute</label>
       <ul id="attrList">
-        <li v-for="attr in attributes" v-bind:key='attr.name'>
+        <li v-for="[i, attr] in logical.attributes.entries()" v-bind:key='`realAtr${i}`'>
           <div class="attrRow">
             <strong>{{attr.name}}: </strong>
-            <span v-for="[i, v] in attr.values.entries()"
-            v-bind:key='v'>{{v}}<span v-if="i != attr.values.length - 1">, </span>
+            <span v-for="[j, v] in attr.values.entries()" v-bind:key='`realAt${j}`'>
+              {{v}}<span v-if="j != attr.values.length - 1">, </span>
             </span>
           </div>
         </li>
@@ -46,15 +46,15 @@
           <div id="classicGrid" class="gridContainer">
             <div id="solutionGridNonCanvas">
               <svg :width="svgWidth" :height="svgHeight">
-                <g v-for="[i, attr] in (attributes.slice(0, 1).concat(attributes.slice(2, attributes.length))).entries()"
+                <g v-for="[i, attr] in (logical.attributes.slice(0, 1).concat(logical.attributes.slice(2, logical.attributes.length))).entries()"
                 :transform="`translate(0, ${paddingTop + i * numAttrValues * cellWidth})`"
-                v-bind:key='`hgroup${attr.name}`' class="horizontalTextGroup">
+                v-bind:key='`hgroup${i}`' class="horizontalTextGroup">
                   <text v-for="[j, val] in attr.values.entries()" ref="horizontalLabels" v-bind:key='`htext${val}`' x="0"
                   :y="j * cellWidth + cellWidth / 2 + 2">{{val}}</text>
                 </g>
-                <g v-for="[i, attr] in attributes.slice(1, attributes.length).entries()"
+                <g v-for="[i, attr] in logical.attributes.slice(1, logical.attributes.length).entries()"
                 :transform="`translate(${paddingLeft + i * numAttrValues * cellWidth}, 0)`"
-                v-bind:key='`vgroup${attr.name}`' class="verticalTextGroup">
+                v-bind:key='`vgroup${i}`' class="verticalTextGroup">
                   <text v-for="[j, val] in attr.values.entries()" ref="verticalLabels" v-bind:key='`vtext${val}`' y="0"
                   :x="j * cellWidth + cellWidth / 2 + 2">{{val}}</text>
                 </g>
@@ -81,17 +81,17 @@
           <table id="solTable" class="dataTable sortable">
             <thead>
               <tr>
-                <th v-for="attr in attributes" v-bind:key='attr.name' scope='col' class='tableH'>
+                <th v-for="attr in logical.attributes" v-bind:key='attr.name' scope='col' class='tableH'>
                   {{attr.name}}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="[i, v] in attributes[0].values.entries()" v-bind:key='i'>
+              <tr v-for="[i, v] in logical.attributes[0].values.entries()" v-bind:key='i'>
                 <td scope='row'>{{v}}</td>
-                <td v-for="[j, attr] in attributes.slice(1).entries()"
+                <td v-for="[j, attr] in logical.attributes.slice(1).entries()"
                   v-bind:key='j' :data-title='attr.name'>
-                  <MSelect :options='attributes[j + 1].values' v-model='attrInputs[i + "_" + j]'/>
+                  <MSelect :options='logical.attributes[j + 1].values' v-model='attrInputs[i + "_" + j]'/>
                 </td>
               </tr>
             </tbody>
@@ -103,6 +103,18 @@
         <img v-if="solved" class="checking" src='@/assets/haken.png' width='40' height='40'/>
       </div>
       <h4 id="solved">{{solveLabel}}</h4>
+
+      <h2>Rätsel bewerten</h2>
+      <b-rate
+        v-model="rating"
+        icon-pack="mdi"
+        icon="star"
+        :max="rateMax"
+        :show-text="false"
+        :rtl="false"
+        :spaced="false"
+        :disabled="false">
+      </b-rate>
     </div>
   </div>
 </div>
@@ -111,7 +123,8 @@
 <script>
 import Toggle from './Toggle';
 import Select from './Select';
-import logical from '../assets/logicals.json';
+import LogicalService from '@/services/LogicalService';
+import LogicalRatingService from '@/services/LogicalRatingService';
 
 export default {
   name: 'LogicalSolve',
@@ -134,13 +147,76 @@ export default {
       tableVisible: false,
       selectedColor: 0,
       colors: ["#fff", "#333", "#fff"],
-      solveLabel: ""
+      solveLabel: "",
+      logical: {
+        name: "",
+        difficulty: 0,
+        description: "",
+        question: "",
+        clues: [],
+        attributes: [{"name": "", "values": []}],
+        image: "",
+        date: "",
+        author: "",
+        solution: []
+      },
+      rating: null,
+      rateMax: 5
     };
   },
   watch: {
-    id() {
-      this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
+    async id() {
+      const id = this.$store.state.route.params.id;
+      const logical = await LogicalService.show(id);
+      this.setRating(id);
+      this.logical = logical.data;
+  
       this.$nextTick(() => {
+        this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
+        if (this.$refs.horizontalLabels != null && this.$refs.verticalLabels != null) {
+          let maxLabelWidth = 0;
+          for(let label of this.$refs.horizontalLabels) {
+            maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
+          }
+          let maxLabelHeight = 0;
+          for(let label of this.$refs.verticalLabels) {
+            maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
+          }
+          this.paddingLeft = maxLabelWidth + 10;
+          this.paddingTop = maxLabelHeight + 10;
+        }
+      });
+    },
+    loggedIn() {
+      this.setRating(this.$store.state.route.params.id);
+    },
+    async rating() {
+      try {
+        if (this.rating != null) {
+          await LogicalRatingService.post({
+            LogicalId: parseInt(this.$store.state.route.params.id, 10),
+            rating: this.rating
+          });
+        }
+      } catch(err) {
+        console.log(err);
+      }
+    }
+  },
+  async mounted() {
+    const id = this.$store.state.route.params.id;
+    const logical = await LogicalService.show(id);
+    this.logical = logical.data;
+    console.log(this.logical);
+    this.setRating(id);
+
+    this.tableVisible = true;
+    document.addEventListener("mouseup", this.mainGridMouseUp, false);
+    window.ondragstart = function() { return false; };
+    
+    this.$nextTick(() => {
+      this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
+      if (this.$refs.horizontalLabels != null && this.$refs.verticalLabels != null) {
         let maxLabelWidth = 0;
         for(let label of this.$refs.horizontalLabels) {
           maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
@@ -151,56 +227,18 @@ export default {
         }
         this.paddingLeft = maxLabelWidth + 10;
         this.paddingTop = maxLabelHeight + 10;
-      });
-    },
-  },
-  mounted() {
-    this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
-    let maxLabelWidth = 0;
-    for(let label of this.$refs.horizontalLabels) {
-      maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
-    }
-    let maxLabelHeight = 0;
-    for(let label of this.$refs.verticalLabels) {
-      maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
-    }
-    this.paddingLeft = maxLabelWidth + 10;
-    this.paddingTop = maxLabelHeight + 10;
-
-    this.tableVisible = true;
-    document.addEventListener("mouseup", this.mainGridMouseUp, false);
-    window.ondragstart = function() { return false; };
+      }
+    });
   },
   computed: {
-    name() {
-      return logical[parseInt(this.id)].name;
-    },
-    difficulty() {
-      return logical[parseInt(this.id)].difficulty;
-    },
-    description() {
-      return logical[parseInt(this.id)].description;
-    },
-    logicalQuestion() {
-      return logical[parseInt(this.id)].question;
-    },
-    clues() {
-      return logical[parseInt(this.id)].clues;
-    },
-    attributes() {
-      return logical[parseInt(this.id)].attributes;
-    },
-    solution() {
-      return logical[parseInt(this.id)].solution;
-    },
-    imgPath() {
-      return logical[parseInt(this.id)].image;
+    loggedIn() {
+      return this.$store.state.isUserLoggedIn;
     },
     numAttrValues() {
-      return this.attributes[0].values.length;
+      return this.logical.attributes[0].values.length;
     },
     numAttributes() {
-      return this.attributes.length;
+      return this.logical.attributes.length;
     },
     blockWidth() {
       return this.numAttrValues * this.cellWidth;
@@ -215,6 +253,12 @@ export default {
     },
   },
   methods: {
+    async setRating(logicalId) {
+      if (this.$store.state.user != null) {
+        const res = await LogicalRatingService.show(logicalId);
+        this.rating = res.data.rating;
+      }
+    },
     revertState() {
       if (this.revertIndex > 0) {
         const state = this.revertHistory[this.revertIndex - 1];
@@ -243,14 +287,14 @@ export default {
     },
     checkSolution() {
       this.solved = true;
-      for(let i = 0; i < this.solution.length; i++) {
-        for(let j = 1; j < this.solution[i].length; j++) {
+      for(let i = 0; i < this.logical.solution.length; i++) {
+        for(let j = 1; j < this.logical.solution[i].length; j++) {
           if (this.attrInputs[`${i}_${j - 1}`] == null) {
             this.solved = false;
             this.solveLabel = "Es sind Attribute noch nicht zugewiesen!";
             return;
           }
-          if (this.solution[i][j] != this.attrInputs[`${i}_${j - 1}`]) {
+          if (this.logical.solution[i][j] != this.attrInputs[`${i}_${j - 1}`]) {
             this.solved = false;
           }
         }
@@ -364,11 +408,6 @@ export default {
         }
         this.revertIndex += 1;
       }
-    },
-    getImg() {
-      // eslint-disable-next-line global-require, import/no-dynamic-require
-      // return require(`@/assets/${this.imgName}`);
-      return this.imgPath;
     },
     drawOutline() {
       // draw horizontal lines
@@ -484,7 +523,7 @@ h1 {
 }
 
 #puzzleHeader {
-  background: #e8e8e8;
+  background: #ffffff;
   height: 37px;
   line-height: 35px;
   padding: 10px 30px;

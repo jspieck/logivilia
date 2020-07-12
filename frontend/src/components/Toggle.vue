@@ -1,7 +1,6 @@
 <template>
   <div>
-    <input type="checkbox" id="cbx" @click="toggle" style="display:none"/>
-    <label for="cbx" class="toggle">
+    <label :class="enabled ? ['toggle', 'checked'] : 'toggle'">
       <span>
         <svg width="10px" height="10px" viewBox="0 0 10 10">
           <path d="M5,1 L5,1 C2.790861,1 1,2.790861 1,5 L1,5 C1,7.209139
@@ -9,6 +8,7 @@
           7.209139,1 5,1 L5,9 L5,1 Z"></path>
         </svg>
       </span>
+      <input class="checkInput" type="checkbox" @change="toggle" :checked="value"/>
     </label>
   </div>
 </template>
@@ -16,25 +16,30 @@
 <script>
 export default {
   name: 'Toggle',
-  model: {
-    prop: 'isEnabled',
-    event: 'toggle',
+  props: {
+    value: {
+      default: false,
+    }
   },
   data() {
     return {
-      isEnabled: true,
+      enabled: this.value,
     };
   },
   methods: {
-    toggle() {
-      this.isEnabled = !this.isEnabled;
-      this.$emit('toggle', this.isEnabled);
+    toggle(e) {
+      this.enabled = e.target.checked;
+      this.$emit('input', e.target.checked);
     },
   },
 };
 </script>
 
 <style>
+.checkInput {
+  display: none;
+}
+
 .toggle {
   position: relative;
   display: block;
@@ -86,15 +91,15 @@ export default {
   transition: all 0.5s linear;
 }
 
-#cbx:checked + .toggle:before {
+.checked.toggle:before {
   background: #52d66b;
 }
 
-#cbx:checked + .toggle span {
+.checked.toggle span {
   transform: translateX(18px);
 }
 
-#cbx:checked + .toggle span path {
+.checked.toggle span path {
   stroke: #52d66b;
   stroke-dasharray: 25;
   stroke-dashoffset: 25;

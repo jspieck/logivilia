@@ -1,36 +1,39 @@
 <template>
 <div>
-  <h2>Login</h2>
-  <form v-on:submit='login'>
+  <h2>Anmeldung</h2>
+  <form>
     <input type='text' name='email' /><br>
     <input type='password' name='password' /><br>
-    <input type='submit' value='Login' />
+    <button @click="login"> Anmelden </button>
   </form>
+  <div v-html="error"/>
 </div>
 </template>
 
 <script>
-import axios from 'axios';
-import router from '../router';
+import AuthenticationService from '@/services/AuthenticationService';
 
 export default {
   name: 'Login',
+  data() {
+    return {
+      error: null
+    };
+  },
   methods: {
-    login: (e) => {
-      e.preventDefault();
-      const email = e.target.elements.email.value;
-      const password = e.target.elements.password.value;
-      const login = () => {
-        const data = {
-          email,
-          password,
-        };
-        axios.post('/api/login', data)
-          .then(() => {
-            router.push('/dashboard');
-          }).catch(() => {});
-      };
-      login();
+    async login() {
+      try {
+        const response = await AuthenticationService.login({
+          email: this.email,
+          password: this.password
+        });
+        this.$store.dispatch('setToken', response.data.token);
+        this.$store.dispatch('setUser', response.data.user);
+        this.error = null;
+        console.log(response.data);
+      } catch (err) {
+        this.error = err.response.data.error;
+      }
     },
   },
 };

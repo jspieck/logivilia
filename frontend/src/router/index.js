@@ -7,8 +7,13 @@ import LogicalSolve from '@/components/LogicalSolve';
 import NonogramSolve from '@/components/NonogramSolve';
 import LinelogSolve from '@/components/LinelogSolve';
 import LogicalOverview from '@/components/LogicalOverview';
+import LogicalCreate from '@/components/LogicalCreate';
 import NonogramOverview from '@/components/NonogramOverview';
 import LinelogOverview from '@/components/LinelogOverview';
+import Register from '@/components/Register';
+import Login from '@/components/Login';
+import Forgot from '@/components/Forgot';
+import PasswordReset from '@/components/PasswordReset';
 
 Vue.use(Router);
 
@@ -20,9 +25,34 @@ export default new Router({
       component: Home,
     },
     {
+      path: '/register',
+      name: 'Register',
+      component: Register,
+    },
+    {
+      path: '/login',
+      name: 'Login',
+      component: Login,
+    },
+    {
+      path: '/forgot',
+      name: 'PasswordForgotten',
+      component: Forgot,
+    },
+    {
+      path: '/reset/:token',
+      component: PasswordReset,
+      props: true
+    },
+    {
       path: '/logical-overview',
       name: 'Logical Overview',
       component: LogicalOverview,
+    },
+    {
+      path: '/logical-create',
+      name: 'Logical Create',
+      component: LogicalCreate,
     },
     {
       path: '/nonogram-overview',

@@ -3,8 +3,8 @@
     <select class="fpfSelect" v-model="selectedOption" :disabled="isDisabled"
       @click="clicked = !clicked"
       @input="event => {$emit('input', event.target.value)}">
-      <option v-for="option in options" :value="option"
-        v-bind:key="option">{{option}}</option>
+      <option v-for="[i, option] in options.entries()" :value="option"
+        v-bind:key="`sel${_uid}${i}`">{{option}}</option>
     </select>
   </div>
 </template>
@@ -51,6 +51,7 @@ select{
   padding-right: 30px;
   background-image: none;
   min-width: 70px;
+  background: #eeeeee;
   text-align: center;
 }
 
