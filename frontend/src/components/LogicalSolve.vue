@@ -31,7 +31,7 @@
           <label id="nummerierung">Zeige die erweiterte Tabelle:</label>
           <MToggle class="solutionToggle" v-model="tableVisible"/>
         </div>
-        <div v-if="!tableVisible" id="solutionGrid">
+        <div v-if="tableVisible" id="solutionGrid">
           <div id="cDiv">
             <svg id="colors" height="50" width="150">
               <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
@@ -144,7 +144,7 @@ export default {
       cellWidth: 25,
       paddingLeft: 50,
       paddingTop: 50,
-      tableVisible: false,
+      tableVisible: true,
       selectedColor: 0,
       colors: ["#fff", "#333", "#fff"],
       solveLabel: "",
@@ -216,7 +216,9 @@ export default {
     
     this.$nextTick(() => {
       this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
+      console.log("Jo", this.$refs.horizontalLabels);
       if (this.$refs.horizontalLabels != null && this.$refs.verticalLabels != null) {
+        console.log("Ho Ve not null");
         let maxLabelWidth = 0;
         for(let label of this.$refs.horizontalLabels) {
           maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);

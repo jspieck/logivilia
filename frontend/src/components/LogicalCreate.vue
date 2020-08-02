@@ -110,7 +110,7 @@
                 <label id="nummerierung">Zeige die erweiterte Tabelle:</label>
                 <Toggle class="solutionToggle" v-model="tableVisible"/>
               </div>
-              <div v-if="!tableVisible" id="solutionGrid">
+              <div v-if="tableVisible" id="solutionGrid">
                 <div id="cDiv">
                   <svg id="colors" height="50" width="150">
                     <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
@@ -255,6 +255,20 @@ export default {
         this.paddingTop = maxLabelHeight + 10;
       });
     },
+    tableVisible() {
+      this.$nextTick(() => {
+        this.padSolutionGrid();
+      });
+    },
+    computedAttributes: {
+      deep: true,
+      handler() {
+        console.log("Handler called");
+        this.$nextTick(() => {
+          this.padSolutionGrid();
+        });
+      }
+    },
   },
   mounted() {
     this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
@@ -273,6 +287,10 @@ export default {
     window.ondragstart = function() { return false; };
   },
   computed: {
+    computedAttributes() {
+      // just to trigger a watch for svg text measuring
+      return this.logical.attributes;
+    },
     solution() {
       const sol = [];
       for (let i = 0; i < this.numAttributeValues; i += 1) {
@@ -359,6 +377,20 @@ export default {
     },
   },
   methods: {
+    padSolutionGrid() {
+      if (this.$refs.horizontalLabels != null && this.$refs.verticalLabels != null) {
+        let maxLabelWidth = 0;
+        for(let label of this.$refs.horizontalLabels) {
+          maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
+        }
+        let maxLabelHeight = 0;
+        for(let label of this.$refs.verticalLabels) {
+          maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
+        }
+        this.paddingLeft = maxLabelWidth + 10;
+        this.paddingTop = maxLabelHeight + 10;
+      }
+    },
     transformValues(values) {
       return values.map((x) => x.name); 
     },
@@ -749,6 +781,10 @@ h1 {
 
 thead {
   background: white;
+}
+
+#classicGrid {
+  margin-top: 10px;
 }
 
 tbody{
