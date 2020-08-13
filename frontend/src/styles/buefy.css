@@ -1315,17 +1315,17 @@ a.has-text-danger:hover, a.has-text-danger:focus {
   font-weight: 700 !important;
 }
 
-.is-family-primary {
-  font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif !important;
+/* .is-family-primary {
+  font-family: "Source Sans Pro", BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif !important;
 }
 
 .is-family-secondary {
-  font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif !important;
+  font-family: "Source Sans Pro", BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif !important;
 }
 
 .is-family-sans-serif {
-  font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif !important;
-}
+  font-family: "Source Sans Pro", BlinkMacSystemFont, -apple-system, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif !important;
+}*/
 
 .is-family-monospace {
   font-family: monospace !important;
@@ -6123,6 +6123,10 @@ a.list-item {
   text-align: left;
 }
 
+.media-content p {
+  margin: 0;
+}
+
 @media screen and (max-width: 768px) {
   .media-content {
     overflow-x: auto;
@@ -6457,7 +6461,7 @@ a.list-item {
   display: flex;
   flex-shrink: 0;
   justify-content: flex-start;
-  padding: 20px;
+  padding: 15px;
   position: relative;
 }
 
@@ -6471,8 +6475,9 @@ a.list-item {
   color: #363636;
   flex-grow: 1;
   flex-shrink: 0;
-  font-size: 1.5rem;
+  font-size: 16px;
   line-height: 1;
+  margin: 0;
 }
 
 .modal-card-foot {
@@ -12256,7 +12261,8 @@ label.panel-block:hover {
 .dialog .modal-card .modal-card-foot .button {
   display: inline;
   min-width: 5em;
-  font-weight: 600;
+  /* font-weight: 600; */
+  font-size: 16px;
 }
 
 @media screen and (min-width: 769px), print {

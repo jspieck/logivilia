@@ -100,7 +100,7 @@
       </div>
       <div class="body">
         <div class="bodyContainer">
-          <router-view/>
+          <keep-alive :include="['LinelogOverview', 'NonogramOverview', 'LogicalOverview']"><router-view/></keep-alive>
         </div>
       </div>
       <footer class="logFooter">
@@ -109,6 +109,7 @@
             <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}
           </p>
         </div>
+        <cookie-law theme="base"></cookie-law>
       </footer>
     </div>
   </div>
@@ -119,9 +120,13 @@
 import router from './router';
 import {mapState} from 'vuex';
 import AuthenticationService from '@/services/AuthenticationService';
+import CookieLaw from 'vue-cookie-law';
 
 export default {
   name: 'App',
+  components: {
+    CookieLaw 
+  },
   data() {
     return {
       /* pages: [
@@ -174,6 +179,10 @@ body {
   font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
 }
 
 h1, h2, h3, h4 {

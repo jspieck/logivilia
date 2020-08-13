@@ -263,7 +263,7 @@ export default {
     computedAttributes: {
       deep: true,
       handler() {
-        console.log("Handler called");
+        // console.log("Handler called");
         this.$nextTick(() => {
           this.padSolutionGrid();
         });
@@ -433,7 +433,20 @@ export default {
     },
     removeAttribute(i) {
       if (this.logical.attributes.length > 2) {
-        this.logical.attributes.splice(i, 1);
+        this.$buefy.dialog.confirm({
+          title: 'Attribut löschen',
+          message: 'Willst du das Attribut wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+          cancelText: 'Nicht löschen',
+          confirmText: 'Löschen',
+          type: 'is-danger',
+          hasIcon: true,
+          onConfirm: () => {
+            this.$buefy.toast.open('Attribut gelöscht!');
+            this.logical.attributes.splice(i, 1);
+          }
+        });
+      } else {
+        this.$buefy.toast.open('Es muss mindestens drei Attribute geben, damit eins gelöscht werden kann!');
       }
     },
     async createLogical() {
@@ -673,8 +686,12 @@ h1 {
 }
 
 .delAttr {
-  width: 20px;
-  height: 20px;
+  width: 100%;
+  height: 28px;
+  font-size: 18px;
+  color: #f66161;
+  text-align: center;
+  cursor: pointer;
 }
 
 #descrHeader {

@@ -5,7 +5,33 @@
     :search="search"
     placeholder="Suche nach einem Rätsel"
     :defaultValue="defaultSearch"
-    @submit="handleSubmit"/>
+    @submit="handleSubmit">
+    <template #default="{rootProps, inputProps, inputListeners, resultListProps,
+      resultListListeners, results, resultProps}">
+      <div v-bind="rootProps">
+        <input
+          v-bind="inputProps"
+          v-on="inputListeners"
+          role="combobox"
+          autocomplete="new-password"
+          spellcheck="false"
+          aria-autocomplete="list"
+          aria-haspopup="listbox"
+          placeholder="Suche nach einem Rätsel"
+          class="autocomplete-input"/>
+        <ul v-bind="resultListProps" v-on="resultListListeners">
+          <li
+            v-for="(result, index) in results"
+            :key="resultProps[index].id"
+            v-bind="resultProps[index]"
+          >
+            {{ result }}
+          </li>
+        </ul>
+      </div>
+    </template>
+  </Autocomplete>
+
   <b-table
     :data="filteredLogicals"
     ref="table"
@@ -142,20 +168,9 @@ export default {
       // eslint-disable-next-line global-require, import/no-dynamic-require
       return require(`@/assets/${this.imgName}`);
     },
-    pushRoute(rt) {
-      const route = {
-        name: 'Logical Overview'
-      };
-      if (rt !== '') {
-        route.query = {
-          search: rt
-        };
-      }
-      this.$router.push(route);
-    },
     search(input) {
       if (input != this.searchString) {
-        this.pushRoute(input);
+        // this.pushRoute(input);
         this.searchString = this.input;
       }
       if (input.length < 1) { return [] }
@@ -168,7 +183,6 @@ export default {
       if (result == null) {
         return;
       }
-      this.pushRoute(result);
       this.searchString = result;
     }
   }

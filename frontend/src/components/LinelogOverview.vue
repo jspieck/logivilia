@@ -62,7 +62,7 @@
 import linelog from '../assets/linelogs.json';
 
 export default {
-  name: 'NonogramOverview',
+  name: 'LinelogOverview',
   data() {
     return {
       data: linelog,
