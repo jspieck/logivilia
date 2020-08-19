@@ -2,7 +2,8 @@
 <div>
   <div class="puzzleContainer" draggable="false">
     <div id="puzzleHeader">
-      <h1>{{name}}</h1>
+      <h1 class="puzzleTitle">{{linelog.name}}</h1>
+      <span class="difficulty">{{linelog.difficulty}}/<strong>5</strong></span>
     </div>
     <div id="puzzle" class="puzzleBody">
       <div id="nonoArea">
@@ -39,10 +40,10 @@
             </pattern>
           </defs>
           <rect v-if="!solved" width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
-          <path v-for="path in paths" v-bind:key="`path${path.id}`" class="noSelect" :d="createPath(path.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[path.color]"/>
-          <path v-if="currentPath != null" v-bind:key="`currentpath`" class="noSelect" :d="createPath(currentPath.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[currentPath.color]"/>
+          <path v-for="path in paths" v-bind:key="`path${path.id}`" class="linelogNoSelect" :d="createPath(path.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[path.color]"/>
+          <path v-if="currentPath != null" v-bind:key="`currentpath`" class="linelogNoSelect" :d="createPath(currentPath.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[currentPath.color]"/>
           <template v-for="[y, infoRow] in information.entries()">
-            <g v-for="[x, cell] in infoRow.entries()" v-bind:key="`cellMain${y}_${x}`" class="gridCell noSelect" :transform="`translate(${cellWidth * x}, ${cellWidth * y})`">
+            <g v-for="[x, cell] in infoRow.entries()" v-bind:key="`cellMain${y}_${x}`" class="gridCell linelogNoSelect" :transform="`translate(${cellWidth * x}, ${cellWidth * y})`">
               <rect v-if="solved" :width="cellWidth" :height="cellWidth" :fill="colors[gridState[x + width * y]]"/>
               <circle v-if="cell != 0" :cx="cellWidth / 2" :cy="cellWidth / 2" :r="cellWidth * 0.4" :fill="colors[gridState[y * width + x]]"/>
               <text v-if="!solved && cell != 0" :x="cellWidth / 2" :y="cellWidth / 2" :fill="fontColors[gridState[y * width + x]]" dominant-baseline="middle" text-anchor="middle" :style="`font-size: ${fontSize}px;`">{{cell}}</text>
@@ -50,18 +51,35 @@
           </template>
         </svg>
       </div>
-    </div>
-    <div id='checkSolutionBox'>
-      <!--<button id='checkButton' class='loes' @click="checkSolution">Überprüfen</button>-->
-      <img v-if="solved" class="checking" src='@/assets/haken.png' width='40' height='40'/>
-      <h4 v-if="solved" id="solved">Gratulation, dieses Rätsel ist gelöst!</h4>
+      <h2>Rätsel bewerten</h2>
+      <b-rate
+        v-if="loggedIn"
+        v-model="rating"
+        icon-pack="mdi"
+        icon="star"
+        :max="rateMax"
+        :show-text="false"
+        :rtl="false"
+        :spaced="false"
+        :disabled="false">
+      </b-rate>
+      <p v-if="!loggedIn">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
+      <div id='checkSolutionBox'>
+        <img v-if="solved" class="checking" src='@/assets/haken.png' width='40' height='40'/>
+        <label v-if="solved" id="solved">Gratulation! Sie haben dieses Rätsel gelöst!</label>
+      </div>
+      <div v-if="!solved && alreadySolved">
+        Glückwunsch! Sie haben dieses Rätsel bereits gelöst.
+      </div>
     </div>
   </div>
 </div>
 </template>
 
 <script>
-import linelogs from '../assets/linelogs.json';
+import LinelogService from '@/services/LinelogService';
+import LinelogRatingService from '@/services/LinelogRatingService';
+import UserService from '@/services/UserService';
 
 export default {
   name: 'LinelogSolve',
@@ -91,10 +109,26 @@ export default {
       pathIndices: [],
       mouseMoveReachedEnd: false,
       cellMarkDisabled: false,
-      originalCells: []
+      originalCells: [],
+      linelog: {
+        name: "",
+        difficulty: 0,
+        width: 0,
+        height: 0,
+        information: [],
+        solution: [],
+        colors: ["#FFFFFF"]
+      },
+      rateMax: 5,
+      rating: null,
+      alreadySolved: false
     };
   },
-  mounted() {
+  async mounted() {
+    const id = this.$store.state.route.params.id;
+    this.linelog = (await LinelogService.show(id)).data;
+    this.setRating(id);
+
     this.gridState = new Array(this.width * this.height).fill(this.backgroundNumber);
     this.pathIndices = new Array(this.width * this.height).fill(-1);
     for (let y = 0; y < this.information.length; y++) {
@@ -104,29 +138,52 @@ export default {
         }
       }
     }
+    if (this.loggedIn) {
+      this.checkIfAlreadySolved();
+    }
     // this.checkTotalNonogram();
     document.addEventListener("mouseup", () => {this.mainGridMouseUp()});
     document.addEventListener("touchend", () => {this.mainGridMouseUp()});
     window.ondragstart = function() { return false; } 
   },
   watch: {
-    id() {
+    async id() {
+      const id = this.$store.state.route.params.id;
+      this.nonogram  = (await LinelogService.show(id)).data;
+      this.setRating(id);
+      if (this.loggedIn) {
+        this.checkIfAlreadySolved();
+      }
+
       this.gridState = new Array(this.width * this.height).fill(this.backgroundNumber);
       // this.checkTotalNonogram();
     },
+    loggedIn() {
+      this.checkIfAlreadySolved();
+      this.setRating(this.$store.state.route.params.id);
+    },
+    async rating() {
+      try {
+        if (this.rating != null) {
+          await LinelogRatingService.post({
+            LinelogId: parseInt(this.$store.state.route.params.id, 10),
+            rating: this.rating
+          });
+        }
+      } catch(err) {
+        console.log(err);
+      }
+    }
   },
   computed: {
-    name() {
-      return linelogs[parseInt(this.id)].name;
-    },
     height() {
-      return linelogs[parseInt(this.id)].height;
+      return this.linelog.height;
     },
     width() {
-      return linelogs[parseInt(this.id)].width;
+      return this.linelog.width;
     },
     colors() {
-      return linelogs[parseInt(this.id)].colors;
+      return this.linelog.colors;
     },
     backgroundNumber() {
       return this.colors.length - 1;
@@ -134,7 +191,7 @@ export default {
     information() {
       const information = [];
       // create a copy
-      for (const row of linelogs[parseInt(this.id)].information) {
+      for (const row of this.linelog.information) {
         const infoRow = [];
         for (const cell of row) {
           infoRow.push(cell);
@@ -146,7 +203,7 @@ export default {
     solution() {
       const solution = [];
       // create a copy
-      for (const row of linelogs[parseInt(this.id)].solution) {
+      for (const row of this.linelog.solution) {
         const solutionRow = [];
         for (const cell of row) {
           if (cell == 0) {
@@ -165,9 +222,24 @@ export default {
         fontColors.push(this.pickTextColorBasedOnBgColor(color));
       }
       return fontColors;
-    }
+    },
+    loggedIn() {
+      return this.$store.state.isUserLoggedIn;
+    },
   },
   methods: {
+    async checkIfAlreadySolved() {
+      // New request in case the user solved the puzzle since logging in
+      const userData = (await UserService.show(this.$store.state.user.id)).data;
+      const linelogId = parseInt(this.$store.state.route.params.id, 10) - 1;
+      this.alreadySolved = userData.solvedLinelogs.includes(linelogId);
+    },
+    async setRating(logicalId) {
+      if (this.$store.state.user != null) {
+        const res = await LinelogRatingService.show(logicalId);
+        this.rating = res.data.rating;
+      }
+    },
     showZoomLevel() {
       this.$buefy.toast.open({
         duration: 500,
@@ -424,6 +496,16 @@ export default {
         }
       }
       this.solved = solved;
+      if (!this.alreadySolved && this.solved) {
+        this.saveSolvedLinelog();
+      }
+    },
+    async saveSolvedLinelog() {
+      const userId = this.$store.state.user.id;
+      const linelogId = parseInt(this.$store.state.route.params.id, 10) - 1;
+      const isSuccess = await UserService.linelogSolved(userId, linelogId);
+      // TODO do something if riddle couldn't be saved
+      console.log("Suc", isSuccess);
     },
     setPathIndices(cells, pathIndex) {
       for (const [x, y] of cells) {
@@ -496,7 +578,8 @@ export default {
     display: block;
     margin-top: 15px;
   }
-  .noSelect {
+  .linelogNoSelect {
+    user-select: none;
     pointer-events: none;
   }
   .notification {

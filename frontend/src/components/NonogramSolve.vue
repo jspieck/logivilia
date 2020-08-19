@@ -2,7 +2,8 @@
 <div>
   <div class="puzzleContainer" draggable="false">
     <div id="puzzleHeader">
-      <h1>{{name}}</h1>
+      <h1 class="puzzleTitle">{{nonogram.name}}</h1>
+      <span class="difficulty">{{nonogram.difficulty}}/<strong>5</strong></span>
     </div>
     <div id="puzzle" class="puzzleBody">
         <div id="nonoArea">
@@ -91,18 +92,36 @@
           </table>
         </div>
       </div>
+      <h2>Rätsel bewerten</h2>
+      <b-rate
+        v-if="loggedIn"
+        v-model="rating"
+        icon-pack="mdi"
+        icon="star"
+        :max="rateMax"
+        :show-text="false"
+        :rtl="false"
+        :spaced="false"
+        :disabled="false">
+      </b-rate>
+      <p v-if="!loggedIn">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
       <div id='checkSolutionBox'>
         <!--<button id='checkButton' class='loes' @click="checkSolution">Überprüfen</button>-->
         <img v-if="solved" class="checking" src='@/assets/haken.png' width='40' height='40'/>
+        <label v-if="solved" id="solved">Gratulation, dieses Rätsel ist gelöst!</label>
       </div>
-      <h4 v-if="solved" id="solved">Gratulation, dieses Rätsel ist gelöst!</h4>
+      <div v-if="!solved && alreadySolved">
+        Glückwunsch! Sie haben dieses Rätsel bereits gelöst.
+      </div>
     </div>
   </div>
 </div>
 </template>
 
 <script>
-import nono from '../assets/nonograms.json';
+import UserService from '@/services/UserService';
+import NonogramService from '@/services/NonogramService';
+import NonogramRatingService from '@/services/NonogramRatingService';
 
 export default {
   name: 'NonogramSolve',
@@ -126,36 +145,78 @@ export default {
       indicatorVertical: [],
       darkColor: '#000000',
       lightColor: '#ffffff',
-      fontSize: 18
+      fontSize: 18,
+      nonogram: {
+        width: 0,
+        height: 0,
+        colors: ['#FFFFFF', '#FFFFFF'],
+        solution: []
+      },
+      rateMax: 5,
+      rating: null,
+      alreadySolved: false
       /* solution: [[1,1,1,1,1], [1,1,1,1,1], [1,1,1,1,1], [1,1,0,1,1], [1,1,1,1,1]] */
     };
   },
-  mounted() {
+  async mounted() {
+    const id = this.$store.state.route.params.id;
+    this.nonogram = (await NonogramService.show(id)).data;
+    this.setRating(id);
+    if (this.loggedIn) {
+      this.checkIfAlreadySolved();
+    }
+
     this.gridState = new Array(this.width * this.height).fill(this.backgroundNumber);
     this.indicatorHorizontal = new Array(this.height).fill(0);
     this.indicatorVertical = new Array(this.width).fill(0);
     this.checkTotalNonogram();
     document.addEventListener("mouseup", () => {this.mainGridMouseUp()});
-
     window.ondragstart = function() { return false; } 
   },
   watch: {
-    id() {
+    async id() {
+      const id = this.$store.state.route.params.id;
+      const nonogram = await NonogramService.show(id);
+      this.nonogram = nonogram.data;
+      this.setRating(id);
+      if (this.loggedIn) {
+        this.checkIfAlreadySolved();
+      }
+
       this.gridState = new Array(this.width * this.height).fill(this.backgroundNumber);
       this.indicatorHorizontal = new Array(this.height).fill(0);
       this.indicatorVertical = new Array(this.width).fill(0);
       this.checkTotalNonogram();
     },
+    loggedIn() {
+      this.setRating(this.$store.state.route.params.id);
+      this.checkIfAlreadySolved();
+    },
+    async rating() {
+      try {
+        if (this.rating != null) {
+          await NonogramRatingService.post({
+            NonogramId: parseInt(this.$store.state.route.params.id, 10),
+            rating: this.rating
+          });
+        }
+      } catch(err) {
+        console.log(err);
+      }
+    }
   },
   computed: {
+    loggedIn() {
+      return this.$store.state.isUserLoggedIn;
+    },
     height() {
-      return nono[parseInt(this.id)].height;
+      return this.nonogram.height;
     },
     width() {
-      return nono[parseInt(this.id)].width;
+      return this.nonogram.width;
     },
     colors() {
-      const baseColors = [...nono[parseInt(this.id)].colors];
+      const baseColors = [...this.nonogram.colors];
       baseColors.push('#FFFFFF');
       return baseColors;
     },
@@ -164,7 +225,7 @@ export default {
     },
     solution() {
       // turn 0 into the background color
-      const solution = nono[parseInt(this.id)].solution;
+      const solution = this.nonogram.solution;
       const adaptedSolution = [];
       for (const row of solution) {
         const adaptedRow = [];
@@ -178,9 +239,6 @@ export default {
         adaptedSolution.push(adaptedRow);
       }
       return adaptedSolution;
-    },
-    name() {
-      return nono[parseInt(this.id)].name;
     },
     horizontalInfo() {
       const horizontalInfo = [];
@@ -247,6 +305,8 @@ export default {
       return horizontalInfo;
     },
     horizontalWidth() {
+      if (this.horizontalInfo[0] == null)
+        return 0;
       return this.horizontalInfo[0][0].length;
     },
     horizontalClues() {
@@ -362,6 +422,8 @@ export default {
       return verticalInfo;
     },
     verticalHeight() {
+      if (this.verticalInfo[0] == null)
+        return 0;
       return this.verticalInfo[0][0].length;
     },
     mainArea() {
@@ -396,6 +458,18 @@ export default {
     }
   },
   methods: {
+    async checkIfAlreadySolved() {
+      // New request in case the user solved the puzzle since logging in
+      const userData = (await UserService.show(this.$store.state.user.id)).data;
+      const nonogramId = parseInt(this.$store.state.route.params.id, 10) - 1;
+      this.alreadySolved = userData.solvedNonograms.includes(nonogramId);
+    },
+    async setRating(logicalId) {
+      if (this.$store.state.user != null) {
+        const res = await NonogramRatingService.show(logicalId);
+        this.rating = res.data.rating;
+      }
+    },
     revertState() {
       if (this.revertIndex > 0) {
         const state = this.revertHistory[this.revertIndex - 1];
@@ -592,6 +666,9 @@ export default {
         if (this.indicatorHorizontal.every( v => v === 1 ) &&
           this.indicatorVertical.every( v => v === 1 ) ) {
           this.solved = true;
+          if (!this.alreadySolved) {
+            this.saveSolvedNono();
+          }
         }
         this.isMouseDown = false;
       }
@@ -650,16 +727,12 @@ export default {
     jQuery('body').on('mouseup', function(e){mouseDown = false;});
     zoom();*/
     },
-    checkSolution() {
-      for(let i = 0; i < this.solution.length; i++) {
-        for(let j = 1; j < this.solution[i].length; j++) {
-          if (this.solution[i][j] != this.attrInputs[`${i}_${j - 1}`]) {
-            this.solved = false;
-            return;
-          }
-        }
-      }
-      this.solved = true;
+    async saveSolvedNono() {
+      const userId = this.$store.state.user.id;
+      const nonogramd = parseInt(this.$store.state.route.params.id, 10) - 1;
+      const isSuccess = await UserService.nonogramSolved(userId, nonogramd);
+      // TODO do something if riddle couldn't be saved
+      console.log("Suc", isSuccess);
     },
     setCell(i, j, k) {
       const index = this.cellIndex(i, j, k);
@@ -724,6 +797,7 @@ export default {
 
 #nonoArea {
   margin: 0;
+  margin-bottom: 20px;
 }
 
 #mainArea .gridRow .gridCell:last-child {

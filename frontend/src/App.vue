@@ -3,20 +3,6 @@
     <div id="mainContainer">
       <div class="header">
         <div class="headerContainer">
-          <!--<img class="logo" width=35 src="@/assets/logo.svg">
-          <div>
-            <router-link :to="{ name: 'Dashboard'}">Dashboard</router-link>
-            <router-link :to="{ name: 'Login'}">Login</router-link>
-            <router-link :to="{ name: 'Logical'}">Logical</router-link>
-            <a href="#" v-on:click="logout">Logout</a>
-          </div>-->
-          <!--<nav class="navMenu">
-            <ul id="navList" class="navList">
-              <li v-for="page in pages" :id="page.id" v-bind:key="page.id" class="navItem">
-                <router-link :to="{ name: page.link}" class="navLink">{{page.name}}</router-link>
-              </li>
-            </ul>
-          </nav>-->
           <b-navbar>
             <template slot="brand">
               <b-navbar-item tag="router-link" :to="{ path: '/' }">
@@ -71,7 +57,7 @@
                         <b-field label="Passwort">
                           <input style="width: 100%" type="password" v-model="password"/>
                         </b-field>
-                        <router-link :to="{ path: '/forgot' }" class="navLink"><a>Passwort vergessen?</a></router-link>  
+                        <router-link :to="{ path: '/forgot' }" class="navLink"><a>Passwort vergessen?</a></router-link>
                         <button style="float: right"
                           @click="login">
                           Login
@@ -84,9 +70,11 @@
               <b-navbar-item v-if="!isUserLoggedIn" tag="router-link" :to="{ path: '/register' }">
                 Registrieren
               </b-navbar-item>
-              <p class="navbar-item" v-if="isUserLoggedIn">
-                Willkommen, {{ $store.state.user.username }}
-              </p>
+              <b-navbar-item v-if="isUserLoggedIn" tag="router-link" :to="{ path: `/user/${$store.state.user.id}` }">
+                <p>
+                  Willkommen, {{ $store.state.user.username }}
+                </p>
+              </b-navbar-item>
               <a v-if="isUserLoggedIn"
                 @click="logout()"
                 class="navbar-item"
@@ -106,10 +94,14 @@
       <footer class="logFooter">
         <div class="content has-text-centered">
           <p>
-            <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}
+            <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}, <router-link :to="`/impressum`" class="navLink">Impressum</router-link>
           </p>
         </div>
-        <cookie-law theme="base"></cookie-law>
+        <cookie-law theme="base">
+          <div slot="message">
+            Diese Website benutzt Cookies, um das beste Nutzererlebnis auf der Seite zu ermöglichen.
+          </div>
+        </cookie-law>
       </footer>
     </div>
   </div>

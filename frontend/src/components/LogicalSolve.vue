@@ -106,6 +106,7 @@
 
       <h2>Rätsel bewerten</h2>
       <b-rate
+        v-if="loggedIn"
         v-model="rating"
         icon-pack="mdi"
         icon="star"
@@ -115,6 +116,10 @@
         :spaced="false"
         :disabled="false">
       </b-rate>
+      <p v-if="!loggedIn">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
+      <div v-if="!solved && alreadySolved">
+        Glückwunsch! Sie haben dieses Rätsel bereits gelöst.
+      </div>
     </div>
   </div>
 </div>
@@ -123,6 +128,7 @@
 <script>
 import Toggle from './Toggle';
 import Select from './Select';
+import UserService from '@/services/UserService';
 import LogicalService from '@/services/LogicalService';
 import LogicalRatingService from '@/services/LogicalRatingService';
 
@@ -161,7 +167,8 @@ export default {
         solution: []
       },
       rating: null,
-      rateMax: 5
+      rateMax: 5,
+      alreadySolved: false
     };
   },
   watch: {
@@ -170,25 +177,17 @@ export default {
       const logical = await LogicalService.show(id);
       this.setRating(id);
       this.logical = logical.data;
+      if (this.loggedIn) {
+        this.checkIfAlreadySolved();
+      }
   
       this.$nextTick(() => {
-        this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
-        if (this.$refs.horizontalLabels != null && this.$refs.verticalLabels != null) {
-          let maxLabelWidth = 0;
-          for(let label of this.$refs.horizontalLabels) {
-            maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
-          }
-          let maxLabelHeight = 0;
-          for(let label of this.$refs.verticalLabels) {
-            maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
-          }
-          this.paddingLeft = maxLabelWidth + 10;
-          this.paddingTop = maxLabelHeight + 10;
-        }
+        this.setPadding();
       });
     },
     loggedIn() {
       this.setRating(this.$store.state.route.params.id);
+      this.checkIfAlreadySolved();
     },
     async rating() {
       try {
@@ -209,27 +208,16 @@ export default {
     this.logical = logical.data;
     console.log(this.logical);
     this.setRating(id);
+    if (this.loggedIn) {
+      this.checkIfAlreadySolved();
+    }
 
     this.tableVisible = true;
     document.addEventListener("mouseup", this.mainGridMouseUp, false);
     window.ondragstart = function() { return false; };
     
     this.$nextTick(() => {
-      this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
-      console.log("Jo", this.$refs.horizontalLabels);
-      if (this.$refs.horizontalLabels != null && this.$refs.verticalLabels != null) {
-        console.log("Ho Ve not null");
-        let maxLabelWidth = 0;
-        for(let label of this.$refs.horizontalLabels) {
-          maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
-        }
-        let maxLabelHeight = 0;
-        for(let label of this.$refs.verticalLabels) {
-          maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
-        }
-        this.paddingLeft = maxLabelWidth + 10;
-        this.paddingTop = maxLabelHeight + 10;
-      }
+      this.setPadding();
     });
   },
   computed: {
@@ -255,6 +243,29 @@ export default {
     },
   },
   methods: {
+    async checkIfAlreadySolved() {
+      // New request in case the user solved the puzzle since logging in
+      const userData = (await UserService.show(this.$store.state.user.id)).data;
+      const logicalId = parseInt(this.$store.state.route.params.id, 10) - 1;
+      this.alreadySolved = userData.solvedLogicals.includes(logicalId);
+    },
+    setPadding() {
+      this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
+      // console.log("Jo", this.$refs.horizontalLabels);
+      if (this.$refs.horizontalLabels != null && this.$refs.verticalLabels != null) {
+        // console.log("Ho Ve not null");
+        let maxLabelWidth = 0;
+        for(let label of this.$refs.horizontalLabels) {
+          maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
+        }
+        let maxLabelHeight = 0;
+        for(let label of this.$refs.verticalLabels) {
+          maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
+        }
+        this.paddingLeft = maxLabelWidth + 10;
+        this.paddingTop = maxLabelHeight + 10;
+      }
+    },
     async setRating(logicalId) {
       if (this.$store.state.user != null) {
         const res = await LogicalRatingService.show(logicalId);
@@ -302,10 +313,20 @@ export default {
         }
       }
       if (this.solved) {
+        if (!this.alreadySolved) {
+          this.saveSolvedLogical();
+        }
         this.solveLabel = "Gratulation, das Rätsel ist gelöst!";
       } else {
         this.solveLabel = "Es existieren noch Fehler!";
       }
+    },
+    async saveSolvedLogical() {
+      const userId = this.$store.state.user.id;
+      const logicalId = parseInt(this.$store.state.route.params.id, 10) - 1;
+      const isSuccess = await UserService.logicalSolved(userId, logicalId);
+      // TODO do something if riddle couldn't be saved
+      console.log("Suc", isSuccess);
     },
     toXY(i, j, k) {
       // i = row, j = column (block), k = cell in nxn block

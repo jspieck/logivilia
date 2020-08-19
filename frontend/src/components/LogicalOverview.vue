@@ -64,9 +64,17 @@
               </b-rate>
             </template>
           </b-table-column>
-          <b-table-column field="date" label="Date" sortable>
+          <b-table-column field="date" label="Erstelldatum" sortable>
             <span class="tag is-success">
                 {{ new Date(props.row.date).toLocaleDateString() }}
+            </span>
+          </b-table-column>
+          <b-table-column field="date" label="Gelöst" sortable>
+            <span v-if="isSolved(props.row.id)" class="tag is-success">
+              Gelöst
+            </span>
+            <span v-if="!isSolved(props.row.id)" class="tag is-danger">
+              Ungelöst
             </span>
           </b-table-column>
       </template>
@@ -97,6 +105,7 @@
 <script>
 import LogicalService from '@/services/LogicalService';
 import LogicalRatingService from '@/services/LogicalRatingService';
+import UserService from '@/services/UserService';
 
 export default {
   name: 'LogicalOverview',
@@ -104,15 +113,13 @@ export default {
     return {
       extractLength: 100,
       title: "Logikrätsel Auswahl",
-      solved: {},
-      showDetailIcon: true,
       imgName: 'biene.jpg',
-      rate: 4.5,
       rateMax: 5,
       defaultSearch: "",
       searchString: "",
       logicals: [],
-      logicalRatings: {}
+      logicalRatings: {},
+      solved: []
     };
   },
   computed: {
@@ -131,16 +138,16 @@ export default {
         return logical.name.toLowerCase()
           .startsWith(this.searchString.toLowerCase())
       });
-    }
+    },
+    loggedIn() {
+      return this.$store.state.isUserLoggedIn;
+    },
   },
   async mounted() {
-    this.logicals = (await LogicalService.index()).data;
-    const ratings = (await LogicalRatingService.index()).data;
-    const ratingDict = {};
-    for (const rating of ratings) {
-      ratingDict[rating.LogicalId] = rating.avgRating;
-    }
-    this.logicalRatings = ratingDict;
+    await this.loadLogicalData();
+  },
+  async activated() {
+    await this.loadLogicalData();
   },
   watch: {
     '$route.query.search': {
@@ -148,18 +155,37 @@ export default {
       handler(value) {
         this.searchString = value;
         this.defaultSearch = value;
-      }
+      },
+    },
+    async loggedIn() {
+      const userData = (await UserService.show(this.$store.state.user.id)).data;
+      this.solved = userData.solvedLogicals;
     }
   },
   methods: {
+    async loadLogicalData() {
+      this.logicals = (await LogicalService.index()).data;
+      const ratings = (await LogicalRatingService.index()).data;
+      const ratingDict = {};
+      for (const rating of ratings) {
+        ratingDict[rating.LogicalId] = rating.avgRating;
+      }
+      this.logicalRatings = ratingDict;
+
+      if (this.loggedIn) {
+        // New request in case the user solved in puzzle since logging in
+        const userData = (await UserService.show(this.$store.state.user.id)).data;
+        this.solved = userData.solvedLogicals;
+      }
+    },
     getExtract(text) {
       return text.substr(0, this.extractLength) + "\u2026";
     },
     isSolved(id) {
-      if (this.solved[id] == null) {
-        return false;
+      if (this.solved.includes(id - 1)) {
+        return true;
       }
-      return true;
+      return false;
     },
     toggle(row) {
       this.$refs.table.toggleDetails(row)

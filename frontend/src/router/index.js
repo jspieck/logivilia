@@ -13,6 +13,8 @@ import LinelogOverview from '@/components/LinelogOverview';
 import Register from '@/components/Register';
 import Login from '@/components/Login';
 import Forgot from '@/components/Forgot';
+import User from '@/components/User';
+import Impressum from '@/components/Impressum';
 import PasswordReset from '@/components/PasswordReset';
 
 Vue.use(Router);
@@ -30,9 +32,19 @@ export default new Router({
       component: Register,
     },
     {
+      path: '/user/:id',
+      name: 'Benutzer',
+      component: User,
+    },
+    {
       path: '/login',
       name: 'Login',
       component: Login,
+    },
+    {
+      path: '/impressum',
+      name: 'Impressum',
+      component: Impressum,
     },
     {
       path: '/forgot',
