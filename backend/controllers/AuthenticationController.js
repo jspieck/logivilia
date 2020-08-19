@@ -69,13 +69,24 @@ function sendPasswordResetConfirmation(userEmail) {
 module.exports = {
   async register (req, res) {
     try {
-      const user = await User.create(req.body);
+      const userToBeCreated = req.body;
+      userToBeCreated.role = "Mitglied";
+      userToBeCreated.joined = new Date().toISOString().slice(0, 10);
+      userToBeCreated.solvedLogicals = [];
+      userToBeCreated.solvedNonograms = [];
+      userToBeCreated.solvedLinelogs = [];
+      userToBeCreated.createdLogicals =  [];
+      userToBeCreated.createdNonograms = [];
+      userToBeCreated.createdLinelogs = [];
+
+      const user = await User.create(userToBeCreated);
+      
       console.log(user.toJSON());
       res.send(user.toJSON());
     } catch (err) {
       console.log(err);
       res.status(400).send({
-        error: 'Die E-Mail wird schon benutzt'
+        error: 'Die E-Mail oder der Benutzername wird schon benutzt'
       });
     }
   },

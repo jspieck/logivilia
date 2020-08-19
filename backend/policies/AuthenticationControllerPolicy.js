@@ -35,7 +35,9 @@ module.exports = {
       email: Joi.string().email({ minDomainSegments: 2 }),
       password: Joi.string().regex(
         new RegExp('^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d^a-zA-Z0-9].{8,32}$')
-      )
+      ),
+      gender: Joi.string().min(0),
+      city: Joi.string().min(0)
     };
     const { error, value } = Joi.validate(req.body, schema);
     if (error) {
@@ -62,6 +64,16 @@ module.exports = {
             <br>
             4: Das Passwort muss zwischen 8 und 32 Zeichen lang sein.
             `
+          });
+          break;
+        case 'gender':
+          res.status(400).send({
+            error: 'Geschlecht keine Zeichenkette!'
+          });
+          break;
+        case 'city':
+          res.status(400).send({
+            error: 'Stadt keine Zeichenkette!'
           });
           break;
         default:
