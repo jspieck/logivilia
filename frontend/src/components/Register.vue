@@ -66,6 +66,8 @@ export default {
       password: '',
       username: '',
       passwordCheck: '',
+      gender: 'Nicht angegeben',
+      city: 'Nicht angegeben',
       error: null,
       registerTry: false,
       registerSuccess: false
@@ -79,6 +81,8 @@ export default {
           const response = await AuthenticationService.register({
             username: this.username,
             email: this.email,
+            gender: this.gender,
+            city: this.city,
             password: this.password
           });
           this.$store.dispatch('setToken', response.data.token);
@@ -132,9 +136,9 @@ export default {
     padding: 20px 70px;
     padding-right: 0;
   }
-  .styledCard input, .styledCard button {
-    background-color: #ebeefc;
-  }
+  /*.styledCard input, .styledCard button {
+     background-color: #ebeefc; 
+  }*/
   .styledCard input:focus {
     background: #fff;
     border: 1px solid #986ff3;
