@@ -1,14 +1,22 @@
 const {
   sequelize,
   Logical,
+  Nonogram,
+  Linelog,
   User,
-  LogicalRating
+  LogicalRating,
+  NonogramRating,
+  LinelogRating
 } = require('../models');
 
 const Promise = require('bluebird');
 const logicals = require('./logicals.json');
+const nonograms = require('./nonograms.json');
+const linelogs = require('./linelogs.json');
 const users = require('./users.json');
 const logicalRatings = require('./logicalRatings.json');
+const nonogramRatings = require('./nonogramRatings.json');
+const linelogRatings = require('./linelogRatings.json');
 
 sequelize.sync({force: true})
   .then( async () => {
@@ -24,8 +32,28 @@ sequelize.sync({force: true})
       )
     );
     await Promise.all(
+      nonograms.map(nonogram => 
+        Nonogram.create(nonogram)
+      )
+    );
+    await Promise.all(
+      linelogs.map(linelog => 
+        Linelog.create(linelog)
+      )
+    );
+    await Promise.all(
       logicalRatings.map(logicalRating => 
         LogicalRating.create(logicalRating)
+      )
+    );
+    await Promise.all(
+      nonogramRatings.map(nonogramRating => 
+        NonogramRating.create(nonogramRating)
+      )
+    );
+    await Promise.all(
+      linelogRatings.map(linelogRating => 
+        LinelogRating.create(linelogRating)
       )
     );
   });

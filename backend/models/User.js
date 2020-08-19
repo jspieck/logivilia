@@ -24,6 +24,18 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       unique: true
     },
+    role: DataTypes.STRING,
+    gender: DataTypes.STRING,
+    bio: DataTypes.TEXT,
+    age: DataTypes.INTEGER,
+    city: DataTypes.STRING,
+    joined: DataTypes.DATE,
+    solvedLogicals: DataTypes.JSON,
+    solvedNonograms: DataTypes.JSON,
+    solvedLinelogs: DataTypes.JSON,
+    createdLogicals: DataTypes.JSON,
+    createdNonograms: DataTypes.JSON,
+    createdLinelogs: DataTypes.JSON,
     password: DataTypes.STRING,
     resetPasswordToken: DataTypes.STRING,
     resetPasswordExpires: DataTypes.INTEGER

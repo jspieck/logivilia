@@ -18,11 +18,3 @@ module.exports = {
     jwtSecret: process.env.JWT_SECRET || 'secret'
   }
 };
-
-/* 
-DB_NAME=logivili_logivilia
-DB_USER=logivili_jan
-DB_PASS=T3ShwD4UgU4qj8Z
-DIALECT=mysql
-JWT_SECRET=$YG^F88^"@Uxj\dU
-*/
