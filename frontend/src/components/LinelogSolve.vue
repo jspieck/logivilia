@@ -1,5 +1,5 @@
 <template>
-<div class="overviewPage">
+<div class="solvePage">
   <div class="puzzleContainer" draggable="false">
     <div id="puzzleHeader">
       <h1 class="puzzleTitle">{{linelog.name}}</h1>
@@ -577,6 +577,9 @@ export default {
 </script>
 
 <style lang="scss">
+  .solvePage {
+    width: 100%;  
+  }
   #mainArea {
     display: block;
     touch-action: none;

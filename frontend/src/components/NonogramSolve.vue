@@ -1,5 +1,5 @@
 <template>
-<div class="overviewPage">
+<div class="solvePage">
   <div class="puzzleContainer" draggable="false">
     <div id="puzzleHeader">
       <h1 class="puzzleTitle">{{nonogram.name}}</h1>

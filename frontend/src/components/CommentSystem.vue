@@ -70,7 +70,7 @@ export default {
   },
   methods: {
     async loadUserUpvotes() {
-      this.userVotes = (await CommentUpvoteService.get()).data.map(m => m.CommentsId);
+      this.userVotes = (await CommentUpvoteService.get()).data.map(m => m.CommentId);
     },
     async sendComment() {
       console.log("Send Comment");

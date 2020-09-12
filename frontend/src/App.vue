@@ -274,10 +274,11 @@ input:focus {
   }
   .overviewPage {
     padding: 20px;
-  }
+  } 
   .puzzleContainer {
     margin: 0;
     border: none;
+    box-shadow: none;
   }
   .websiteText {
     margin: 0;

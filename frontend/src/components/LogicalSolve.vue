@@ -1,5 +1,5 @@
 <template>
-<div class="overviewPage">
+<div class="solvePage">
   <div class="puzzleContainer" v-if="logical != null">
     <div id="puzzleHeader">
       <h1 class="puzzleTitle">{{logical.name}}</h1>
