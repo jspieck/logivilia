@@ -1,14 +1,14 @@
 [
   {
     "UserId": 1,
-    "CommentsId": 1
+    "CommentId": 1
   },
   {
     "UserId": 1,
-    "CommentsId": 2
+    "CommentId": 2
   },
   {
     "UserId": 2,
-    "CommentsId": 2
+    "CommentId": 2
   }
 ]

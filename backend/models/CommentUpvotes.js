@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
 
   CommentUpvotes.associate = function(models) {
     CommentUpvotes.belongsTo(models.User);
-    CommentUpvotes.belongsTo(models.Comments);
+    CommentUpvotes.belongsTo(models.Comment);
   };
 
   return CommentUpvotes;

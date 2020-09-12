@@ -20,7 +20,7 @@ module.exports = {
   async post (req, res) {
     try {
       const upvote = await CommentUpvotes.create({
-        CommentsId: parseInt(req.params.commentId, 10),
+        CommentId: parseInt(req.params.commentId, 10),
         UserId: req.user.id
       });
       console.log(upvote);
@@ -36,7 +36,7 @@ module.exports = {
     try {
       const upvote = await CommentUpvotes.findOne({
         where: {
-          CommentsId: req.params.commentId,
+          CommentId: req.params.commentId,
           UserId: req.user.id
         }
       });

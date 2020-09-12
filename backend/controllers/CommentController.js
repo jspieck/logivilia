@@ -7,7 +7,7 @@ module.exports = {
       const comments = await Comments.findAll({
         attributes: {
           include: [
-            [sequelize.fn('COUNT', sequelize.col('CommentUpvotes.CommentsId')), 'upvotes']
+            [sequelize.fn('COUNT', sequelize.col('CommentUpvotes.CommentId')), 'upvotes']
           ]
         },
         where: {
