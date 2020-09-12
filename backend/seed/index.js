@@ -8,7 +8,7 @@ const {
   NonogramRating,
   LinelogRating,
   Comment,
-  CommentUpvotes
+  CommentUpvote
 } = require('../models');
 
 const Promise = require('bluebird');
@@ -37,7 +37,7 @@ sequelize.sync({force: true})
     );
     await Promise.all(
       commentUpvotes.map(upvote => 
-        CommentUpvotes.create(upvote)
+        CommentUpvote.create(upvote)
       )
     ); 
     await Promise.all(

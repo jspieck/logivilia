@@ -1,4 +1,4 @@
-const {sequelize, Comment, CommentUpvotes, User} = require('../models');
+const {sequelize, Comment, CommentUpvote, User} = require('../models');
 // const {sequelize} = require('../models');
 
 module.exports = {
@@ -7,7 +7,7 @@ module.exports = {
       const comments = await Comment.findAll({
         attributes: {
           include: [
-            [sequelize.fn('COUNT', sequelize.col('CommentUpvotes.CommentId')), 'upvotes']
+            [sequelize.fn('COUNT', sequelize.col('CommentUpvote.CommentId')), 'upvotes']
           ]
         },
         where: {
@@ -21,7 +21,7 @@ module.exports = {
             attributes: ['username', 'role', 'userImageId']
           },
           {
-            model: CommentUpvotes,
+            model: CommentUpvote,
             required: false
           }],
         group: ['Comment.id']
