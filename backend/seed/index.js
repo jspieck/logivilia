@@ -6,7 +6,9 @@ const {
   User,
   LogicalRating,
   NonogramRating,
-  LinelogRating
+  LinelogRating,
+  Comments,
+  CommentUpvotes
 } = require('../models');
 
 const Promise = require('bluebird');
@@ -17,6 +19,8 @@ const users = require('./users.json');
 const logicalRatings = require('./logicalRatings.json');
 const nonogramRatings = require('./nonogramRatings.json');
 const linelogRatings = require('./linelogRatings.json');
+const comments = require('./comments.json');
+const commentUpvotes = require('./commentsUpvotes.json');
 
 sequelize.sync({force: true})
   .then( async () => {
@@ -26,6 +30,16 @@ sequelize.sync({force: true})
         User.create(user)
       )
     );
+    await Promise.all(
+      comments.map(comment => 
+        Comments.create(comment)
+      )
+    );
+    await Promise.all(
+      commentUpvotes.map(upvote => 
+        CommentUpvotes.create(upvote)
+      )
+    ); 
     await Promise.all(
       logicals.map(logical => 
         Logical.create(logical)

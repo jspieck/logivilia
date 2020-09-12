@@ -7,6 +7,8 @@ const LinelogRatingController = require('./controllers/LinelogRatingController')
 const NonogramController = require('./controllers/NonogramController');
 const LinelogController = require('./controllers/LinelogController');
 const UserController = require('./controllers/UserController');
+const CommentController = require('./controllers/CommentController');
+const CommentUpvoteController = require('./controllers/CommentUpvoteController');
 const isAuthenticated = require('./policies/isAuthenticated');
 
 module.exports = (app) => {
@@ -18,7 +20,7 @@ module.exports = (app) => {
   app.post('/forgot',
     AuthenticationController.forgot);
   app.post('/reset/:token',
-  AuthenticationControllerPolicy.reset,
+    AuthenticationControllerPolicy.reset,
     AuthenticationController.reset);
 
   // User Pages
@@ -33,6 +35,28 @@ module.exports = (app) => {
   // A new Logical was solved
   app.patch('/users/:userId/logical/:logicalId',
     UserController.logicalSolved);
+
+  // Comments Routes
+  app.get('/comments/:riddleType/:riddleId',
+    CommentController.index);
+  app.post('/comments/:riddleType/:riddleId',
+    isAuthenticated,
+    CommentController.post);
+  app.delete('/comments',
+    isAuthenticated,
+    CommentController.delete);
+
+  // Comment Upvote Routes
+  app.get('/commentupvote',
+    isAuthenticated,
+    CommentUpvoteController.show);
+  app.post('/commentupvote/:commentId',
+    isAuthenticated,
+    CommentUpvoteController.post);
+  app.delete('/commentupvote/:commentId',
+    isAuthenticated,
+    CommentUpvoteController.delete);
+
 
   // Logical Routes
   app.get('/logical',
