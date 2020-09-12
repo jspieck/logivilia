@@ -3,14 +3,12 @@ module.exports = (sequelize, DataTypes) => {
     riddleType: DataTypes.STRING,
     riddleId: DataTypes.INTEGER,
     replyId: DataTypes.INTEGER,
-    upvotes: DataTypes.INTEGER,
     text: DataTypes.TEXT,
     date: DataTypes.DATE
   });
 
   Comments.associate = function(models) {
-    Comments.belongsTo(models.User); // , { foreignKey: { unique: false}, onDelete: 'cascade', onUpdate: 'cascade'});
-    Comments.hasMany(models.CommentUpvotes, { foreignKey: 'CommentsId' });
+    Comments.belongsTo(models.User);
   };
 
   return Comments;
