@@ -7,7 +7,7 @@ const {
   LogicalRating,
   NonogramRating,
   LinelogRating,
-  Comments,
+  Comment,
   CommentUpvotes
 } = require('../models');
 
@@ -32,7 +32,7 @@ sequelize.sync({force: true})
     );
     await Promise.all(
       comments.map(comment => 
-        Comments.create(comment)
+        Comment.create(comment)
       )
     );
     await Promise.all(

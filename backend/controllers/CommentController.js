@@ -1,10 +1,10 @@
-const {sequelize, Comments, CommentUpvotes, User} = require('../models');
+const {sequelize, Comment, CommentUpvotes, User} = require('../models');
 // const {sequelize} = require('../models');
 
 module.exports = {
   async index (req, res) {
     try {
-      const comments = await Comments.findAll({
+      const comments = await Comment.findAll({
         attributes: {
           include: [
             [sequelize.fn('COUNT', sequelize.col('CommentUpvotes.CommentId')), 'upvotes']
@@ -24,7 +24,7 @@ module.exports = {
             model: CommentUpvotes,
             required: false
           }],
-        group: ['Comments.id']
+        group: ['Comment.id']
       });
       res.send(comments);
     } catch (err) {
@@ -41,7 +41,7 @@ module.exports = {
       const riddleId = parseInt(req.params.riddleId, 10);
       const date = new Date().toISOString();
       const commentObj = {...req.body, riddleType, riddleId, UserId, date};
-      const comment = await Comments.create(commentObj);
+      const comment = await Comment.create(commentObj);
       res.send(comment);
     } catch (err) {
       console.log(err);
@@ -54,7 +54,7 @@ module.exports = {
     try {
       const userId = req.user.id;
       const {commentId} = req.params;
-      const comment = await Comments.findOne({
+      const comment = await Comment.findOne({
         where: {
           id: commentId,
           UserId: userId

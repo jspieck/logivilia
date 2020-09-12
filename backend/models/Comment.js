@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  const Comments = sequelize.define('Comments', {
+  const Comment = sequelize.define('Comment', {
     riddleType: DataTypes.STRING,
     riddleId: DataTypes.INTEGER,
     replyId: DataTypes.INTEGER,
@@ -7,9 +7,9 @@ module.exports = (sequelize, DataTypes) => {
     date: DataTypes.DATE
   });
 
-  Comments.associate = function(models) {
-    Comments.belongsTo(models.User);
+  Comment.associate = function(models) {
+    Comment.belongsTo(models.User);
   };
 
-  return Comments;
+  return Comment;
 };
