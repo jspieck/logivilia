@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="overviewPage">
   <div class="puzzleContainer" draggable="false">
     <div id="puzzleHeader">
       <h1 class="puzzleTitle">{{linelog.name}}</h1>
@@ -13,10 +13,10 @@
           Dieser Rätseltyp befindet sich noch in der Testphase. Es kann zu Fehlern kommen.
         </b-notification>
         <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
-          <ion-icon v-pre name="ios-add"></ion-icon>
+          <ion-icon v-pre name="add"></ion-icon>
         </button>
         <button id="zoomOut" @click="zoomOut" class="nonoButton largerIcon">
-          <ion-icon v-pre name="ios-remove"></ion-icon>
+          <ion-icon v-pre name="remove"></ion-icon>
         </button>
         <!-- <button id="revert" @click="revertState" class="nonoButton"><ion-icon class="rotate" v-pre name="ios-refresh"></ion-icon></button>
         <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button> -->
@@ -73,6 +73,7 @@
       </div>
     </div>
   </div>
+  <CommentSystem :riddleType="'linelog'" :riddleId="computedId"/>
 </div>
 </template>
 
@@ -80,10 +81,14 @@
 import LinelogService from '@/services/LinelogService';
 import LinelogRatingService from '@/services/LinelogRatingService';
 import UserService from '@/services/UserService';
+import CommentSystem from '@/components/CommentSystem'
 
 export default {
   name: 'LinelogSolve',
   props: ['id'],
+  components: {
+    CommentSystem: CommentSystem
+  },
   data() {
     return {
       revertHistory: [],
@@ -154,7 +159,6 @@ export default {
       if (this.loggedIn) {
         this.checkIfAlreadySolved();
       }
-
       this.gridState = new Array(this.width * this.height).fill(this.backgroundNumber);
       // this.checkTotalNonogram();
     },
@@ -226,6 +230,9 @@ export default {
     loggedIn() {
       return this.$store.state.isUserLoggedIn;
     },
+    computedId() {
+      return this.$store.state.route.params.id;
+    }
   },
   methods: {
     async checkIfAlreadySolved() {

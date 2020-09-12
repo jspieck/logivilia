@@ -6,6 +6,7 @@
       <option v-for="[i, option] in options.entries()" :value="option"
         v-bind:key="`sel${_uid}${i}`">{{option}}</option>
     </select>
+    <ion-icon name="chevron-forward" class="select-icon"/>
   </div>
 </template>
 
@@ -55,6 +56,16 @@ select{
   text-align: center;
 }
 
+.select-icon {
+  font-size: 1.2em;
+  position: absolute;
+  right: 10px;
+  top: 12px;
+  transition: .3s all;
+  transform: rotate(90deg);
+  pointer-events: none;
+}
+
 .selectBox{
   position: relative;
   border-radius: 6px;
@@ -62,22 +73,8 @@ select{
   border: none;
   display: inline-block;
 
-  &:after {
-    content: "\f3d0";
-    font-family: IonIcons;
-    font-size: 1.2em;
-    position:absolute;
-    right: 10px;
-    top: 12px;
-    transition: .3s all;
-    transform: rotate(0deg);
-    pointer-events: none;
-  }
-  &.clicked:after {
-    transform: rotate(180deg);
-  }
-  &[disabled=disabled]:after{
-    content: "";
+  &.clicked .select-icon {
+    transform: rotate(270deg);
   }
 }
 </style>

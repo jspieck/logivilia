@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="overviewPage">
   <div class="puzzleContainer" draggable="false">
     <div id="puzzleHeader">
       <h1 class="puzzleTitle">{{nonogram.name}}</h1>
@@ -8,13 +8,17 @@
     <div id="puzzle" class="puzzleBody">
         <div id="nonoArea">
           <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
-            <ion-icon v-pre name="ios-add"></ion-icon>
+            <ion-icon v-pre name="add"></ion-icon>
           </button>
           <button id="zoomOut" @click="zoomOut" class="nonoButton largerIcon">
-            <ion-icon v-pre name="ios-remove"></ion-icon>
+            <ion-icon v-pre name="remove"></ion-icon>
           </button>
-          <button id="revert" @click="revertState" class="nonoButton"><ion-icon class="rotate" v-pre name="ios-refresh"></ion-icon></button>
-          <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
+          <button id="revert" @click="revertState" class="nonoButton">
+            <ion-icon class="rotate" v-pre name="refresh"></ion-icon>
+          </button>
+          <button id="restore" @click="restoreState" class="nonoButton">
+            <ion-icon v-pre name="refresh"></ion-icon>
+            </button>
           <!-- <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
           <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button> -->
 
@@ -115,6 +119,7 @@
       </div>
     </div>
   </div>
+  <CommentSystem :riddleType="'nonogram'" :riddleId="computedId"/>
 </div>
 </template>
 
@@ -122,10 +127,14 @@
 import UserService from '@/services/UserService';
 import NonogramService from '@/services/NonogramService';
 import NonogramRatingService from '@/services/NonogramRatingService';
+import CommentSystem from '@/components/CommentSystem';
 
 export default {
   name: 'NonogramSolve',
   props: ['id'],
+  components: {
+    CommentSystem: CommentSystem
+  },
   data() {
     return {
       revertHistory: [],
@@ -206,6 +215,9 @@ export default {
     }
   },
   computed: {
+    computedId() {
+      return this.$store.state.route.params.id;
+    },
     loggedIn() {
       return this.$store.state.isUserLoggedIn;
     },

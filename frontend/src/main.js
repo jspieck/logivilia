@@ -13,7 +13,8 @@ Vue.use(Autocomplete);
 Vue.use(Buefy);
 Vue.use(VueCookies);
 
-Vue.config.productionTip = false
+Vue.config.ignoredElements = [/^ion-/];
+Vue.config.productionTip = false;
 
 sync(store, router);
 
@@ -21,4 +22,4 @@ new Vue({
   router,
   store,
   render: h => h(App),
-}).$mount('#app') 
+}).$mount('#app');

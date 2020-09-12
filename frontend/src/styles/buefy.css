@@ -14999,6 +14999,7 @@ MIT (https://github.com/Wikiki/bulma-steps/blob/master/LICENSE)
 }
 
 .b-table .table {
+  box-shadow: 0 4px 10px rgb(8 112 184 / 16%);
   width: 100%;
   border: 1px solid transparent;
   border-radius: 4px;

@@ -2,11 +2,12 @@
   <div>
     <h2>Benutzerprofil</h2>
 
-    <div class="tile is-ancestor">
+    <div class="tile is-ancestor user-card">
       <div class="tile is-parent is-3">
         <div class="is-child box profile-box">
-          <!-- <img class="profile-picture" src="@/assets/stock.jpg"/> -->
-          <div class="profile-picture"></div>
+          <!-- <img class="profile-picture" src="@/assets/stock.jpg"/>
+          <div class="profile-picture"></div> -->
+          <img class="profile-picture" src="@/assets/bear.svg"/>
           <p class="user-name">{{user.username}}</p>
           <p class="user-role">{{user.role}}</p>
         </div>
@@ -118,6 +119,9 @@ export default {
 </script>
 
 <style scoped>
+  .user-card {
+    box-shadow: 0 4px 10px #0870b829;
+  }
   .box {
     background: #fcfcfc;
     box-shadow: none;

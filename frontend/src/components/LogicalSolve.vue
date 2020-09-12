@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="overviewPage">
   <div class="puzzleContainer" v-if="logical != null">
     <div id="puzzleHeader">
       <h1 class="puzzleTitle">{{logical.name}}</h1>
@@ -40,8 +40,12 @@
                 <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3" :y="cellWidth + 4"/> 
               </g>
             </svg>
-            <button id="revert" @click="revertState" class="nonoButton"><ion-icon class="rotate" v-pre name="ios-refresh"></ion-icon></button>
-            <button id="restore" @click="restoreState" class="nonoButton"><ion-icon v-pre name="ios-refresh"></ion-icon></button>
+            <button id="revert" @click="revertState" class="nonoButton">
+              <ion-icon class="rotate" v-pre name="refresh"></ion-icon>
+            </button>
+            <button id="restore" @click="restoreState" class="nonoButton">
+              <ion-icon v-pre name="refresh"></ion-icon>
+            </button>
           </div>
           <div id="classicGrid" class="gridContainer">
             <div id="solutionGridNonCanvas">
@@ -122,6 +126,7 @@
       </div>
     </div>
   </div>
+  <CommentSystem :riddleType="'logical'" :riddleId="computedId"/>
 </div>
 </template>
 
@@ -131,6 +136,7 @@ import Select from './Select';
 import UserService from '@/services/UserService';
 import LogicalService from '@/services/LogicalService';
 import LogicalRatingService from '@/services/LogicalRatingService';
+import CommentSystem from '@/components/CommentSystem';
 
 export default {
   name: 'LogicalSolve',
@@ -138,6 +144,7 @@ export default {
   components: {
     MToggle: Toggle,
     MSelect: Select,
+    CommentSystem: CommentSystem
   },
   data() {
     return {
@@ -221,6 +228,9 @@ export default {
     });
   },
   computed: {
+    computedId() {
+      return this.$store.state.route.params.id;
+    },
     loggedIn() {
       return this.$store.state.isUserLoggedIn;
     },
@@ -547,6 +557,7 @@ h1 {
 
 #puzzleHeader {
   background: #ffffff;
+  background: #f5f5f5;
   height: 37px;
   line-height: 35px;
   padding: 10px 30px;
@@ -566,7 +577,6 @@ h1 {
   /* background-color: $logicalColor; */
   background: #f5f5f5;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
-
   /* box-shadow: 0px 0px 20px 3px rgb(211, 211, 211);
   box-shadow: 0 2px 6px rgba(154,153,153,0.75); */
   color: $textColor;

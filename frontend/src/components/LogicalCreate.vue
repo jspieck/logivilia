@@ -777,6 +777,7 @@ h1 {
   box-shadow: 0 2px 6px rgba(154,153,153,0.75); */
   color: $textColor;
   border-radius: 4px;
+  box-shadow: 0 4px 10px #0870b829;
 }
 
 .bold {

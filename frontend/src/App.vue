@@ -71,6 +71,7 @@
                 Registrieren
               </b-navbar-item>
               <b-navbar-item v-if="isUserLoggedIn" tag="router-link" :to="{ path: `/user/${$store.state.user.id}` }">
+                <img class="avatarImg" :src="getUserAvatar($store.state.user.userImageId)">
                 <p>
                   Willkommen, {{ $store.state.user.username }}
                 </p>
@@ -136,6 +137,11 @@ export default {
     ...mapState(['isUserLoggedIn'])
   },
   methods: {
+    getUserAvatar(id) {
+      const paths = ["bear", "chicken", "cat"];
+      const index = id == null ? 0 : id % paths.length;
+      return require(`@/assets/${paths[index]}.svg`);
+    },
     logout() {
       this.$store.dispatch('setToken', null);
       this.$store.dispatch('setUser', null);
@@ -187,6 +193,11 @@ h1, h2, h3, h4 {
   height: 100%;
 }
 
+.avatarImg {
+  border-radius: 37%;
+  margin-right: 5px;
+}
+
 .logFooter {
   background: #fcfcfc;
   border-top: 2px solid #f2f2f2;
@@ -228,6 +239,10 @@ h1, h2, h3, h4 {
   margin: auto;
 }
 
+.bodyContainer {
+  display: flex;
+}
+
 input {
   margin: 10px 0;
   display: block;
@@ -241,6 +256,10 @@ input {
 input:focus {
   background-color: #fff;
   border: 1px solid #eee;
+}
+
+.puzzleContainer {
+  box-shadow: 0 4px 10px rgb(8 112 184 / 16%);
 }
 
 @media (max-width: 1000px) {

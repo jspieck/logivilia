@@ -133,4 +133,7 @@ export default {
 </script>
 
 <style lang="scss">
+.overviewPage {
+  width: 100%;
+}
 </style>
