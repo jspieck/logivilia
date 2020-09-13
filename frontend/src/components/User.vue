@@ -1,9 +1,9 @@
 <template>
-  <div>
+  <div class="overviewPage">
     <h2>Benutzerprofil</h2>
 
     <div class="tile is-ancestor user-card">
-      <div class="tile is-parent is-3">
+      <div class="tile is-parent is-3 userCardBox">
         <div class="is-child box profile-box">
           <!-- <img class="profile-picture" src="@/assets/stock.jpg"/>
           <div class="profile-picture"></div> -->
@@ -12,7 +12,7 @@
           <p class="user-role">{{user.role}}</p>
         </div>
       </div>
-      <div class="tile is-parent is-4">
+      <div class="tile is-parent is-4 userCardBox">
         <div class="is-child box profile-box">
           <p class="category-text">Wohnort</p>
           <p class="category-sub">{{user.city}}</p>
@@ -24,8 +24,8 @@
           <p class="category-sub">{{formatDate(user.joined)}}</p>
         </div>
       </div>
-      <div class="tile is-parent is-vertical is-5">
-        <div class="tile is-parent">
+      <div class="tile is-parent is-vertical is-5 userCardBox">
+        <div class="tile is-parent statBox">
           <div class="is-child box">
             <p class="tile-heading">Gelöste Rätsel</p>
             <nav class="level">
@@ -50,7 +50,7 @@
             </nav>
           </div>
         </div>
-        <div class="tile is-parent">
+        <div class="tile is-parent statBox">
           <div class="is-child box">
             <p class="tile-heading">Erstellte Rätsel</p>
             <nav class="level">
@@ -122,13 +122,49 @@ export default {
   .user-card {
     box-shadow: 0 4px 10px #0870b829;
   }
+  @media (max-width: 770px) {
+    .is-3 {
+      width: 33%;
+    }
+    .is-4 {
+      width: 66%;
+    }
+    .is-3, .is-4 {
+      display: inline-block;
+      margin: 0;
+      padding: 0;
+    }
+    .box {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .tile.is-parent {
+      vertical-align: top;
+    }
+    .userCardBox[data-v-73968b0a] {
+      border-right: none;
+    }
+    .statBox {
+      width: 49% !important;
+      display: inline-block;
+    }
+  }
+  @media (max-width: 1000px) {
+    .heading {
+      font-size: 10px !important;
+    }
+  }
   .box {
     background: #fcfcfc;
     box-shadow: none;
     width: 100%;
     margin: 20px;
     padding: 20px;
+    box-sizing: border-box;
     /* box-shadow: 0 4px 10px rgb(8 112 184 / 16%); */
+  }
+  .userCardBox {
+    border-right: 1px solid #305bd73b;
   }
   .level {
     width: 100%;
@@ -145,20 +181,20 @@ export default {
     background: #f7f9fc;
   }
   .profile-box {
-    padding: 50px;
     position: relative;
     box-sizing: border-box;
     background: white;
     box-shadow: none;
     border-radius: 0;
-    border-right: 1px solid #305bd73b;
+    text-align: center;
   }
   .profile-picture {
-    width: 150px;
-    height: 150px;
+    /* width: 150px;
+    height: 150px; */
+    margin-top: 10px;
+    width: 100%;
     background: #9595ea;
     border-radius: 65px;
-    margin-left: -12.5px;
   }
   .user-name {
     font-size: 20px;
