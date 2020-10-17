@@ -149,7 +149,10 @@ export default {
     // this.checkTotalNonogram();
     document.addEventListener("mouseup", () => {this.mainGridMouseUp()});
     document.addEventListener("touchend", () => {this.mainGridMouseUp()});
-    window.ondragstart = function() { return false; } 
+    window.ondragstart = function() { return false; }
+    window.onbeforeunload = function() {
+      return "Möchten Sie die Seite wirklich verlassen. Nicht gespeicherte Rätsel sind für immer verloren!";
+    }
   },
   watch: {
     async id() {
@@ -235,6 +238,12 @@ export default {
     }
   },
   methods: {
+    scaleToScreenSize() {
+      const MAX_WIDTH = 500;
+      const PADDING = 50;
+      const targetedWidth = Math.min(Math.max(PADDING, window.screen.width - PADDING), MAX_WIDTH);
+      this.cellWidth = targetedWidth / this.linelog.width;
+    },
     async checkIfAlreadySolved() {
       // New request in case the user solved the puzzle since logging in
       const userData = (await UserService.show(this.$store.state.user.id)).data;
@@ -503,6 +512,9 @@ export default {
         }
       }
       this.solved = solved;
+      if (this.solved) {
+        this.scaleToScreenSize();
+      }
       if (!this.alreadySolved && this.solved) {
         this.saveSolvedLinelog();
       }

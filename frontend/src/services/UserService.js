@@ -4,6 +4,9 @@ export default {
   show (userId) {
     return Api().get(`users/${userId}`);
   },
+  update (userId, updatedProfile) {
+    return Api().patch(`users/${userId}`, updatedProfile);
+  },
   linelogSolved (userId, linelogId) {
     return Api().patch(`users/${userId}/linelog/${linelogId}`);
   },

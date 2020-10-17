@@ -23,7 +23,15 @@ export default {
       clicked: false
     };
   },
+  computed: {
+    selection() {
+      return this.sel;
+    }
+  },
   watch: {
+    selection() {
+      this.selectedOption = this.sel;
+    },
     value: {
       immediate: true,
       handler(newValue) {

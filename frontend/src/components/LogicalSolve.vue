@@ -226,6 +226,9 @@ export default {
     this.$nextTick(() => {
       this.setPadding();
     });
+    window.onbeforeunload = function() {
+      return "Möchten Sie die Seite wirklich verlassen. Nicht gespeicherte Rätsel sind für immer verloren!";
+    }
   },
   computed: {
     computedId() {
