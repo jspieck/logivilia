@@ -28,28 +28,30 @@
         </svg>
         <!-- <button id="loadNono" class="nonoButton"><ion-icon v-pre name="ios-folder-open"></ion-icon></button>
         <button id="saveNono" class="nonoButton"><ion-icon v-pre name="ios-save"></ion-icon></button> -->
-        <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'" :width="width * cellWidth + 1" :height="height * cellWidth + 1"
-          @mousedown="e => {mouseDown(e)}" @mousemove="e => {mouseMove(e)}" @touchstart="e => {touchDown(e)}" @touchmove="e => {touchMove(e)}">
-          <defs>
-            <pattern id="smallGrid" :width="cellWidth" :height="cellWidth" patternUnits="userSpaceOnUse">
-              <path :d="`M ${cellWidth} 0 L 0 0 0 ${cellWidth}`" fill="none" stroke="#929292" stroke-width="1"/>
-            </pattern>
-            <pattern id="grid" :width="cellWidth * 5" :height="cellWidth * 5" patternUnits="userSpaceOnUse">
-              <rect :width="cellWidth * 5" :height="cellWidth * 5" fill="url(#smallGrid)"/>
-              <path :d="`M ${cellWidth * 5} 0 L 0 0 0 ${cellWidth * 5}`" fill="none" stroke="black" stroke-width="2"/>
-            </pattern>
-          </defs>
-          <rect v-if="!solved" width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
-          <path v-for="path in paths" v-bind:key="`path${path.id}`" class="linelogNoSelect" :d="createPath(path.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[path.color]"/>
-          <path v-if="currentPath != null" v-bind:key="`currentpath`" class="linelogNoSelect" :d="createPath(currentPath.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[currentPath.color]"/>
-          <template v-for="[y, infoRow] in information.entries()">
-            <g v-for="[x, cell] in infoRow.entries()" v-bind:key="`cellMain${y}_${x}`" class="gridCell linelogNoSelect" :transform="`translate(${cellWidth * x}, ${cellWidth * y})`">
-              <rect v-if="solved" :width="cellWidth" :height="cellWidth" :fill="colors[gridState[x + width * y]]"/>
-              <circle v-if="cell != 0" :cx="cellWidth / 2" :cy="cellWidth / 2" :r="cellWidth * 0.4" :fill="colors[gridState[y * width + x]]"/>
-              <text v-if="!solved && cell != 0" :x="cellWidth / 2" :y="cellWidth / 2" :fill="fontColors[gridState[y * width + x]]" dominant-baseline="middle" text-anchor="middle" :style="`font-size: ${fontSize}px;`">{{cell}}</text>
-            </g>
-          </template>
-        </svg>
+        <div id="linelogGridContainer">
+          <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'" :width="width * cellWidth + 1" :height="height * cellWidth + 1"
+            @mousedown="e => {mouseDown(e)}" @mousemove="e => {mouseMove(e)}" @touchstart="e => {touchDown(e)}" @touchmove="e => {touchMove(e)}">
+            <defs>
+              <pattern id="smallGrid" :width="cellWidth" :height="cellWidth" patternUnits="userSpaceOnUse">
+                <path :d="`M ${cellWidth} 0 L 0 0 0 ${cellWidth}`" fill="none" stroke="#929292" stroke-width="1"/>
+              </pattern>
+              <pattern id="grid" :width="cellWidth * 5" :height="cellWidth * 5" patternUnits="userSpaceOnUse">
+                <rect :width="cellWidth * 5" :height="cellWidth * 5" fill="url(#smallGrid)"/>
+                <path :d="`M ${cellWidth * 5} 0 L 0 0 0 ${cellWidth * 5}`" fill="none" stroke="black" stroke-width="2"/>
+              </pattern>
+            </defs>
+            <rect v-if="!solved" width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
+            <path v-for="path in paths" v-bind:key="`path${path.id}`" class="linelogNoSelect" :d="createPath(path.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[path.color]"/>
+            <path v-if="currentPath != null" v-bind:key="`currentpath`" class="linelogNoSelect" :d="createPath(currentPath.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[currentPath.color]"/>
+            <template v-for="[y, infoRow] in information.entries()">
+              <g v-for="[x, cell] in infoRow.entries()" v-bind:key="`cellMain${y}_${x}`" class="gridCell linelogNoSelect" :transform="`translate(${cellWidth * x}, ${cellWidth * y})`">
+                <rect v-if="solved" :width="cellWidth" :height="cellWidth" :fill="colors[gridState[x + width * y]]"/>
+                <circle v-if="cell != 0" :cx="cellWidth / 2" :cy="cellWidth / 2" :r="cellWidth * 0.4" :fill="colors[gridState[y * width + x]]"/>
+                <text v-if="!solved && cell != 0" :x="cellWidth / 2" :y="cellWidth / 2" :fill="fontColors[gridState[y * width + x]]" dominant-baseline="middle" text-anchor="middle" :style="`font-size: ${fontSize}px;`">{{cell}}</text>
+              </g>
+            </template>
+          </svg>
+        </div>
       </div>
       <h2>Rätsel bewerten</h2>
       <b-rate
@@ -267,14 +269,16 @@ export default {
       });
     },
     errorMessage(text) {
-      this.$buefy.toast.open({
-        duration: 500,
-        message: text,
-        position: 'is-top-right',
-        queue: false,
-        closable: false,
-        type: 'is-danger'
-      });
+      if (!this.solved) {
+        this.$buefy.toast.open({
+          duration: 500,
+          message: text,
+          position: 'is-top-right',
+          queue: false,
+          closable: false,
+          type: 'is-danger'
+        });
+      }
     },
     zoomIn() {
       this.cellWidth = (this.cellWidth + 5);
@@ -426,6 +430,8 @@ export default {
       }
     },
     moveEvent(x, y) {
+      if (this.solved)
+        return;
       if (x < 0 || y < 0 || x >= this.width || y >= this.height)
         return;
       if (x != this.lastMousePos[0] || y != this.lastMousePos[1]) {
@@ -520,11 +526,13 @@ export default {
       }
     },
     async saveSolvedLinelog() {
-      const userId = this.$store.state.user.id;
-      const linelogId = parseInt(this.$store.state.route.params.id, 10) - 1;
-      const isSuccess = await UserService.linelogSolved(userId, linelogId);
-      // TODO do something if riddle couldn't be saved
-      console.log("Suc", isSuccess);
+      if (this.$store.state.isUserLoggedIn) {
+        const userId = this.$store.state.user.id;
+        const linelogId = parseInt(this.$store.state.route.params.id, 10) - 1;
+        const isSuccess = await UserService.linelogSolved(userId, linelogId);
+        // TODO do something if riddle couldn't be saved
+        console.log("Suc", isSuccess);
+      }
     },
     setPathIndices(cells, pathIndex) {
       for (const [x, y] of cells) {
@@ -595,6 +603,7 @@ export default {
   #mainArea {
     display: block;
     touch-action: none;
+    overflow-x: scroll;
   }
   #colors {
     display: block;
@@ -611,5 +620,23 @@ export default {
     position: absolute;
     right: 2px !important;
     top: 1px !important;
+  }
+  #linelogGridContainer {
+    overflow-x: scroll;
+  }
+  ::-webkit-scrollbar {
+    -webkit-appearance: none;
+  }
+  ::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background-color: #ffffff;
+  }
+  ::-webkit-scrollbar:horizontal {
+    height: 12px;
+    border-radius: 10px;
+    border: 2px solid #ffffff;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, .5);
   }
 </style>
