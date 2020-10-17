@@ -16,7 +16,7 @@ module.exports = {
         "role": user.role,
         "gender": user.gender,
         "bio": user.bio,
-        "age": user.age,
+        "birthyear": user.birthyear,
         "city": user.city,
         "solvedLogicals": user.solvedLogicals,
         "solvedNonograms": user.solvedNonograms,
@@ -27,6 +27,27 @@ module.exports = {
         "joined": user.joined,
       };
       res.send(saveUser);
+    } catch (err) {
+      console.log(err);
+      res.status(500).send({
+        error: 'Benutzer nicht existent.'
+      });
+    }
+  },
+  async update(req, res) {
+    try {
+      const userId = req.user.id;
+      const user = await User.findOne({
+        where: {
+          id: userId
+        }
+      });
+      user.gender = req.body.gender;
+      user.city = req.body.city;
+      user.birthyear = req.body.birthyear;
+      user.bio = req.body.bio;
+      await user.save();
+      res.send({"success": "true"});
     } catch (err) {
       console.log(err);
       res.status(500).send({

@@ -26,14 +26,22 @@ module.exports = (app) => {
   // User Pages
   app.get('/users/:userId',
     UserController.show);
+  
+  // Update bio, age and co
+  app.patch('/users/:userId',
+    isAuthenticated,
+    UserController.update);
   // A new Linelog was solved
   app.patch('/users/:userId/linelog/:linelogId',
+    isAuthenticated,
     UserController.linelogSolved);
   // A new Nonogram was solved
   app.patch('/users/:userId/nonogram/:nonogramId',
+    isAuthenticated,
     UserController.nonogramSolved);
   // A new Logical was solved
   app.patch('/users/:userId/logical/:logicalId',
+    isAuthenticated,
     UserController.logicalSolved);
 
   // Comments Routes
