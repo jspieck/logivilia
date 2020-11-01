@@ -335,11 +335,13 @@ export default {
       }
     },
     async saveSolvedLogical() {
-      const userId = this.$store.state.user.id;
-      const logicalId = parseInt(this.$store.state.route.params.id, 10) - 1;
-      const isSuccess = await UserService.logicalSolved(userId, logicalId);
-      // TODO do something if riddle couldn't be saved
-      console.log("Suc", isSuccess);
+      if (this.loggedIn) {
+        const userId = this.$store.state.user.id;
+        const logicalId = parseInt(this.$store.state.route.params.id, 10) - 1;
+        const isSuccess = await UserService.logicalSolved(userId, logicalId);
+        // TODO do something if riddle couldn't be saved
+        console.log("Suc", isSuccess);
+      }
     },
     toXY(i, j, k) {
       // i = row, j = column (block), k = cell in nxn block

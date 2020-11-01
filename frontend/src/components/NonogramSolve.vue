@@ -8,7 +8,7 @@
     <div id="puzzle" class="puzzleBody">
         <div id="nonoArea">
           <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
-            <ion-icon v-pre name="add"></ion-icon>
+            <ion-icon v-pre name="add" aria-label="Hineinzoomen"></ion-icon>
           </button>
           <button id="zoomOut" @click="zoomOut" class="nonoButton largerIcon">
             <ion-icon v-pre name="remove"></ion-icon>
@@ -34,7 +34,7 @@
             <tr>
               <td></td>
               <td>
-                <svg id="verticalInformation" ref="verticalInformation" draggable="false" :height="verticalHeight * cellWidth + 8" :width="width * cellWidth + 1">
+                <svg v-if="!solved" id="verticalInformation" ref="verticalInformation" draggable="false" :height="verticalHeight * cellWidth + 8" :width="width * cellWidth + 1">
                   <defs>
                     <pattern id="smallGrid" :width="cellWidth" :height="cellWidth" patternUnits="userSpaceOnUse">
                       <path :d="`M ${cellWidth} 0 L 0 0 0 ${cellWidth}`" fill="none" stroke="#d7dadd" stroke-width="1"/>
@@ -60,7 +60,7 @@
             </tr>
             <tr>
               <td>
-                <svg id="horizontalInformation" draggable="false" :width="horizontalWidth * cellWidth + 8" :height="height * cellWidth + 1">
+                <svg v-if="!solved" id="horizontalInformation" draggable="false" :width="horizontalWidth * cellWidth + 8" :height="height * cellWidth + 1">
                   <template v-for="[i, group] in horizontalInfo.entries()">
                     <template v-for="[j, row] in group.entries()" :id="`row${j}`">
                       <g v-for="[k, cell] in row.entries()" v-bind:key="`cell${cell.id}`" :id="cell.id" class="gridCell noSelect" @click="selectColor(cell.colorId)"
@@ -75,7 +75,8 @@
                 </svg>
               </td>
               <td>
-                <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'" :width="width * cellWidth + 1" :height="height * cellWidth + 1">
+                <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'" :width="width * cellWidth + 1" :height="height * cellWidth + 1" oncontextmenu="return false;"       
+                  @touchstart="e => {this.touchDownEvent(e);}" @touchmove="e => {this.touchMoveEvent(e);}" @touchend="e => {this.touchEndEvent(e);}">
                   <template v-for="[i, groupRow] in mainArea.entries()">
                     <template v-for="[j, group] in groupRow.entries()" class="gridGroup">
                       <template v-for="[k, row] in group.entries()" :id="`row${k}`" class="gridRow">
@@ -147,6 +148,7 @@ export default {
       lastMouseOver: [0, 0],
       gridCells: [],
       isMouseDown: false,
+      rightMouseButtonPressed: false,
       gridState: [],
       gridStateCopy: [],
       indicatorColors: ["#ff0000", "#00ff00"],
@@ -544,14 +546,43 @@ export default {
       const L = (0.2126 * c[0]) + (0.7152 * c[1]) + (0.0722 * c[2]);
       return (L > 0.179) ? this.darkColor : this.lightColor;
     },
+    getSelectedColor() {
+      if (this.rightMouseButtonPressed) {
+        return this.backgroundNumber;
+      } else {
+        return this.selectedColor;
+      }
+    },
+    getCellFromTouchPos(e) {
+      const rect = document.getElementById("mainArea").getBoundingClientRect();
+      const x = e.touches[0].clientX - rect.left;
+      const y = e.touches[0].clientY - rect.top;
+      return [Math.floor(x / this.cellWidth), Math.floor(y / this.cellWidth)];
+    },
+    touchDownEvent(e) {
+      const [horizontalCellIndex, verticalCellIndex] = this.getCellFromTouchPos(e);
+      this.cellMouseDown(e, horizontalCellIndex, verticalCellIndex);
+    },
+    touchMoveEvent(e) {
+      const [horizontalCellIndex, verticalCellIndex] = this.getCellFromTouchPos(e);
+      this.cellMouseEnter(e, horizontalCellIndex, verticalCellIndex);
+    },
+    touchEndEvent() {
+      this.mainGridMouseUp();
+    },
     cellMouseDown(e, i, j) {
-      this.startMouseDown = [i, j];
-      this.lastMouseOver = this.startMouseDown;
-      this.isMouseDown = true;
-      // TODO
-      // this.gridCells[j * this.width + i].style.background = this.colors[this.selectedColor];
-      this.gridStateCopy = [...this.gridState];
-      this.$set(this.gridState, j * this.width + i, this.selectedColor);
+      if (!this.solved) {
+        this.startMouseDown = [i, j];
+        this.lastMouseOver = this.startMouseDown;
+        this.isMouseDown = true;
+        if (e.which == 3) {
+          this.rightMouseButtonPressed = true;
+        } else{
+          this.rightMouseButtonPressed = false;
+        }
+        this.gridStateCopy = [...this.gridState];
+        this.$set(this.gridState, j * this.width + i, this.getSelectedColor());
+      }
     },
     cellMouseEnter(e, i1, j1) {
       if (this.isMouseDown) {
@@ -578,7 +609,7 @@ export default {
         for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
             // this.gridCells[b * this.width + a].style.background = this.colors[this.selectedColor];
-            this.$set(this.gridState, b * this.width + a, this.selectedColor);
+            this.$set(this.gridState, b * this.width + a, this.getSelectedColor());
           }
         }
         this.lastMouseOver = [i1, j1];
@@ -656,7 +687,7 @@ export default {
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
             const ind = b * this.width + a;
             stateBeforeRow.push(this.gridStateCopy[ind]);
-            this.gridState[ind] = this.selectedColor;
+            this.gridState[ind] = this.getSelectedColor();
           }
           stateBefore.push(stateBeforeRow);
         }
@@ -665,7 +696,7 @@ export default {
           'x1': Math.max(i1, i2),
           'y0': Math.min(j1, j2),
           'y1': Math.max(j1, j2),
-          'colorAfter': this.selectedColor,
+          'colorAfter': this.getSelectedColor(),
           'colorsBefore': stateBefore
         }
         
@@ -703,7 +734,7 @@ export default {
         this.$set(this.indicatorHorizontal, i, this.checkRow(i));
       }
     },
-    createMainArea() {
+    /* createMainArea() {
       const mainArea = this.$refs.mainArea;
       mainArea.innerHTML = "";
       for(let i = 0; i < this.height; i += 5){
@@ -733,28 +764,26 @@ export default {
         mainArea.appendChild(gridGroupRow);
       }
       document.addEventListener("mouseup", this.mainGridMouseUp, false);
-    /*touch events on canvas
-    canvasGrid.addEventListener("touchstart", doTouchDownEvent, false);
-    canvasGrid.addEventListener("touchmove", doTouchOverEvent, false);
-    canvasGrid.addEventListener("touchleave", doTouchOutEvent, false);
-    canvasGrid.addEventListener("touchend", doTouchUpEvent, false);
+      // Touch events on canvas
+      // canvasGrid.addEventListener("touchleave", doTouchOutEvent, false);
 
-    //Problem if not outside but not over cell
-    if(typ == "none" || typ == "create"){
-        document.getElementById("alignKapsel").addEventListener("mouseleave", doMouseOutEvent, false);
-    }else
-        canvasGrid.addEventListener("mouseleave", doMouseOutEvent, false);
-
-    jQuery('body').on('contextmenu', '#gridRid', function(e){ return false; });
-    jQuery('body').on('mouseup', function(e){mouseDown = false;});
-    zoom();*/
-    },
+      // Problem if not outside but not over cell
+      // if(typ == "none" || typ == "create"){
+      //     document.getElementById("alignKapsel").addEventListener("mouseleave", doMouseOutEvent, false);
+      // }else
+      //     canvasGrid.addEventListener("mouseleave", doMouseOutEvent, false);
+      // 
+      // jQuery('body').on('contextmenu', '#gridRid', function(e){ return false; });
+      // zoom();
+    }, */
     async saveSolvedNono() {
-      const userId = this.$store.state.user.id;
-      const nonogramd = parseInt(this.$store.state.route.params.id, 10) - 1;
-      const isSuccess = await UserService.nonogramSolved(userId, nonogramd);
-      // TODO do something if riddle couldn't be saved
-      console.log("Suc", isSuccess);
+      if (this.loggedIn) {
+        const userId = this.$store.state.user.id;
+        const nonogramd = parseInt(this.$store.state.route.params.id, 10) - 1;
+        const isSuccess = await UserService.nonogramSolved(userId, nonogramd);
+        // TODO do something if riddle couldn't be saved
+        console.log("Suc", isSuccess);
+      }
     },
     setCell(i, j, k) {
       const index = this.cellIndex(i, j, k);
@@ -899,6 +928,9 @@ export default {
   border: none;
 }
 
+ion-icon {
+  pointer-events: none;
+}
 
 .nonoGrid {
   border: none;
