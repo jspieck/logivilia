@@ -1,0 +1,50 @@
+[
+  {
+    "UserId": 1,
+    "riddleType": "linelog",
+    "riddleId": 1,
+    "replyId": -1,
+    "date": "2020-08-29T18:25:43.511Z",
+    "text": "Was für ein tolles Rätsel"
+  },
+  {
+    "UserId": 2,
+    "riddleType": "linelog",
+    "riddleId": 1,
+    "replyId": 1,
+    "date": "2020-08-29T18:29:43.511Z",
+    "text": "Stimme bei"
+  },
+  {
+    "UserId": 1,
+    "riddleType": "linelog",
+    "riddleId": 1,
+    "replyId": -1,
+    "date": "2020-08-29T18:15:43.511Z",
+    "text": "Hast du gut gemacht"
+  },
+  {
+    "UserId": 1,
+    "riddleType": "linelog",
+    "riddleId": 1,
+    "replyId": 3,
+    "date": "2020-08-29T17:25:43.511Z",
+    "text": "Ja"
+  },
+  {
+    "UserId": 1,
+    "riddleType": "linelog",
+    "riddleId": 1,
+    "replyId": 3,
+    "date": "2020-08-29T16:25:43.511Z",
+    "text": "Nein"
+  },
+  {
+    "UserId": 3,
+    "riddleType": "linelog",
+    "riddleId": 1,
+    "replyId": 5,
+    "date": "2020-08-28T18:25:43.511Z",
+    "text": "Nein"
+  }
+]

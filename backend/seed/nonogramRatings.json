@@ -1,0 +1,32 @@
+[
+  {
+    "UserId": 1,
+    "NonogramId": 1,
+    "rating": 5
+  },
+  {
+    "UserId": 2,
+    "NonogramId": 1,
+    "rating": 4
+  },
+  {
+    "UserId": 2,
+    "NonogramId": 2,
+    "rating": 5
+  },
+  {
+    "UserId": 2,
+    "NonogramId": 3,
+    "rating": 5
+  },
+  {
+    "UserId": 2,
+    "NonogramId": 5,
+    "rating": 5
+  },
+  {
+    "UserId": 1,
+    "NonogramId": 5,
+    "rating": 5
+  }
+]

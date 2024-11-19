@@ -1,0 +1,32 @@
+[
+  {
+    "UserId": 1,
+    "LinelogId": 1,
+    "rating": 5
+  },
+  {
+    "UserId": 2,
+    "LinelogId": 1,
+    "rating": 4
+  },
+  {
+    "UserId": 2,
+    "LinelogId": 2,
+    "rating": 5
+  },
+  {
+    "UserId": 2,
+    "LinelogId": 3,
+    "rating": 5
+  },
+  {
+    "UserId": 2,
+    "LinelogId": 5,
+    "rating": 5
+  },
+  {
+    "UserId": 1,
+    "LinelogId": 5,
+    "rating": 5
+  }
+]
