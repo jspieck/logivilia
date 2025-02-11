@@ -34,13 +34,13 @@ A modern full-stack puzzle application with Vue.js frontend and Node.js backend.
 1. Install backend dependencies
 ```bash
 cd backend
-npm install
+yarn install
 ```
 
 2. Set up environment variables
 ```bash
 # Create .env file in backend directory
-cp .env.example .env
+touch .env
 ```
 
 3. Configure your .env file
@@ -53,12 +53,12 @@ NODE_ENV=development
 
 4. Seed the database (optional)
 ```bash
-npm run seed
+yarn run seed
 ```
 
 5. Start the backend server
 ```bash
-npm start
+yarn run start
 ```
 
 ### Frontend Setup
