@@ -58,7 +58,7 @@ yarn run seed
 
 5. Start the backend server
 ```bash
-yarn run start
+yarn start
 ```
 
 ### Frontend Setup
