@@ -50,14 +50,9 @@
 
 export default {
   name: 'Home',
-  data() {
+  setup() {
     return {
     };
-  },
-  computed: {
-
-  },
-  methods: {
   }
 };
 </script>

@@ -34,52 +34,50 @@
 
   <b-table
     :data="filteredLogicals"
-    ref="table"
+    ref="tableRef"
     paginated
     per-page="10"
     aria-next-label="Nächste Seite"
     aria-previous-label="Vorherige Seite"
     aria-page-label="Seite"
     aria-current-label="Gegenwärtige Seite">
-      <template slot-scope="props">
-          <b-table-column field="id" label="Name" sortable>
-            <router-link :to="`/logicalSolve/${ props.row.id }`" class="navLink">{{ props.row.name }}</router-link>
-          </b-table-column>
-          <b-table-column field="difficulty" label="Schwierigkeit" sortable>
-            <template>
-              {{ props.row.difficulty }}
-            </template>
-          </b-table-column>
-          <b-table-column field="score" label="Bewertung" sortable>
-            <template>
-              <b-rate
-                v-model="logicalRatings[props.row.id]"
-                icon-pack="mdi"
-                icon="star"
-                :max="rateMax"
-                :show-text="false"
-                :rtl="false"
-                :spaced="false"
-                :disabled="true">
-              </b-rate>
-            </template>
-          </b-table-column>
-          <b-table-column field="date" label="Erstelldatum" sortable>
-            <span class="tag is-success">
-                {{ new Date(props.row.date).toLocaleDateString() }}
-            </span>
-          </b-table-column>
-          <b-table-column field="date" label="Gelöst" sortable>
-            <span v-if="isSolved(props.row.id)" class="tag is-success">
-              Gelöst
-            </span>
-            <span v-if="!isSolved(props.row.id)" class="tag is-danger">
-              Ungelöst
-            </span>
-          </b-table-column>
-      </template>
+        <b-table-column field="id" label="Name" v-slot="props" sortable>
+          <router-link :to="`/logicalSolve/${ props.row.id }`" class="navLink">{{ props.row.name }}</router-link>
+        </b-table-column>
+        <b-table-column field="difficulty" label="Schwierigkeit" v-slot="props" sortable>
+          <template>
+            {{ props.row.difficulty }}
+          </template>
+        </b-table-column>
+        <b-table-column field="score" label="Bewertung" v-slot="props" sortable>
+          <template>
+            <b-rate
+              v-model="logicalRatings[props.row.id]"
+              icon-pack="mdi"
+              icon="star"
+              :max="rateMax"
+              :show-text="false"
+              :rtl="false"
+              :spaced="false"
+              :disabled="true">
+            </b-rate>
+          </template>
+        </b-table-column>
+        <b-table-column field="date" label="Erstelldatum" v-slot="props" sortable>
+          <span class="tag is-success">
+              {{ new Date(props.row.date).toLocaleDateString() }}
+          </span>
+        </b-table-column>
+        <b-table-column field="date" label="Gelöst" v-slot="props" sortable>
+          <span v-if="isSolved(props.row.id)" class="tag is-success">
+            Gelöst
+          </span>
+          <span v-if="!isSolved(props.row.id)" class="tag is-danger">
+            Ungelöst
+          </span>
+        </b-table-column>
 
-      <template slot="detail" slot-scope="props">
+      <!--<template #detail="props">
         <article class="media">
           <figure class="media-left">
             <p class="image is-64x64">
@@ -97,20 +95,29 @@
             </div>
           </div>
         </article>
-      </template>
+      </template> -->
   </b-table>
 </div>
 </template>
 
 <script>
-import LogicalService from '@/services/LogicalService';
-import LogicalRatingService from '@/services/LogicalRatingService';
-import UserService from '@/services/UserService';
+import { ref, computed, onMounted, onActivated, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useMainStore } from '@/store/store'
+import LogicalService from '@/services/LogicalService'
+import LogicalRatingService from '@/services/LogicalRatingService'
+import UserService from '@/services/UserService'
 
 export default {
   name: 'LogicalOverview',
-  data() {
-    return {
+  setup() {
+    const route = useRoute()
+    const store = useMainStore()
+    const { isUserLoggedIn, user } = storeToRefs(store)
+    const tableRef = ref(null)
+
+    const state = ref({
       extractLength: 100,
       title: "Logikrätsel Auswahl",
       imgName: 'biene.jpg',
@@ -120,99 +127,106 @@ export default {
       logicals: [],
       logicalRatings: {},
       solved: []
-    };
-  },
-  computed: {
-    logicalNames() {
-      const names = [];
-      for (const logical of this.logicals) {
-        names.push(logical.name);
-      }
-      return names;
-    },
-    filteredLogicals() {
-      if (this.searchString == null || this.searchString == "") {
-        return this.logicals;
-      }
-      return this.logicals.filter(logical => {
-        return logical.name.toLowerCase()
-          .startsWith(this.searchString.toLowerCase())
-      });
-    },
-    loggedIn() {
-      return this.$store.state.isUserLoggedIn;
-    },
-  },
-  async mounted() {
-    await this.loadLogicalData();
-  },
-  async activated() {
-    await this.loadLogicalData();
-  },
-  watch: {
-    '$route.query.search': {
-      immediate: true,
-      handler(value) {
-        this.searchString = value;
-        this.defaultSearch = value;
-      },
-    },
-    async loggedIn() {
-      const userData = (await UserService.show(this.$store.state.user.id)).data;
-      this.solved = userData.solvedLogicals;
-    }
-  },
-  methods: {
-    async loadLogicalData() {
-      this.logicals = (await LogicalService.index()).data;
-      const ratings = (await LogicalRatingService.index()).data;
-      const ratingDict = {};
-      for (const rating of ratings) {
-        ratingDict[rating.LogicalId] = rating.avgRating;
-      }
-      this.logicalRatings = ratingDict;
+    })
 
-      if (this.loggedIn) {
-        // New request in case the user solved in puzzle since logging in
-        const userData = (await UserService.show(this.$store.state.user.id)).data;
-        this.solved = userData.solvedLogicals;
+    const logicalNames = computed(() => {
+      return state.value.logicals.map(logical => logical.name)
+    })
+
+    const filteredLogicals = computed(() => {
+      if (!state.value.searchString) {
+        return state.value.logicals
       }
-    },
-    getExtract(text) {
-      return text.substr(0, this.extractLength) + "\u2026";
-    },
-    isSolved(id) {
-      if (this.solved.includes(id - 1)) {
-        return true;
+      return state.value.logicals.filter(logical => 
+        logical.name.toLowerCase().startsWith(state.value.searchString.toLowerCase())
+      )
+    })
+
+    const loadLogicalData = async () => {
+      state.value.logicals = (await LogicalService.index()).data
+      const ratings = (await LogicalRatingService.index()).data
+      const ratingDict = {}
+      for (const rating of ratings) {
+        ratingDict[rating.LogicalId] = rating.avgRating
       }
-      return false;
-    },
-    toggle(row) {
-      this.$refs.table.toggleDetails(row)
-    },
-    getImg() {
-      // eslint-disable-next-line global-require, import/no-dynamic-require
-      return require(`@/assets/${this.imgName}`);
-    },
-    search(input) {
-      if (input != this.searchString) {
-        // this.pushRoute(input);
-        this.searchString = this.input;
+      state.value.logicalRatings = ratingDict
+
+      if (isUserLoggedIn.value) {
+        const userData = (await UserService.show(user.value.id)).data
+        state.value.solved = userData.solvedLogicals
       }
-      if (input.length < 1) { return [] }
-      return this.logicalNames.filter(name => {
-        return name.toLowerCase()
-          .startsWith(input.toLowerCase())
-      });
-    },
-    handleSubmit(result) {
-      if (result == null) {
-        return;
+    }
+
+    const getExtract = (text) => {
+      return text.substr(0, state.value.extractLength) + "\u2026"
+    }
+
+    const isSolved = (id) => {
+      return state.value.solved.includes(id - 1)
+    }
+
+    const toggle = (row) => {
+      tableRef.value.toggleDetails(row)
+    }
+
+    const getImg = () => {
+      try {
+        return new URL(`../assets/${state.value.imgName}`, import.meta.url).href
+      } catch (error) {
+        console.error('Error loading image:', error)
+        return ''
       }
-      this.searchString = result;
+    }
+
+    const search = (input) => {
+      if (input !== state.value.searchString) {
+        state.value.searchString = input
+      }
+      if (input.length < 1) return []
+      return logicalNames.value.filter(name => 
+        name.toLowerCase().startsWith(input.toLowerCase())
+      )
+    }
+
+    const handleSubmit = (result) => {
+      if (result == null) return
+      state.value.searchString = result
+    }
+
+    watch(() => route.query.search, (value) => {
+      state.value.searchString = value
+      state.value.defaultSearch = value
+    }, { immediate: true })
+
+    watch(isUserLoggedIn, async (newValue) => {
+      if (newValue) {
+        const userData = (await UserService.show(user.value.id)).data
+        state.value.solved = userData.solvedLogicals
+      }
+    })
+
+    onMounted(async () => {
+      await loadLogicalData()
+    })
+
+    onActivated(async () => {
+      await loadLogicalData()
+    })
+
+    return {
+      ...state.value,
+      tableRef,
+      filteredLogicals,
+      logicalNames,
+      isSolved,
+      toggle,
+      getImg,
+      getExtract,
+      search,
+      handleSubmit
     }
   }
-};
+}
 </script>
 
 <style lang="scss">

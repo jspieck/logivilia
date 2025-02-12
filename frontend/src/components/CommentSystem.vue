@@ -2,7 +2,7 @@
   <div id="comment-area" class="comment-area">
     <div class="comments-container">
       <h2>Kommentare</h2>
-      <div v-if="loggedIn">
+      <div v-if="isUserLoggedIn">
         <textarea
           id="mainComment"
           class="comment-input"
@@ -17,113 +17,131 @@
           <div v-if="commentSend" class="dankeBox replyInactive">Danke für den Kommentar!</div>
         </div>
       </div>
-      <span v-if="!loggedIn">Um einen Kommentar zu hinterlassen, müssen Sie sich einloggen.</span>
+      <span v-if="!isUserLoggedIn">Um einen Kommentar zu hinterlassen, müssen Sie sich einloggen.</span>
       <Comments :comments="comments" :commentLevel="1" :userVotes="userVotes" :replyId="-1"/>
     </div>
   </div>
 </template>
 
 <script>
-import Comments from '@/components/Comments';
-import CommentService from '@/services/CommentService';
-import CommentUpvoteService from '@/services/CommentUpvoteService';
+import { ref, computed, watch, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useMainStore } from '@/store/store'
+import Comments from '@/components/Comments'
+import CommentService from '@/services/CommentService'
+import CommentUpvoteService from '@/services/CommentUpvoteService'
 
 export default {
-  name: "CommentSystem",
+  name: 'CommentSystem',
+  components: {
+    Comments
+  },
   props: {
     riddleType: {
       type: String,
-      requires: true
+      required: true
     },
     riddleId: {
       type: String,
-      requires: true
+      required: true
     }
   },
-  components: {
-    Comments: Comments
-  },
-  data() {
-    return {
-      comments: [],
-      userVotes: [],
-      userComment: "",
-      commentSend: false
-    };
-  },
-  watch: {
-    async computedRiddleId() {
-      this.updateComments();
-      if (this.loggedIn) {
-        await this.loadUserUpvotes();
-      }
-    },
-    async loggedIn() {
-      await this.loadUserUpvotes();
+  setup(props) {
+    const store = useMainStore()
+    const { isUserLoggedIn } = storeToRefs(store)
+    
+    const comments = ref([])
+    const userVotes = ref([])
+    const userComment = ref('')
+    const commentSend = ref(false)
+
+    const computedRiddleId = computed(() => props.riddleId)
+
+    const loadUserUpvotes = async () => {
+      userVotes.value = (await CommentUpvoteService.get()).data.map(m => m.CommentId)
     }
-  },
-  async mounted() {
-    this.updateComments();
-    if (this.loggedIn) {
-      await this.loadUserUpvotes();
+
+    const updateComments = async () => {
+      comments.value = (await CommentService.show(props.riddleType, props.riddleId)).data
     }
-  },
-  methods: {
-    async loadUserUpvotes() {
-      this.userVotes = (await CommentUpvoteService.get()).data.map(m => m.CommentId);
-    },
-    async sendComment() {
-      console.log("Send Comment");
-      await this.sendCommentToDb(this.userComment, -1);
-      this.commentSend = true;
-    },
-    async sendCommentToDb(userComment, replyId) {
-      const encodedComment = encodeURIComponent(userComment);
-      await CommentService.post(this.riddleType, this.riddleId, {
+
+    const sendCommentToDb = async (comment, replyId) => {
+      const encodedComment = encodeURIComponent(comment)
+      await CommentService.post(props.riddleType, props.riddleId, {
         text: encodedComment,
         replyId: replyId
-      });
-      this.updateComments();
-    },
-    commentUpvote(a) {
-      console.log(a);
-    },
-    async updateComments() {
-      this.comments = (await CommentService.show(this.riddleType, this.riddleId)).data;
+      })
+      await updateComments()
     }
-  },
-  computed: {
-    loggedIn() {
-      return this.$store.state.isUserLoggedIn;
-    },
-    computedRiddleId() {
-      return this.riddleId;
+
+    const sendComment = async () => {
+      console.log('Send Comment')
+      await sendCommentToDb(userComment.value, -1)
+      commentSend.value = true
+    }
+
+    const commentUpvote = (a) => {
+      console.log(a)
+    }
+
+    watch(computedRiddleId, async () => {
+      await updateComments()
+      if (isUserLoggedIn.value) {
+        await loadUserUpvotes()
+      }
+    })
+
+    watch(isUserLoggedIn, async (newValue) => {
+      if (newValue) {
+        await loadUserUpvotes()
+      }
+    })
+
+    onMounted(async () => {
+      await updateComments()
+      if (isUserLoggedIn.value) {
+        await loadUserUpvotes()
+      }
+    })
+
+    return {
+      comments,
+      userVotes,
+      userComment,
+      commentSend,
+      isUserLoggedIn,
+      sendComment,
+      commentUpvote
     }
   }
-};
+}
 </script>
 
-<style>
+<style scoped>
 .comment-action-label {
   vertical-align: text-bottom;
   margin-left: 3px;
   cursor: pointer;
 }
+
 .comment-input {
   width: 100%;
   height: 75px;
   padding: 10px;
 }
+
 .sendIcon {
   width: 20px;
   height: 20px;
   float: right;
   margin-left: 5px;
 }
+
 .divsend {
   position: relative;
   margin-top: 10px;
 }
+
 .dankeBox {
   position: absolute;
   left: 50px;
@@ -133,6 +151,7 @@ export default {
   border-radius: 4px;
   background-color: #1568a0;
 }
+
 .dankeBox:after {
   content: "";
   height: 0;

@@ -1,38 +1,26 @@
-import Vue from 'vue';
-import Vuex from 'vuex';
-import createPersistedState from 'vuex-persistedstate'
+import { defineStore } from 'pinia';
 
-Vue.use(Vuex);
-
-export default new Vuex.Store({
-  plugins: [createPersistedState({
-    storage: window.sessionStorage,
-  })],
-  strict: true,
-  state: {
+export const useMainStore = defineStore('main', {
+  state: () => ({
     token: null,
     user: null,
     isUserLoggedIn: false
-  },
-  mutations: {
-    setToken (state, token) {
-      state.token = token;
-      if (token) {
-        state.isUserLoggedIn = true;
-      } else {
-        state.isUserLoggedIn = false;
-      }
-    },
-    setUser (state, user) {
-      state.user = user;
-    }
-  },
+  }),
   actions: {
-    setToken ({commit}, token) {
-      commit('setToken', token);
+    setToken(token) {
+      this.token = token;
+      this.isUserLoggedIn = !!token;
     },
-    setUser ({commit}, user) {
-      commit('setUser', user);
+    setUser(user) {
+      this.user = user;
+    },
+    logout() {
+      this.token = null
+      this.user = null
+      this.isUserLoggedIn = false
     }
+  },
+  persist: {
+    storage: window.sessionStorage,
   }
 });

@@ -13,7 +13,7 @@
         </b-field>
         <p class="error" v-if="!nameFinished">Bitte einen Namen für das Rätsel festlegen.</p>
         <b-field label="Schwierigkeit">
-          <MSelect :options='difficulties' :sel="logical.difficulty" v-model='logical.difficulty'/>
+          <MySelect :options='difficulties' :sel="logical.difficulty" v-model='logical.difficulty'/>
         </b-field>
         <b-field label="Beschreibung">
           <textarea v-model="logical.description" placeholder="Leiten Sie zum Thema des Rätsels hin."/>
@@ -39,7 +39,7 @@
         <b-field label="Lösung" :addons="false">
           <p>Anzahl an Attributwerten:</p>
           <!--<input type="number" @input="setAttributeValNumber"/>-->
-          <MSelect :options='attrValNumberOptions' :sel="numAttributeValues" @input='setAttributeValNumber'/>
+          <MySelect :options='attrValNumberOptions' :sel="numAttributeValues" @input='setAttributeValNumber'/>
           <table class="attributeTable">
             <!-- All the attribute names -->
             <tr>
@@ -170,7 +170,7 @@
                       <td scope='row'>{{v.name}}</td>
                       <td v-for="[j, attr] in logical.attributes.slice(1).entries()"
                         v-bind:key='`tableCell${i}_${j}`' :data-title='attr.name'>
-                        <MSelect :options='transformValues(logical.attributes[j + 1].values)' v-model='attrInputs[i + "_" + j]'/>
+                        <MySelect :options='transformValues(logical.attributes[j + 1].values)' v-model='attrInputs[i + "_" + j]'/>
                       </td>
                     </tr>
                   </tbody>
@@ -191,140 +191,74 @@
 </template>
 
 <script>
+import { ref, computed, onMounted } from 'vue';
+import { watch, nextTick } from 'vue';
 import Toggle from './Toggle';
-import Select from './Select';
+import MySelect from './MySelect';
 import LogicalService from '@/services/LogicalService';
 import draggable from 'vuedraggable';
 
 export default {
   name: 'LogicalCreate',
-  props: ['id'],
   components: {
     Toggle,
-    MSelect: Select,
-    draggable,
+    MySelect,
+    draggable
   },
-  data() {
-    return {
-      revertHistory: [],
-      revertIndex: 0,
-      attrInputs: {},
-      solved: false,
-      gridState: [],
-      gridStateCopy: [],
-      cellWidth: 25,
-      paddingLeft: 50,
-      paddingTop: 50,
-      tableVisible: true,
-      selectedColor: 0,
-      colors: ["#fff", "#333", "#fff"],
-      solveLabel: "",
-      difficulties: [1, 2, 3, 4, 5],
-      attrValNumberOptions: [2, 3, 4, 5, 6, 7, 8, 9, 10],
-      numAttributeValues: 2,
-      logical: {
-        name: "",
-        difficulty: 1,
-        description: "",
-        question: "",
-        clues: [],
-        attributes: [
-          {"name": "", "values": [{name: ""}, {name: ""}]},
-          {"name": "", "values": [{name: ""}, {name: ""}]}
-        ],
-        image: "",
-        date: "",
-        author: ""
-      },
-      preview: true,
-    };
-  },
-  watch: {
-    id() {
-      this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
-      this.$nextTick(() => {
-        let maxLabelWidth = 0;
-        for(let label of this.$refs.horizontalLabels) {
-          maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
-        }
-        let maxLabelHeight = 0;
-        for(let label of this.$refs.verticalLabels) {
-          maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
-        }
-        this.paddingLeft = maxLabelWidth + 10;
-        this.paddingTop = maxLabelHeight + 10;
-      });
-    },
-    tableVisible() {
-      this.$nextTick(() => {
-        this.padSolutionGrid();
-      });
-    },
-    computedAttributes: {
-      deep: true,
-      handler() {
-        // console.log("Handler called");
-        this.$nextTick(() => {
-          this.padSolutionGrid();
-        });
-      }
-    },
-  },
-  mounted() {
-    this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
-    let maxLabelWidth = 0;
-    for(let label of this.$refs.horizontalLabels) {
-      maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
-    }
-    let maxLabelHeight = 0;
-    for(let label of this.$refs.verticalLabels) {
-      maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
-    }
-    this.paddingLeft = maxLabelWidth + 10;
-    this.paddingTop = maxLabelHeight + 10;
+  props: ['id'],
+  setup(props) {
+    const revertHistory = ref([])
+    const revertIndex = ref(0)
+    const attrInputs = ref({})
+    const solved = ref(false)
+    const gridState = ref([])
+    const gridStateCopy = ref([])
+    const cellWidth = ref(25)
+    const paddingLeft = ref(50)
+    const paddingTop = ref(50)
+    const tableVisible = ref(true)
+    const selectedColor = ref(0)
+    const colors = ref(["#fff", "#333", "#fff"])
+    const solveLabel = ref("")
+    const difficulties = ref([1, 2, 3, 4, 5])
+    const attrValNumberOptions = ref([2, 3, 4, 5, 6, 7, 8, 9, 10])
+    const numAttributeValues = ref(2)
+    const preview = ref(true)
 
-    document.addEventListener("mouseup", this.mainGridMouseUp, false);
-    window.ondragstart = function() { return false; };
-  },
-  computed: {
-    computedAttributes() {
-      // just to trigger a watch for svg text measuring
-      return this.logical.attributes;
-    },
-    solution() {
-      const sol = [];
-      for (let i = 0; i < this.numAttributeValues; i += 1) {
-        const solRow = [];
-        for (const attr of this.logical.attributes) {
-          solRow.push(attr.values[i].name);
-        }
-        sol.push(solRow);
-      }
-      return sol;
-    },
-    nameFinished() {
-      return this.logical.name != "";
-    },
-    descriptionFinished() {
-      return this.logical.description.length > 20;
-    },
-    questionFinished() {
-      return this.logical.question.length > 20;
-    },
-    cluesFinished() {
-      if (this.logical.clues.length == 0) {
+    const startMouseDown = ref([0, 0]);
+    const lastMouseOver = ref([0, 0]);
+    const isMouseDown = ref(false);
+    
+    const logical = ref({
+      name: "",
+      difficulty: 1,
+      description: "",
+      question: "",
+      clues: [],
+      attributes: [
+        {"name": "", "values": [{name: ""}, {name: ""}]},
+        {"name": "", "values": [{name: ""}, {name: ""}]}
+      ],
+      image: "",
+      date: "",
+      author: ""
+    });
+
+    const cluesFinished = computed(() => {
+      if (logical.value.clues.length == 0) {
         return false;
       }
-      for (const clue of this.logical.clues) {
+      for (const clue of logical.value.clues) {
         if (clue.text.length < 10) {
           return false;
         }
       }
       return true;
-    },
-    solutionFinished() {
+    });
+
+    const solutionFinished = computed(() => {
       const names = new Set();
-      for (const attr of this.logical.attributes) {
+      for (const attr of logical.value.attributes) {
         if (attr.name == "") {
           return false;
         }
@@ -341,43 +275,135 @@ export default {
         }
       }
       // Check if names are unique
-      if (names.size != this.logical.attributes.length) {
+      if (names.size != logical.value.attributes.length) {
         return false;
       }
       return true;
-    },
-    riddleFinished() {
+    });
+
+    const riddleFinished = computed(() => {
       let finished = true;
-      finished &= this.nameFinished;
-      finished &= this.descriptionFinished;
-      finished &= this.questionFinished;
-      finished &= this.cluesFinished;
-      finished &= this.solutionFinished;
+      finished &= nameFinished.value;
+      finished &= descriptionFinished.value;
+      finished &= questionFinished.value;
+      finished &= cluesFinished.value;
+      finished &= solutionFinished.value;
       return finished;
-    },
-    numAttributes() {
-      return this.logical.attributes.length;
-    },
-    numAttrValues() {
-      if (this.logical.attributes.length == 0) {
+    });
+    const numAttributes = computed(() => logical.value.attributes.length);
+    const numAttrValues = computed(() => {
+      if (logical.value.attributes.length == 0) {
         return 0;
       }
-      return this.logical.attributes[0].values.length;
-    },
-    blockWidth() {
-      return this.numAttrValues * this.cellWidth;
-    },
-    svgWidth() {
+      return logical.value.attributes[0].values.length;
+    });
+    const blockWidth = computed(() =>{
+      return numAttrValues.value * cellWidth.value;
+    });
+    const svgWidth = computed(() => {
       const margin = 20;
-      return this.paddingLeft + margin + (this.numAttributes - 1) * this.blockWidth;
-    },
-    svgHeight() {
+      return paddingLeft.value + margin + (numAttributes.value - 1) * blockWidth.value;
+    });
+    const svgHeight = computed(() => {
       const margin = 20;
-      return this.paddingTop + margin + (this.numAttributes - 1) * this.blockWidth;
-    },
-  },
-  methods: {
-    padSolutionGrid() {
+      return paddingTop.value + margin + (numAttributes.value - 1) * blockWidth.value;
+    });
+
+    onMounted(() => {
+      gridState.value = new Array((numAttributes.value * (numAttributes.value + 1)) / 2 * numAttrValues.value * numAttrValues.value).fill(2);
+      let maxLabelWidth = 0;
+      for(let label of this.$refs.horizontalLabels) {
+        maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
+      }
+      let maxLabelHeight = 0;
+      for(let label of this.$refs.verticalLabels) {
+        maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
+      }
+      paddingLeft.value = maxLabelWidth + 10;
+      paddingTop.value = maxLabelHeight + 10;
+
+      document.addEventListener("mouseup", mainGridMouseUp, false);
+      window.ondragstart = function() { return false; };
+    });
+
+    const removeAttribute = (i) => {
+      if (logical.value.attributes.length > 2) {
+        this.$buefy.modal.open({
+          title: 'Attribut löschen',
+          message: 'Willst du das Attribut wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+          cancelText: 'Nicht löschen',
+          confirmText: 'Löschen',
+          type: 'is-danger',
+          hasIcon: true,
+          onConfirm: () => {
+            this.$buefy.toast.open({
+              message: 'Attribut gelöscht!',
+              duration: 2000
+            })
+            logical.value.attributes.splice(i, 1)
+          }
+        })
+      } else {
+        this.$buefy.toast.open({
+          message: 'Es muss mindestens drei Attribute geben, damit eins gelöscht werden kann!',
+          duration: 2000,
+          type: 'is-warning'
+        })
+      }
+    }
+
+    const addAttribute = () => {
+      const attrValues = []
+      for (let i = 0; i < numAttributeValues.value; i += 1) {
+        attrValues.push({name: ""})
+      }
+      logical.value.attributes.push({
+        "name": "",
+        "values": attrValues
+      })
+    }
+
+    const createLogical = async () => {
+      try {
+        if (riddleFinished.value) {
+          const flattenedAttributes = []
+          for (const attr of logical.value.attributes) {
+            const flatAttr = {name: attr.name}
+            flatAttr.values = attr.values.map(v => v.name)
+            flattenedAttributes.push(flatAttr)
+          }
+          
+          const logicalData = {
+            name: logical.value.name,
+            solution: solution.value,
+            difficulty: logical.value.difficulty,
+            description: logical.value.description,
+            question: logical.value.question,
+            clues: logical.value.clues,
+            attributes: flattenedAttributes,
+            image: "",
+            date: new Date().toISOString().slice(0, 10),
+            author: logical.value.author
+          }
+          
+          await LogicalService.post(logicalData)
+          this.$buefy.toast.open({
+            message: 'Logikrätsel erfolgreich erstellt!',
+            duration: 2000,
+            type: 'is-success'
+          })
+        }
+      } catch(err) {
+        console.error(err)
+        this.$buefy.toast.open({
+          message: 'Fehler beim Erstellen des Logikrätsels',
+          duration: 2000,
+          type: 'is-danger'
+        })
+      }
+    }
+
+    const padSolutionGrid = () => {
       if (this.$refs.horizontalLabels != null && this.$refs.verticalLabels != null) {
         let maxLabelWidth = 0;
         for(let label of this.$refs.horizontalLabels) {
@@ -387,15 +413,17 @@ export default {
         for(let label of this.$refs.verticalLabels) {
           maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
         }
-        this.paddingLeft = maxLabelWidth + 10;
-        this.paddingTop = maxLabelHeight + 10;
+        paddingLeft.value = maxLabelWidth + 10;
+        paddingTop.value = maxLabelHeight + 10;
       }
-    },
-    transformValues(values) {
+    };
+
+    const transformValues =(values) => {
       return values.map((x) => x.name); 
-    },
-    setAttributeValNumber(valNumber) {
-      for (const at of this.logical.attributes) {
+    };
+
+    const setAttributeValNumber = (valNumber) => {
+      for (const at of logical.value.attributes) {
         const diff = valNumber - at["values"].length;
         if (diff > 0) {
           for (let i = 0; i < diff; i += 1) {
@@ -407,159 +435,114 @@ export default {
           }
         }
       }
-      this.numAttributeValues = parseInt(valNumber);
-    },
-    updateDifficulty(diff) {
-      this.logical.difficulty = diff;
-    },
-    removeClue(idx) {
-      this.logical.clues.splice(idx, 1);
-    },
-    addClue() {
-      this.logical.clues.push({
-        "id": this.logical.clues.length,
+      numAttributeValues.value = parseInt(valNumber);
+    };
+
+    /* const updateDifficulty = (diff) => {
+      logical.value.difficulty = diff;
+    }; */
+
+    const removeClue = (idx) => {
+      logical.value.clues.splice(idx, 1);
+    };
+
+    const addClue = () => {
+      logical.value.clues.push({
+        "id": logical.value.clues.length,
         "text": ""
       });
-    },
-    addAttribute() {
-      const attrValues = [];
-      for (let i = 0; i < this.numAttributeValues; i += 1) {
-        attrValues.push({name: ""});
-      }
-      this.logical.attributes.push({
-        "name": "",
-        "values": attrValues
-      });
-    },
-    removeAttribute(i) {
-      if (this.logical.attributes.length > 2) {
-        this.$buefy.dialog.confirm({
-          title: 'Attribut löschen',
-          message: 'Willst du das Attribut wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
-          cancelText: 'Nicht löschen',
-          confirmText: 'Löschen',
-          type: 'is-danger',
-          hasIcon: true,
-          onConfirm: () => {
-            this.$buefy.toast.open('Attribut gelöscht!');
-            this.logical.attributes.splice(i, 1);
-          }
-        });
-      } else {
-        this.$buefy.toast.open('Es muss mindestens drei Attribute geben, damit eins gelöscht werden kann!');
-      }
-    },
-    async createLogical() {
-      try {
-        if (this.riddleFinished) {
-          const flattenedAttributes = [];
-          for (const attr of this.logical.attributes) {
-            const flatAttr = {name: attr.name};
-            flatAttr.values = attr.values.map(v => v.name);
-            flattenedAttributes.push(flatAttr);
-          }
-          const logical = {
-            name: this.logical.name,
-            solution: this.solution,
-            difficulty: this.logical.difficulty,
-            description: this.logical.description,
-            question: this.logical.question,
-            clues: this.logical.clues,
-            attributes: flattenedAttributes,
-            image: "",
-            date: new Date().toISOString().slice(0, 10),
-            author: this.logical.author,
-          };
-          await LogicalService.post(logical);
-        }
-      } catch(err) {
-        console.log(err);
-      }
-    },
-    revertState() {
-      if (this.revertIndex > 0) {
-        const state = this.revertHistory[this.revertIndex - 1];
+    };
+
+    const revertState = () => {
+      if (revertIndex.value > 0) {
+        const state = revertHistory[revertIndex.value - 1];
         for (let b = state['x0']; b <= state['x1']; b++) {
           for (let a = state['y0']; a <= state['y1']; a++) {
-            const [i, j, k] = this.toIJK(b, a);
-            const cellIndex = this.cellIndex(i, j, k);
-            this.$set(this.gridState, cellIndex, state['colorsBefore'][b - state['x0']][a - state['y0']]);
+            const [i, j, k] = toIJK(b, a);
+            const cellIndex = cellIndex(i, j, k);
+            this.$set(gridState, cellIndex, state['colorsBefore'][b - state['x0']][a - state['y0']]);
           }
         }
-        this.revertIndex -= 1;
+        revertIndex.value -= 1;
       }
-    },
-    restoreState() {
-      if (this.revertIndex < this.revertHistory.length) {
-        const state = this.revertHistory[this.revertIndex];
+    };
+
+    const restoreState = () => {
+      if (revertIndex.value < revertHistory.value.length) {
+        const state = revertHistory[revertIndex];
         for (let b = state['x0']; b <= state['x1']; b++) {
           for (let a = state['y0']; a <= state['y1']; a++) {
-            const [i, j, k] = this.toIJK(b, a);
-            const cellIndex = this.cellIndex(i, j, k);
-            this.$set(this.gridState, cellIndex, state['colorAfter']);
+            const [i, j, k] = toIJK(b, a);
+            const cellIndex = cellIndex(i, j, k);
+            this.$set(gridState, cellIndex, state['colorAfter']);
           }
         }
-        this.revertIndex += 1;
+        revertIndex.value += 1;
       }
-    },
-    checkSolution() {
-      this.solved = true;
-      for(let i = 0; i < this.solution.length; i++) {
-        for(let j = 1; j < this.solution[i].length; j++) {
-          if (this.attrInputs[`${i}_${j - 1}`] == null) {
-            this.solved = false;
-            this.solveLabel = "Es sind Attribute noch nicht zugewiesen!";
+    };
+
+    const checkSolution = () => {
+      solved.value = true;
+      for(let i = 0; i < solution.value.length; i++) {
+        for(let j = 1; j < solution[i].length; j++) {
+          if (attrInputs[`${i}_${j - 1}`] == null) {
+            solved.value = false;
+            solveLabel.value = "Es sind Attribute noch nicht zugewiesen!";
             return;
           }
-          if (this.solution[i][j] != this.attrInputs[`${i}_${j - 1}`]) {
-            this.solved = false;
+          if (solution[i][j] != attrInputs[`${i}_${j - 1}`]) {
+            solved.value = false;
           }
         }
       }
-      if (this.solved) {
-        this.solveLabel = "Gratulation, das Rätsel ist gelöst!";
+      if (solved.value) {
+        solveLabel.value = "Gratulation, das Rätsel ist gelöst!";
       } else {
-        this.solveLabel = "Es existieren noch Fehler!";
+        solveLabel.value = "Es existieren noch Fehler!";
       }
-    },
-    toXY(i, j, k) {
+    };
+
+    const toXY = (i, j, k) => {
       // i = row, j = column (block), k = cell in nxn block
-      const x = (j - 1) * this.numAttrValues + Math.floor((k - 1) / this.numAttrValues);
-      const y = (i - 1) * this.numAttrValues + (k - 1) % this.numAttrValues;
+      const x = (j - 1) * numAttrValues.value + Math.floor((k - 1) / numAttrValues.value);
+      const y = (i - 1) * numAttrValues.value + (k - 1) % numAttrValues.value;
       return [x, y];
-    },
-    toIJK(x, y) {
-      const i = Math.floor(y / this.numAttrValues);
-      const j = Math.floor(x / this.numAttrValues);
-      if (j >= this.numAttributes - 1 - i) {
+    };
+
+    const toIJK = (x, y) => {
+      const i = Math.floor(y / numAttrValues.value);
+      const j = Math.floor(x / numAttrValues.value);
+      if (j >= numAttributes.value - 1 - i) {
         // block not in grid
         return [-1, -1, -1];
       }
-      const k = (x % this.numAttrValues) * this.numAttrValues + (y % this.numAttrValues);
+      const k = (x % numAttrValues.value) * numAttrValues.value + (y % numAttrValues.value);
       return [i + 1, j + 1, k + 1];
-    },
-    mouseDown(i, j, k) {
-      const [x, y] = this.toXY(i, j, k);
+    };
+
+    const mouseDown = (i, j, k) => {
+      const [x, y] = toXY(i, j, k);
       // create a copy of the grid state before the mouse down
-      this.gridStateCopy = [...this.gridState];
-      this.startMouseDown = [x, y];
-      this.lastMouseOver = this.startMouseDown;
-      this.isMouseDown = true;
-      this.$set(this.gridState, this.cellIndex(i, j, k), this.selectedColor);
-    },
-    mouseEnter(i, j, k) {
-      if (this.isMouseDown) {
-        const [i1, j1] = this.toXY(i, j, k);
-        const [i2, j2] = this.startMouseDown;
-        const [i3, j3] = this.lastMouseOver;
+      gridStateCopy.value = [...gridState];
+      startMouseDown.value = [x, y];
+      lastMouseOver.value = startMouseDown.value;
+      isMouseDown.value = true;
+      this.$set(gridState, cellIndex(i, j, k), selectedColor);
+    };
+
+    const mouseEnter = (i, j, k) => {
+      if (isMouseDown.value) {
+        const [i1, j1] = toXY(i, j, k);
+        const [i2, j2] = startMouseDown;
+        const [i3, j3] = lastMouseOver;
         // first reset not marked cells
         if (i1 !== i3) {
           for (let x = Math.min(i1, i3); x <= Math.max(i1, i3); x++) {
             for (let y = Math.min(j2, j3); y <= Math.max(j2, j3); y += 1) {
-              const [i, j, k] = this.toIJK(x, y);
+              const [i, j, k] = toIJK(x, y);
               if (i != -1) {
-                const cellIndex = this.cellIndex(i, j, k);
-                this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+                const cellIndex = cellIndex(i, j, k);
+                this.$set(gridState, cellIndex, gridStateCopy[cellIndex]);
               }
             }
           }
@@ -567,11 +550,11 @@ export default {
         if (j1 !== j3) {
           for (let y = Math.min(j1, j3); y <= Math.max(j1, j3); y++) {
             for (let x = Math.min(i2, i3); x <= Math.max(i2, i3); x += 1) {
-              const [i, j, k] = this.toIJK(x, y);
+              const [i, j, k] = toIJK(x, y);
               if (i != -1) {
-                const cellIndex = this.cellIndex(i, j, k);
-                // this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
-                this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+                const cellIndex = cellIndex(i, j, k);
+                // gridCells[ind].style.background = colors[gridState[ind]];
+                this.$set(gridState, cellIndex, gridStateCopy[cellIndex]);
               }
             }
           }
@@ -579,31 +562,32 @@ export default {
         // then mark nearly marked cells
         for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a += 1) {
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b += 1) {
-            // this.gridCells[b * this.width + a].style.background = this.colors[this.selectedColor];
-            const [i, j, k] = this.toIJK(a, b);
+            // gridCells[b * width + a].style.background = colors[selectedColor];
+            const [i, j, k] = toIJK(a, b);
             if (i != -1) {
-              const cellIndex = this.cellIndex(i, j, k);
-              this.$set(this.gridState, cellIndex, this.selectedColor);
+              const cellIndex = cellIndex(i, j, k);
+              this.$set(gridState, cellIndex, selectedColor);
             }
           }
         }
-        this.lastMouseOver = [i1, j1];
+        lastMouseOver.value = [i1, j1];
       }
-    },
-    mainGridMouseUp() {
-      if (this.isMouseDown) {
-        this.isMouseDown = false;
-        const [i1, j1] = this.startMouseDown;
-        const [i2, j2] = this.lastMouseOver;
+    };
+
+    const mainGridMouseUp = () => {
+      if (isMouseDown.value) {
+        isMouseDown.value = false;
+        const [i1, j1] = startMouseDown;
+        const [i2, j2] = lastMouseOver;
         const stateBefore = [];
         for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
           const stateBeforeRow = [];
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
-            const [i, j, k] = this.toIJK(a, b);
+            const [i, j, k] = toIJK(a, b);
             if (i != -1) {
-              const cellIndex = this.cellIndex(i, j, k);
-              stateBeforeRow.push(this.gridStateCopy[cellIndex]);
-              this.gridState[cellIndex] = this.selectedColor;
+              const cellIndex = cellIndex(i, j, k);
+              stateBeforeRow.push(gridStateCopy[cellIndex]);
+              gridState[cellIndex] = selectedColor;
             }
           }
           stateBefore.push(stateBeforeRow);
@@ -613,60 +597,148 @@ export default {
           'x1': Math.max(i1, i2),
           'y0': Math.min(j1, j2),
           'y1': Math.max(j1, j2),
-          'colorAfter': this.selectedColor,
+          'colorAfter': selectedColor,
           'colorsBefore': stateBefore
         }
         
-        if (this.revertIndex < this.revertHistory.length) {
-          this.revertHistory[this.revertIndex] = revertObj;
-          this.revertHistory.length = this.revertIndex + 1;
+        if (revertIndex.value < revertHistory.value .length) {
+          revertHistory[revertIndex] = revertObj;
+          revertHistory.value .length = revertIndex.value  + 1;
         } else {
-          this.revertHistory.push(revertObj);
+          revertHistory.value .push(revertObj);
         }
-        this.revertIndex += 1;
+        revertIndex.value  += 1;
       }
-    },
-    getImg() {
-      // eslint-disable-next-line global-require, import/no-dynamic-require
-      // return require(`@/assets/${this.imgName}`);
-      return this.imgPath;
-    },
-    drawOutline() {
+    };
+
+    const drawOutline = () => {
       // draw horizontal lines
-      let pathStr = `M0 0H${this.blockWidth * (this.numAttributes - 1)}`;
-      for(let i = 0; i < this.numAttributes - 1; i++){
-          pathStr += `M0 ${this.blockWidth * (i + 1)}H${this.blockWidth * (this.numAttributes - 1 - i)}`;
+      let pathStr = `M0 0H${blockWidth.value * (numAttributes.value - 1)}`;
+      for(let i = 0; i < numAttributes.value - 1; i++){
+          pathStr += `M0 ${blockWidth.value * (i + 1)}H${blockWidth.value * (numAttributes.value - 1 - i)}`;
       }
       // draw vertical lines
-      pathStr += `M0 0V${this.blockWidth * (this.numAttributes - 1)}`;
-      for(let i = 0; i < this.numAttributes - 1; i++){
-          pathStr += `M${this.blockWidth * (i + 1)} 0V${this.blockWidth * (this.numAttributes - 1 - i)}`;
+      pathStr += `M0 0V${blockWidth.value * (numAttributes.value - 1)}`;
+      for(let i = 0; i < numAttributes.value - 1; i++){
+          pathStr += `M${blockWidth.value * (i + 1)} 0V${blockWidth.value * (numAttributes.value - 1 - i)}`;
       }
       return pathStr;
-    },
-    setCell(i, j, k) {
-      const index = this.cellIndex(i, j, k);
-      this.$set(this.gridState, index, this.selectedColor);
+    };
+
+    const setCell = (i, j, k) => {
+      const index = cellIndex(i, j, k);
+      this.$set(gridState, index, selectedColor);
       // if a cross is set, consider it for the solution
-      const row = (k - 1) % this.numAttrValues;
-      if (this.selectedColor == 0) {
+      const row = (k - 1) % numAttrValues.value;
+      if (selectedColor.value == 0) {
         if (i == 1) {
-          this.attrInputs[`${row}_${j - 1}`] = this.logical.attributes[j].values[Math.floor((k - 1) / this.numAttrValues)];
+          attrInputs[`${row}_${j - 1}`] = logical.value.attributes[j].values[Math.floor((k - 1) / numAttrValues.value)];
         }
       }
-    },
-    cellIndex(i, j, k) {
+    };
+
+    const cellIndex = (i, j, k) => {
       // i: y pos of block group of size (numAttrValues * numAttrValues)
       // j: x pos of block group
       // k: index in block group
       let index = 0;
       for(let c = 0; c < i - 1; c++) {
-        index += this.numAttributes - 1 - c;
+        index += numAttributes.value - 1 - c;
       }
-      return (index + j - 1) * this.numAttrValues * this.numAttrValues + (k - 1);
-    },
-    selectColor(i) {
-      this.selectedColor = i;
+      return (index + j - 1) * numAttrValues.value * numAttrValues.value + (k - 1);
+    };
+
+    const selectColor = (i) => {
+      selectedColor.value = i;
+    };
+
+    watch(() => props.id, async () => {
+      gridState.value = new Array(
+        (numAttributes.value * (numAttributes.value + 1)) / 2 * 
+        numAttrValues.value * 
+        numAttrValues.value
+      ).fill(2)
+      
+      await nextTick()
+      if (this.$refs.horizontalLabelsRef && this.$refs.verticalLabelsRef) {
+        let maxLabelWidth = 0
+        for (let label of this.$refs.horizontalLabelsRef) {
+          maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width)
+        }
+        
+        let maxLabelHeight = 0
+        for (let label of this.$refs.verticalLabelsRef) {
+          maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height)
+        }
+        
+        paddingLeft.value = maxLabelWidth + 10
+        paddingTop.value = maxLabelHeight + 10
+      }
+    })
+
+    watch(tableVisible, async () => {
+      await nextTick()
+      padSolutionGrid()
+    })
+
+    watch(computedAttributes, async () => {
+      await nextTick()
+      padSolutionGrid()
+    }, { deep: true })
+
+    const computedAttributes = computed(() => logical.value.attributes);
+    const nameFinished = computed(() => logical.value.name != "");
+    const descriptionFinished = computed(() => logical.value.description.length > 20);
+    const questionFinished = computed(() => logical.value.question.length > 20);
+    const solution = computed(() => {
+      const sol = [];
+      for (let i = 0; i < numAttributeValues.value; i += 1) {
+        const solRow = [];
+        for (const attr of logical.value.attributes) {
+          solRow.push(attr.values[i].name);
+        }
+        sol.push(solRow);
+      }
+      return sol;
+    });
+
+    return {
+      revertHistory,
+      revertIndex,
+      attrInputs,
+      solved,
+      gridState,
+      gridStateCopy,
+      cellWidth,
+      paddingLeft,
+      paddingTop,
+      tableVisible,
+      selectedColor,
+      colors,
+      solveLabel,
+      difficulties,
+      attrValNumberOptions,
+      numAttributeValues,
+      preview,
+      logical,
+      removeAttribute,
+      addAttribute,
+      createLogical,
+      riddleFinished,
+      selectColor,
+      setCell,
+      drawOutline,
+      checkSolution,
+      transformValues,
+      setAttributeValNumber,
+      removeClue,
+      addClue,
+      revertState,
+      mouseDown,
+      svgWidth,
+      svgHeight,
+      restoreState,
+      mouseEnter
     }
   },
 };

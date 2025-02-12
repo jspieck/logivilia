@@ -5,47 +5,63 @@
     <p>Geben Sie die E-Mail-Adresse Ihres Accounts ein, damit wir Ihnen eine E-Mail
       zusenden können, welche einen Link zum Zurücksetzen Ihres Passworts enthält.</p>
     <b-field label="E-Mail">
-      <input class="inputForm" v-model="forgottenEmail"
-        type="email"/>
+      <b-input
+        class="inputForm"
+        v-model="forgottenEmail"
+        type="email"
+      />
     </b-field>
 
-    <button @click="forgot">Bestätigen</button>
+    <b-button @click="forgot">Bestätigen</b-button>
     <div class="error" v-html="error"/>
   </div>
 </template>
 
 <script>
-import AuthenticationService from '@/services/AuthenticationService';
+import { ref } from 'vue'
+import AuthenticationService from '@/services/AuthenticationService'
 
 export default {
   name: 'Forgot',
-  data() {
-    return {
-      forgottenEmail: '',
-      error: null
-    };
-  },
-  methods: {
-    async forgot() {
+  setup() {
+    const forgottenEmail = ref('')
+    const error = ref(null)
+
+    const forgot = async () => {
       try {
-        const response = await AuthenticationService.forgot({email: this.forgottenEmail});
-        this.error = null;
+        const response = await AuthenticationService.forgot({ email: forgottenEmail.value })
+        error.value = null
+        
         this.$buefy.toast.open({
           duration: 3000,
-          message: `Eine Email wurde erfolgreich an ${this.forgottenEmail} versendet`,
-          position: 'is-top-right',
-          queue: false,
-          closable: false,
-          type: 'is-info'
-        });
-        console.log(response.data);
+          message: `Eine Email wurde erfolgreich an ${forgottenEmail.value} versendet`,
+          position: 'top-right',
+          type: 'info',
+          closable: false
+        })
+        
+        console.log(response.data)
       } catch (err) {
-        this.error = err.response.data.error;
+        error.value = err.response.data.error
       }
     }
-  },
-  /* mounted() {
-    this.getUserData();
-  }, */
-};
+
+    return {
+      forgottenEmail,
+      error,
+      forgot
+    }
+  }
+}
 </script>
+
+<style scoped>
+.inputForm {
+  width: 100%;
+}
+
+.error {
+  color: red;
+  margin-top: 1rem;
+}
+</style>

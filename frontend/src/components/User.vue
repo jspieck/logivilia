@@ -83,9 +83,9 @@
       <p class="category-text">Wohnort</p>
       <input v-model="editedCity"/>
       <p class="category-text">Geschlecht</p>
-      <Select :options="genderOptions" v-model="selectedGender" :sel="selectedGender"/>
+      <MySelect :options="genderOptions" v-model="selectedGender" :sel="selectedGender"/>
       <p class="category-text">Geburtsjahr</p>
-      <Select :options="years" v-model="selectedBirthyear" :sel="selectedBirthyear"/>
+      <MySelect :options="years" v-model="selectedBirthyear" :sel="selectedBirthyear"/>
       <p class="category-text">Über mich</p>
       <textarea class="bio-area" v-model="aboutMe"></textarea>
       <button @click="updateProfile">Profil aktualisieren</button>
@@ -94,80 +94,98 @@
 </template>
 
 <script>
+import { ref, computed, watch, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { useMainStore } from '@/store/store';
 import UserService from '@/services/UserService';
-import Select from '@/components/Select'
+import MySelect from '@/components/MySelect';
 
 export default {
-  name: 'User',
+  name: 'UserProfile',
   components: {
-    Select: Select
+    MySelect
   },
-  data() {
-    return {
-      user: {
-        username: "",
-        solvedLogicals: [],
-        solvedNonograms: [],
-        solvedLinelogs: [],
-        createdLogicals: [],
-        createdNonograms: [],
-        createdLinelogs: []
-      },
-      genderOptions: ["Männlich", "Weiblich", "Divers", ""],
-      editedCity: "",
-      aboutMe: "",
-      selectedBirthyear: 1975,
-      selectedGender: ""
-    };
-  },
-  async mounted() {
-    const id = this.$store.state.route.params.id;
-    this.user = (await UserService.show(id)).data;
-    this.updateUserEdit();
-  },
-  computed: {
-    years () {
-      const year = new Date().getFullYear()
-      return Array.from({length: year - 1900}, (value, index) => 1901 + index)
-    },
-    loggedIn() {
-      return this.$store.state.isUserLoggedIn;
-    },
-    age() {
+  setup() {
+    const store = useMainStore();
+    const route = useRoute();
+    const user = ref({
+      username: "",
+      solvedLogicals: [],
+      solvedNonograms: [],
+      solvedLinelogs: [],
+      createdLogicals: [],
+      createdNonograms: [],
+      createdLinelogs: []
+    });
+    const genderOptions = ["Männlich", "Weiblich", "Divers", ""];
+    const editedCity = ref("");
+    const aboutMe = ref("");
+    const selectedBirthyear = ref(1975);
+    const selectedGender = ref("");
+
+    const years = computed(() => {
       const year = new Date().getFullYear();
-      return year - this.user.birthyear;
-    }
-  },
-  watch: {
-    async id() {
-      const id = this.$store.state.route.params.id;
-      this.user = (await UserService.show(id)).data;
-      this.updateUserEdit();
-    },
-  },
-  methods: {
-    async updateProfile() {
-      await UserService.update(this.$store.state.user.id, {
-        city: this.editedCity,
-        birthyear: this.selectedBirthyear,
-        bio: this.aboutMe,
-        gender: this.selectedGender
-      });
-    },
-    updateUserEdit() {
-      if (this.loggedIn && (this.$store.state.user.id == this.$store.state.route.params.id)) {
-        this.editedCity = this.user.city;
-        this.aboutMe = this.user.bio;
-        this.selectedBirthyear = this.user.birthyear;
-        this.selectedGender = this.user.gender;
+      return Array.from({ length: year - 1900 }, (value, index) => 1901 + index);
+    });
+
+    const loggedIn = computed(() => store.isUserLoggedIn);
+
+    const age = computed(() => {
+      const year = new Date().getFullYear();
+      return year - user.value.birthyear;
+    });
+
+    const updateUserEdit = () => {
+      if (loggedIn.value && (store.user.id == route.params.id)) {
+        editedCity.value = user.value.city;
+        aboutMe.value = user.value.bio;
+        selectedBirthyear.value = user.value.birthyear;
+        selectedGender.value = user.value.gender;
       }
-    },
-    formatDate(inputFormat) {
+    };
+
+    const updateProfile = async () => {
+      await UserService.update(store.user.id, {
+        city: editedCity.value,
+        birthyear: selectedBirthyear.value,
+        bio: aboutMe.value,
+        gender: selectedGender.value
+      });
+    };
+
+    const formatDate = (inputFormat) => {
       function pad(s) { return (s < 10) ? '0' + s : s; }
       const d = new Date(inputFormat);
-      return [pad(d.getDate()), pad(d.getMonth()+1), d.getFullYear()].join('/');
-    }
-  },
+      return [pad(d.getDate()), pad(d.getMonth() + 1), d.getFullYear()].join('/');
+    };
+
+    onMounted(async () => {
+      const id = route.params.id;
+      user.value = (await UserService.show(id)).data;
+      updateUserEdit();
+    });
+
+    watch(() => route.params.id, async () => {
+      const id = route.params.id;
+      user.value = (await UserService.show(id)).data;
+      updateUserEdit();
+    });
+
+    return {
+      user,
+      genderOptions,
+      editedCity,
+      aboutMe,
+      selectedBirthyear,
+      selectedGender,
+      years,
+      loggedIn,
+      age,
+      updateProfile,
+      updateUserEdit,
+      formatDate
+    };
+  }
 };
 </script>
 

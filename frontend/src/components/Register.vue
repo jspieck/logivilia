@@ -47,7 +47,7 @@
         </div>
       </div>
       <div class="column columnRight">
-        <img class="registerImg" src="../assets/registerNoBack.png"/>
+        <img class="registerImg" src="../assets/registerNoBack.png" alt="Register"/>
         <h2><strong>Registrieren Sie sich kostenlos!</strong></h2>
         <p>Genießen Sie eine Vielzahl an Rätseln.</p>
       </div>
@@ -56,48 +56,65 @@
 </template>
 
 <script>
-import AuthenticationService from '@/services/AuthenticationService';
+import { ref } from 'vue'
+import { useMainStore } from '@/store/store'
+import AuthenticationService from '@/services/AuthenticationService'
 
 export default {
-  name: 'Register',
-  data() {
-    return {
-      email: '',
-      password: '',
-      username: '',
-      passwordCheck: '',
-      gender: 'Nicht angegeben',
-      city: 'Nicht angegeben',
-      error: null,
-      registerTry: false,
-      registerSuccess: false
-    };
-  },
-  methods: {
-    async register() {
-      this.registerTry = true;
+  name: 'RegisterComponent',
+  setup() {
+    const store = useMainStore()
+
+    const email = ref('')
+    const password = ref('')
+    const username = ref('')
+    const passwordCheck = ref('')
+    const gender = ref('Nicht angegeben')
+    const city = ref('Nicht angegeben')
+    const error = ref(null)
+    const registerTry = ref(false)
+    const registerSuccess = ref(false)
+
+    const register = async () => {
+      registerTry.value = true
       try {
-        if (this.email.length > 0 && this.username.length > 0 && this.password == this.passwordCheck) {
+        if (email.value.length > 0 && 
+            username.value.length > 0 && 
+            password.value === passwordCheck.value) {
           const response = await AuthenticationService.register({
-            username: this.username,
-            email: this.email,
-            gender: this.gender,
-            city: this.city,
-            password: this.password
-          });
-          this.$store.dispatch('setToken', response.data.token);
-          this.$store.dispatch('setUser', response.data.user);
-          this.error = null;
-          this.registerSuccess = true;
+            username: username.value,
+            email: email.value,
+            gender: gender.value,
+            city: city.value,
+            password: password.value
+          })
+          
+          store.setToken(response.data.token)
+          store.setUser(response.data.user)
+          error.value = null
+          registerSuccess.value = true
         } else {
-          this.error = "Bitte die nötigen Felder ausfüllen und das Übereinstimmen der Passwörter überprüfen.";
+          error.value = "Bitte die nötigen Felder ausfüllen und das Übereinstimmen der Passwörter überprüfen."
         }
       } catch (err) {
-        this.error = err.response.data.error;
+        error.value = err.response.data.error
       }
     }
-  },
-};
+
+    return {
+      email,
+      password,
+      username,
+      passwordCheck,
+      gender,
+      city,
+      error,
+      registerTry,
+      registerSuccess,
+      register
+    }
+  }
+}
 </script>
 
 <style scoped>

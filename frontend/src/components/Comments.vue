@@ -46,61 +46,61 @@
 </template>
 
 <script>
+import { ref, computed } from 'vue';
+import { useMainStore } from '@/store/store';
+import { storeToRefs } from 'pinia';
 import CommentUpvoteService from '@/services/CommentUpvoteService';
 
 export default {
   name: "Comments",
   props: {
     comments: {
-        type: Array,
-        required: true
+      type: Array,
+      required: true
     },
     replyId: {
-        type: Number,
-        required: true
+      type: Number,
+      required: true
     },
     commentLevel: {
-        type: Number,
-        required: true
+      type: Number,
+      required: true
     },
     userVotes: {
       type: Array,
       required: true
     }
   },
-  data() {
-    return {
-      activeReply: -1,
-      userComments: {}
-    };
-  },
-  computed: {
-    loggedIn() {
-      return this.$store.state.isUserLoggedIn;
-    },
-  },
-  methods: {
-    initUserState() {
-      console.log("Init Comment", this.getComments());
-      for (const c of this.getComments()) {
-        this.userComments[c.id] = "";
+  setup(props, { emit }) {
+    const store = useMainStore();
+    const { isUserLoggedIn } = storeToRefs(store);
+    const activeReply = ref(-1);
+    const userComments = ref({});
+
+    const loggedIn = computed(() => isUserLoggedIn.value);
+
+    const initUserState = () => {
+      console.log("Init Comment", getComments());
+      for (const c of getComments()) {
+        userComments.value[c.id] = "";
       }
-    },
-    getUserAvatar(id) {
+    };
+
+    const getUserAvatar = (id) => {
       const paths = ["bear", "chicken", "cat"];
       const index = id == null ? 0 : id % paths.length;
-      return require(`@/assets/${paths[index]}.svg`);
-    },
-    getComments() {
-      return this.comments.filter(m => m.replyId == this.replyId);
-    },
-    sendComment(commentId) {
-      this.$parent.sendCommentToDb(this.userComments[commentId], commentId);
-    },
-    sendCommentToDb(userComment, replyId) {
-      this.$parent.sendCommentToDb(userComment, replyId);
-    },
-    commentDate(d) {
+      return new URL(`../assets/${paths[index]}.svg`, import.meta.url).href;
+    };
+
+    const getComments = () => {
+      return props.comments.filter(m => m.replyId == props.replyId);
+    };
+
+    const sendComment = (commentId) => {
+      emit('send-comment', userComments.value[commentId], commentId);
+    };
+
+    const commentDate = (d) => {
       let diff = new Date(Date.now()) - new Date(d);
       console.log(diff, new Date(Date.now()), new Date(d));
       // ms to s
@@ -122,27 +122,40 @@ export default {
       else if(diff < 60*60*24*365*2)
         return "Vor über einem Jahr";
       return `Vor über ${Math.floor(diff / (60 * 60 * 24 * 365.5))} Jahren`;
-    },
-    showReply(commentId) {
-      if (this.loggedIn) {
-        if (commentId == this.activeReply) {
-          this.activeReply = -1;
-        } else {
-          this.activeReply = commentId;
-        }
+    };
+
+    const showReply = (commentId) => {
+      if (loggedIn.value) {
+        activeReply.value = commentId === activeReply.value ? -1 : commentId;
       }
-    },
-    async commentUpvote(commentId) {
-      if (this.userVotes.includes(commentId)) {
+    };
+
+    const commentUpvote = async (commentId) => {
+      if (props.userVotes.includes(commentId)) {
         await CommentUpvoteService.delete(commentId);
-        this.comments.filter(c => c.id == commentId)[0].upvotes -= 1;
-        this.userVotes = this.userVotes.filter(item => item !== commentId);
+        const comment = props.comments.find(c => c.id === commentId);
+        if (comment) comment.upvotes -= 1;
+        emit('update:userVotes', props.userVotes.filter(item => item !== commentId));
       } else {
         await CommentUpvoteService.post(commentId);
-        this.comments.filter(c => c.id == commentId)[0].upvotes += 1;
-        this.userVotes.push(commentId);
+        const comment = props.comments.find(c => c.id === commentId);
+        if (comment) comment.upvotes += 1;
+        emit('update:userVotes', [...props.userVotes, commentId]);
       }
-    }
+    };
+
+    return {
+      activeReply,
+      userComments,
+      loggedIn,
+      initUserState,
+      getUserAvatar,
+      getComments,
+      sendComment,
+      commentDate,
+      showReply,
+      commentUpvote
+    };
   }
 };
 </script>

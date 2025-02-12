@@ -50,73 +50,47 @@ export default {
 }
 </script>
 
-<style>
-.checkInput {
-  display: none;
+<style scoped lang="scss">
+select{
+  -webkit-appearance: none;
+  border: none;
+  font-size: 13px;
+  list-style: none;
+  outline: none;
+  overflow: hidden;
+  text-align: left;
+  text-decoration: none;
+  vertical-align: middle;
+  background-color: transparent;
+  color: #202124!important;
+  height: 36px;
+  padding-left: 8px;
+  padding-right: 30px;
+  background-image: none;
+  min-width: 70px;
+  background: #eeeeee;
+  text-align: center;
 }
 
-.toggle {
-  position: relative;
-  display: block;
-  width: 42px;
-  height: 24px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transform: translate3d(0, 0, 0);
-}
-
-.toggle:before {
-  content: "";
-  position: relative;
-  top: 1px;
-  left: 1px;
-  width: 40px;
-  height: 22px;
-  display: block;
-  background: #c8ccd4;
-  border-radius: 12px;
-  transition: background 0.2s ease;
-}
-
-.toggle span {
+.select-icon {
+  font-size: 1.2em;
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 24px;
-  height: 24px;
-  display: block;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(154,153,153,0.75);
-  transition: all 0.2s ease;
+  right: 10px;
+  top: 12px;
+  transition: .3s all;
+  transform: rotate(90deg);
+  pointer-events: none;
 }
 
-.toggle span svg {
-  margin: 7px;
-  fill: none;
-}
+.selectBox{
+  position: relative;
+  border-radius: 6px;
+  background-color: #fff;
+  border: none;
+  display: inline-block;
 
-.toggle span svg path {
-  stroke: #c8ccd4;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 24;
-  stroke-dashoffset: 0;
-  transition: all 0.5s linear;
-}
-
-.checked.toggle:before {
-  background: #52d66b;
-}
-
-.checked.toggle span {
-  transform: translateX(18px);
-}
-
-.checked.toggle span path {
-  stroke: #52d66b;
-  stroke-dasharray: 25;
-  stroke-dashoffset: 25;
+  &.clicked .select-icon {
+    transform: rotate(270deg);
+  }
 }
 </style>

@@ -1,138 +1,115 @@
 <template>
-<div class="solvePage">
-  <div class="puzzleContainer" v-if="logical != null">
-    <div id="puzzleHeader">
-      <h1 class="puzzleTitle">{{logical.name}}</h1>
-      <span class="difficulty">{{logical.difficulty}}/<strong>5</strong></span>
-    </div>
-    <img id='headerImage' :src="logical.image" alt='header image' width='320'/>
-    <div id="puzzle" class="puzzleBody">
-      <h3 id="descrHeader">Beschreibung</h3>
-      <p id="description">{{logical.description}}</p>
-      <label class="logicalQuestion"><strong>{{logical.question}}</strong></label>
-      <h3>Hinweise</h3>
-      <ol id="clues">
-        <li v-for="[i, clue] in logical.clues.entries()" v-bind:key='`clueActual${i}`' class="clue">{{clue}}</li>
-      </ol>
-      <label class="bold">Attribute</label>
-      <ul id="attrList">
-        <li v-for="[i, attr] in logical.attributes.entries()" v-bind:key='`realAtr${i}`'>
-          <div class="attrRow">
-            <strong>{{attr.name}}: </strong>
-            <span v-for="[j, v] in attr.values.entries()" v-bind:key='`realAt${j}`'>
-              {{v}}<span v-if="j != attr.values.length - 1">, </span>
-            </span>
+  <div class="solvePage">
+    <div class="puzzleContainer" v-if="logical != null">
+      <div id="puzzleHeader">
+        <h1 class="puzzleTitle">{{ logical.name }}</h1>
+        <span class="difficulty">{{ logical.difficulty }}/<strong>5</strong></span>
+      </div>
+      <img id="headerImage" :src="logical.image" alt="header image" width="320" />
+      <div id="puzzle" class="puzzleBody">
+        <h3 id="descrHeader">Beschreibung</h3>
+        <p id="description">{{ logical.description }}</p>
+        <label class="logicalQuestion"><strong>{{ logical.question }}</strong></label>
+        <h3>Hinweise</h3>
+        <ol id="clues">
+          <li v-for="(clue, i) in logical.clues" :key="`clueActual${i}`" class="clue">{{ clue }}</li>
+        </ol>
+        <label class="bold">Attribute</label>
+        <ul id="attrList">
+          <li v-for="(attr, i) in logical.attributes" :key="`realAtr${i}`">
+            <div class="attrRow">
+              <strong>{{ attr.name }}: </strong>
+              <span v-for="(v, j) in attr.values" :key="`realAt${j}`">
+                {{ v }}<span v-if="j != attr.values.length - 1">, </span>
+              </span>
+            </div>
+          </li>
+        </ul>
+        <h3>Lösung</h3>
+        <div class="eitherOr">
+          <div id="wrapMe" class="wrapMe">
+            <label id="nummerierung">Zeige die erweiterte Tabelle:</label>
+            <MToggle class="solutionToggle" v-model="tableVisible" />
           </div>
-        </li>
-      </ul>
-      <h3>Lösung</h3>
-      <div class="eitherOr">
-        <div id="wrapMe" class="wrapMe">
-          <label id="nummerierung">Zeige die erweiterte Tabelle:</label>
-          <MToggle class="solutionToggle" v-model="tableVisible"/>
-        </div>
-        <div v-if="tableVisible" id="solutionGrid">
-          <div id="cDiv">
-            <svg id="colors" height="50" width="150">
-              <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
-                <rect :fill="color" stroke="black" :width="cellWidth" :height="cellWidth" @click="selectColor(i)"/>
-                <path v-if="i == 0" class="crossPath" :d="`M5 5L${cellWidth - 5} ${cellWidth - 5}M5 ${cellWidth - 5}L${cellWidth - 5} 5`" stroke="#565656"/>
-                <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3" :y="cellWidth + 4"/> 
-              </g>
-            </svg>
-            <button id="revert" @click="revertState" class="nonoButton">
-              <ion-icon class="rotate" v-pre name="refresh"></ion-icon>
-            </button>
-            <button id="restore" @click="restoreState" class="nonoButton">
-              <ion-icon v-pre name="refresh"></ion-icon>
-            </button>
-          </div>
-          <div id="classicGrid" class="gridContainer">
-            <div id="solutionGridNonCanvas">
-              <svg :width="svgWidth" :height="svgHeight">
-                <g v-for="[i, attr] in (logical.attributes.slice(0, 1).concat(logical.attributes.slice(2, logical.attributes.length))).entries()"
-                :transform="`translate(0, ${paddingTop + i * numAttrValues * cellWidth})`"
-                v-bind:key='`hgroup${i}`' class="horizontalTextGroup">
-                  <text v-for="[j, val] in attr.values.entries()" ref="horizontalLabels" v-bind:key='`htext${val}`' x="0"
-                  :y="j * cellWidth + cellWidth / 2 + 2">{{val}}</text>
-                </g>
-                <g v-for="[i, attr] in logical.attributes.slice(1, logical.attributes.length).entries()"
-                :transform="`translate(${paddingLeft + i * numAttrValues * cellWidth}, 0)`"
-                v-bind:key='`vgroup${i}`' class="verticalTextGroup">
-                  <text v-for="[j, val] in attr.values.entries()" ref="verticalLabels" v-bind:key='`vtext${val}`' y="0"
-                  :x="j * cellWidth + cellWidth / 2 + 2">{{val}}</text>
-                </g>
-                <g id="blockArea" :transform="`translate(${paddingLeft}, ${paddingTop})`">
-                  <template v-for="i in numAttributes">
-                    <g v-for="j in numAttributes - i" v-bind:key="`cblock${i}_${j}`"
-                    :transform="`translate(${(j - 1) * blockWidth}, ${(i - 1) * blockWidth})`">
-                      <g v-for="k in numAttrValues * numAttrValues" v-bind:key="`cell${k}`"
-                      :transform="`translate(${Math.floor((k - 1) / numAttrValues) * cellWidth}, ${((k - 1) % numAttrValues) * cellWidth})`">
-                        <rect :width="cellWidth" :height="cellWidth" class="blockGroups" :fill="colors[gridState[cellIndex(i, j, k)]]"
-                        stroke="#c5c5c5" @mousedown="mouseDown(i, j, k)" @mouseenter="mouseEnter(i, j, k)"/>
-                        <path v-if="gridState[cellIndex(i, j, k)] == 0" class="crossPath"
-                        :d="`M5 5L${cellWidth - 5} ${cellWidth - 5}M5 ${cellWidth - 5}L${cellWidth - 5} 5`" stroke="#565656"/>
-                      </g>
-                    </g>
-                  </template>
-                  <path stroke="black" stroke-width="1" :d="drawOutline()"/>
+          <div v-if="tableVisible" id="solutionGrid">
+            <div id="cDiv">
+              <svg id="colors" height="50" width="150">
+                <g v-for="(color, i) in colors" :key="`color${i}`" :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
+                  <rect :fill="color" stroke="black" :width="cellWidth" :height="cellWidth" @click="selectColor(i)" />
+                  <path v-if="i == 0" class="crossPath" :d="`M5 5L${cellWidth - 5} ${cellWidth - 5}M5 ${cellWidth - 5}L${cellWidth - 5} 5`" stroke="#565656" />
+                  <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3" :y="cellWidth + 4" />
                 </g>
               </svg>
+              <button id="revert" @click="revertState" class="nonoButton">
+                <ion-icon class="rotate" v-pre name="refresh"></ion-icon>
+              </button>
+              <button id="restore" @click="restoreState" class="nonoButton">
+                <ion-icon v-pre name="refresh"></ion-icon>
+              </button>
+            </div>
+            <div id="classicGrid" class="gridContainer">
+              <div id="solutionGridNonCanvas">
+                <svg :width="svgWidth" :height="svgHeight">
+                  <g v-for="(attr, i) in logical.attributes.slice(0, 1).concat(logical.attributes.slice(2))" :key="`hgroup${i}`" class="horizontalTextGroup" :transform="`translate(0, ${paddingTop + i * numAttrValues * cellWidth})`">
+                    <text v-for="(val, j) in attr.values" :key="`htext${val}`" ref="horizontalLabels" x="0" :y="j * cellWidth + cellWidth / 2 + 2">{{ val }}</text>
+                  </g>
+                  <g v-for="(attr, i) in logical.attributes.slice(1)" :key="`vgroup${i}`" class="verticalTextGroup" :transform="`translate(${paddingLeft + i * numAttrValues * cellWidth}, 0)`">
+                    <text v-for="(val, j) in attr.values" :key="`vtext${val}`" ref="verticalLabels" y="0" :x="j * cellWidth + cellWidth / 2 + 2">{{ val }}</text>
+                  </g>
+                  <g id="blockArea" :transform="`translate(${paddingLeft}, ${paddingTop})`">
+                    <template v-for="i in numAttributes">
+                      <g v-for="j in numAttributes - i" :key="`cblock${i}_${j}`" :transform="`translate(${(j - 1) * blockWidth}, ${(i - 1) * blockWidth})`">
+                        <g v-for="k in numAttrValues * numAttrValues" :key="`cell${k}`" :transform="`translate(${Math.floor((k - 1) / numAttrValues) * cellWidth}, ${((k - 1) % numAttrValues) * cellWidth})`">
+                          <rect :width="cellWidth" :height="cellWidth" class="blockGroups" :fill="colors[gridState[cellIndex(i, j, k)]]" stroke="#c5c5c5" @mousedown="mouseDown(i, j, k)" @mouseenter="mouseEnter(i, j, k)" />
+                          <path v-if="gridState[cellIndex(i, j, k)] == 0" class="crossPath" :d="`M5 5L${cellWidth - 5} ${cellWidth - 5}M5 ${cellWidth - 5}L${cellWidth - 5} 5`" stroke="#565656" />
+                        </g>
+                      </g>
+                    </template>
+                    <path stroke="black" stroke-width="1" :d="drawOutline()" />
+                  </g>
+                </svg>
+              </div>
             </div>
           </div>
+          <div class="responsive-table">
+            <table id="solTable" class="dataTable sortable">
+              <thead>
+                <tr>
+                  <th v-for="attr in logical.attributes" :key="attr.name" scope="col" class="tableH">{{ attr.name }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(v, i) in logical.attributes[0].values" :key="i">
+                  <td scope="row">{{ v }}</td>
+                  <td v-for="(attr, j) in logical.attributes.slice(1)" :key="j" :data-title="attr.name">
+                    <MySelect :options="logical.attributes[j + 1].values" v-model="attrInputs[i + '_' + j]" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="responsive-table">
-          <table id="solTable" class="dataTable sortable">
-            <thead>
-              <tr>
-                <th v-for="attr in logical.attributes" v-bind:key='attr.name' scope='col' class='tableH'>
-                  {{attr.name}}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="[i, v] in logical.attributes[0].values.entries()" v-bind:key='i'>
-                <td scope='row'>{{v}}</td>
-                <td v-for="[j, attr] in logical.attributes.slice(1).entries()"
-                  v-bind:key='j' :data-title='attr.name'>
-                  <MSelect :options='logical.attributes[j + 1].values' v-model='attrInputs[i + "_" + j]'/>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div id="checkSolutionBox">
+          <button id="checkButton" class="loes" @click="checkSolution">Überprüfen</button>
+          <img v-if="solved" class="checking" src="@/assets/haken.png" width="40" height="40" />
         </div>
-      </div>
-      <div id='checkSolutionBox'>
-        <button id='checkButton' class='loes' @click="checkSolution">Überprüfen</button>
-        <img v-if="solved" class="checking" src='@/assets/haken.png' width='40' height='40'/>
-      </div>
-      <h4 id="solved">{{solveLabel}}</h4>
-
-      <h2>Rätsel bewerten</h2>
-      <b-rate
-        v-if="loggedIn"
-        v-model="rating"
-        icon-pack="mdi"
-        icon="star"
-        :max="rateMax"
-        :show-text="false"
-        :rtl="false"
-        :spaced="false"
-        :disabled="false">
-      </b-rate>
-      <p v-if="!loggedIn">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
-      <div v-if="!solved && alreadySolved">
-        Glückwunsch! Sie haben dieses Rätsel bereits gelöst.
+        <h4 id="solved">{{ solveLabel }}</h4>
+        <h2>Rätsel bewerten</h2>
+        <b-rate v-if="loggedIn" v-model="rating" icon-pack="mdi" icon="star" :max="rateMax" :show-text="false" :rtl="false" :spaced="false" :disabled="false"></b-rate>
+        <p v-if="!loggedIn">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
+        <div v-if="!solved && alreadySolved">Glückwunsch! Sie haben dieses Rätsel bereits gelöst.</div>
       </div>
     </div>
+    <CommentSystem :riddleType="'logical'" :riddleId="computedId" />
   </div>
-  <CommentSystem :riddleType="'logical'" :riddleId="computedId"/>
-</div>
 </template>
 
 <script>
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useMainStore } from "@/store/store";
 import Toggle from './Toggle';
-import Select from './Select';
+import MySelect from './MySelect';
 import UserService from '@/services/UserService';
 import LogicalService from '@/services/LogicalService';
 import LogicalRatingService from '@/services/LogicalRatingService';
@@ -140,247 +117,195 @@ import CommentSystem from '@/components/CommentSystem';
 
 export default {
   name: 'LogicalSolve',
-  props: ['id'],
   components: {
     MToggle: Toggle,
-    MSelect: Select,
-    CommentSystem: CommentSystem
+    MySelect: MySelect,
+    CommentSystem: CommentSystem,
   },
-  data() {
-    return {
-      revertHistory: [],
-      revertIndex: 0,
-      attrInputs: {},
-      solved: false,
-      gridState: [],
-      gridStateCopy: [],
-      cellWidth: 25,
-      paddingLeft: 50,
-      paddingTop: 50,
-      tableVisible: true,
-      selectedColor: 0,
-      colors: ["#fff", "#333", "#fff"],
-      solveLabel: "",
-      logical: {
-        name: "",
-        difficulty: 0,
-        description: "",
-        question: "",
-        clues: [],
-        attributes: [{"name": "", "values": []}],
-        image: "",
-        date: "",
-        author: "",
-        solution: []
-      },
-      rating: null,
-      rateMax: 5,
-      alreadySolved: false
-    };
-  },
-  watch: {
-    async id() {
-      const id = this.$store.state.route.params.id;
-      const logical = await LogicalService.show(id);
-      this.setRating(id);
-      this.logical = logical.data;
-      if (this.loggedIn) {
-        this.checkIfAlreadySolved();
-      }
-  
-      this.$nextTick(() => {
-        this.setPadding();
-      });
-    },
-    loggedIn() {
-      this.setRating(this.$store.state.route.params.id);
-      this.checkIfAlreadySolved();
-    },
-    async rating() {
-      try {
-        if (this.rating != null) {
-          await LogicalRatingService.post({
-            LogicalId: parseInt(this.$store.state.route.params.id, 10),
-            rating: this.rating
-          });
-        }
-      } catch(err) {
-        console.log(err);
-      }
-    }
-  },
-  async mounted() {
-    const id = this.$store.state.route.params.id;
-    const logical = await LogicalService.show(id);
-    this.logical = logical.data;
-    console.log(this.logical);
-    this.setRating(id);
-    if (this.loggedIn) {
-      this.checkIfAlreadySolved();
-    }
+  setup() {
+    const route = useRoute();
+    const store = useMainStore();
 
-    this.tableVisible = true;
-    document.addEventListener("mouseup", this.mainGridMouseUp, false);
-    window.ondragstart = function() { return false; };
-    
-    this.$nextTick(() => {
-      this.setPadding();
+    const horizontalLabels = ref([]);
+    const verticalLabels = ref([]);
+
+    const revertHistory = ref([]);
+    const revertIndex = ref(0);
+    const attrInputs = ref({});
+    const solved = ref(false);
+    const gridState = ref([]);
+    const gridStateCopy = ref([]);
+    const cellWidth = ref(25);
+    const paddingLeft = ref(50);
+    const paddingTop = ref(50);
+    const tableVisible = ref(true);
+    const selectedColor = ref(0);
+    const colors = ref(["#fff", "#333", "#fff"]);
+    const solveLabel = ref("");
+    const logical = ref({
+      name: "",
+      difficulty: 0,
+      description: "",
+      question: "",
+      clues: [],
+      attributes: [{ name: "", values: [] }],
+      image: "",
+      date: "",
+      author: "",
+      solution: [],
     });
-    window.onbeforeunload = function() {
-      return "Möchten Sie die Seite wirklich verlassen. Nicht gespeicherte Rätsel sind für immer verloren!";
-    }
-  },
-  computed: {
-    computedId() {
-      return this.$store.state.route.params.id;
-    },
-    loggedIn() {
-      return this.$store.state.isUserLoggedIn;
-    },
-    numAttrValues() {
-      return this.logical.attributes[0].values.length;
-    },
-    numAttributes() {
-      return this.logical.attributes.length;
-    },
-    blockWidth() {
-      return this.numAttrValues * this.cellWidth;
-    },
-    svgWidth() {
-      const margin = 20;
-      return this.paddingLeft + margin + (this.numAttributes - 1) * this.blockWidth;
-    },
-    svgHeight() {
-      const margin = 20;
-      return this.paddingTop + margin + (this.numAttributes - 1) * this.blockWidth;
-    },
-  },
-  methods: {
-    async checkIfAlreadySolved() {
-      // New request in case the user solved the puzzle since logging in
-      const userData = (await UserService.show(this.$store.state.user.id)).data;
-      const logicalId = parseInt(this.$store.state.route.params.id, 10) - 1;
-      this.alreadySolved = userData.solvedLogicals.includes(logicalId);
-    },
-    setPadding() {
-      this.gridState = new Array((this.numAttributes * (this.numAttributes + 1)) / 2 * this.numAttrValues * this.numAttrValues).fill(2);
-      // console.log("Jo", this.$refs.horizontalLabels);
-      if (this.$refs.horizontalLabels != null && this.$refs.verticalLabels != null) {
-        // console.log("Ho Ve not null");
+    const rating = ref(null);
+    const rateMax = ref(5);
+    const alreadySolved = ref(false);
+    const startMouseDown = ref([0, 0]);
+    const lastMouseOver = ref([0, 0]);
+    const isMouseDown = ref(false);
+
+    const computedId = computed(() => route.params.id);
+    const loggedIn = computed(() => store.isUserLoggedIn);
+    const numAttrValues = computed(() => logical.value.attributes[0].values.length);
+    const numAttributes = computed(() => logical.value.attributes.length);
+    const blockWidth = computed(() => numAttrValues.value * cellWidth.value);
+    const svgWidth = computed(() => paddingLeft.value + 20 + (numAttributes.value - 1) * blockWidth.value);
+    const svgHeight = computed(() => paddingTop.value + 20 + (numAttributes.value - 1) * blockWidth.value);
+
+    const fetchLogical = async (id) => {
+      const response = await LogicalService.show(id);
+      logical.value = response.data;
+      setRating(id);
+      if (loggedIn.value) {
+        await checkIfAlreadySolved();
+      }
+      setPadding();
+    };
+
+    const setRating = async (logicalId) => {
+      if (store.user) {
+        const res = await LogicalRatingService.show(logicalId);
+        rating.value = res.data.rating;
+      }
+    };
+
+    const checkIfAlreadySolved = async () => {
+      const userData = (await UserService.show(store.user.id)).data;
+      const logicalId = parseInt(route.params.id, 10) - 1;
+      alreadySolved.value = userData.solvedLogicals.includes(logicalId);
+    };
+
+    const setPadding = () => {
+      gridState.value = new Array((numAttributes.value * (numAttributes.value + 1)) / 2 * numAttrValues.value * numAttrValues.value).fill(2);
+      if (horizontalLabels.value && verticalLabels.value) {
         let maxLabelWidth = 0;
-        for(let label of this.$refs.horizontalLabels) {
+        for (let label of horizontalLabels.value) {
           maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
         }
         let maxLabelHeight = 0;
-        for(let label of this.$refs.verticalLabels) {
+        for (let label of verticalLabels.value) {
           maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
         }
-        this.paddingLeft = maxLabelWidth + 10;
-        this.paddingTop = maxLabelHeight + 10;
+        paddingLeft.value = maxLabelWidth + 10;
+        paddingTop.value = maxLabelHeight + 10;
       }
-    },
-    async setRating(logicalId) {
-      if (this.$store.state.user != null) {
-        const res = await LogicalRatingService.show(logicalId);
-        this.rating = res.data.rating;
-      }
-    },
-    revertState() {
-      if (this.revertIndex > 0) {
-        const state = this.revertHistory[this.revertIndex - 1];
+    };
+
+    const revertState = () => {
+      if (revertIndex.value > 0) {
+        const state = revertHistory.value[revertIndex.value - 1];
         for (let b = state['x0']; b <= state['x1']; b++) {
           for (let a = state['y0']; a <= state['y1']; a++) {
-            const [i, j, k] = this.toIJK(b, a);
-            const cellIndex = this.cellIndex(i, j, k);
-            this.$set(this.gridState, cellIndex, state['colorsBefore'][b - state['x0']][a - state['y0']]);
+            const [i, j, k] = toIJK(b, a);
+            const cellIndex = cellIndex(i, j, k);
+            gridState.value[cellIndex] = state['colorsBefore'][b - state['x0']][a - state['y0']];
           }
         }
-        this.revertIndex -= 1;
+        revertIndex.value -= 1;
       }
-    },
-    restoreState() {
-      if (this.revertIndex < this.revertHistory.length) {
-        const state = this.revertHistory[this.revertIndex];
+    };
+
+    const restoreState = () => {
+      if (revertIndex.value < revertHistory.value.length) {
+        const state = revertHistory.value[revertIndex.value];
         for (let b = state['x0']; b <= state['x1']; b++) {
           for (let a = state['y0']; a <= state['y1']; a++) {
-            const [i, j, k] = this.toIJK(b, a);
-            const cellIndex = this.cellIndex(i, j, k);
-            this.$set(this.gridState, cellIndex, state['colorAfter']);
+            const [i, j, k] = toIJK(b, a);
+            const cellIndex = cellIndex(i, j, k);
+            gridState.value[cellIndex] = state['colorAfter'];
           }
         }
-        this.revertIndex += 1;
+        revertIndex.value += 1;
       }
-    },
-    checkSolution() {
-      this.solved = true;
-      for(let i = 0; i < this.logical.solution.length; i++) {
-        for(let j = 1; j < this.logical.solution[i].length; j++) {
-          if (this.attrInputs[`${i}_${j - 1}`] == null) {
-            this.solved = false;
-            this.solveLabel = "Es sind Attribute noch nicht zugewiesen!";
+    };
+
+    const checkSolution = () => {
+      solved.value = true;
+      for (let i = 0; i < logical.value.solution.length; i++) {
+        for (let j = 1; j < logical.value.solution[i].length; j++) {
+          if (attrInputs.value[`${i}_${j - 1}`] == null) {
+            solved.value = false;
+            solveLabel.value = "Es sind Attribute noch nicht zugewiesen!";
             return;
           }
-          if (this.logical.solution[i][j] != this.attrInputs[`${i}_${j - 1}`]) {
-            this.solved = false;
+          if (logical.value.solution[i][j] != attrInputs.value[`${i}_${j - 1}`]) {
+            solved.value = false;
           }
         }
       }
-      if (this.solved) {
-        if (!this.alreadySolved) {
-          this.saveSolvedLogical();
+      if (solved.value) {
+        if (!alreadySolved.value) {
+          saveSolvedLogical();
         }
-        this.solveLabel = "Gratulation, das Rätsel ist gelöst!";
+        solveLabel.value = "Gratulation, das Rätsel ist gelöst!";
       } else {
-        this.solveLabel = "Es existieren noch Fehler!";
+        solveLabel.value = "Es existieren noch Fehler!";
       }
-    },
-    async saveSolvedLogical() {
-      if (this.loggedIn) {
-        const userId = this.$store.state.user.id;
-        const logicalId = parseInt(this.$store.state.route.params.id, 10) - 1;
+    };
+
+    const saveSolvedLogical = async () => {
+      if (loggedIn.value) {
+        const userId = store.user.id;
+        const logicalId = parseInt(route.params.id, 10) - 1;
         const isSuccess = await UserService.logicalSolved(userId, logicalId);
-        // TODO do something if riddle couldn't be saved
         console.log("Suc", isSuccess);
       }
-    },
-    toXY(i, j, k) {
-      // i = row, j = column (block), k = cell in nxn block
-      const x = (j - 1) * this.numAttrValues + Math.floor((k - 1) / this.numAttrValues);
-      const y = (i - 1) * this.numAttrValues + (k - 1) % this.numAttrValues;
+    };
+
+    const toXY = (i, j, k) => {
+      const x = (j - 1) * numAttrValues.value + Math.floor((k - 1) / numAttrValues.value);
+      const y = (i - 1) * numAttrValues.value + (k - 1) % numAttrValues.value;
       return [x, y];
-    },
-    toIJK(x, y) {
-      const i = Math.floor(y / this.numAttrValues);
-      const j = Math.floor(x / this.numAttrValues);
-      if (j >= this.numAttributes - 1 - i) {
-        // block not in grid
+    };
+
+    const toIJK = (x, y) => {
+      const i = Math.floor(y / numAttrValues.value);
+      const j = Math.floor(x / numAttrValues.value);
+      if (j >= numAttributes.value - 1 - i) {
         return [-1, -1, -1];
       }
-      const k = (x % this.numAttrValues) * this.numAttrValues + (y % this.numAttrValues);
+      const k = (x % numAttrValues.value) * numAttrValues.value + (y % numAttrValues.value);
       return [i + 1, j + 1, k + 1];
-    },
-    mouseDown(i, j, k) {
-      const [x, y] = this.toXY(i, j, k);
-      // create a copy of the grid state before the mouse down
-      this.gridStateCopy = [...this.gridState];
-      this.startMouseDown = [x, y];
-      this.lastMouseOver = this.startMouseDown;
-      this.isMouseDown = true;
-      this.$set(this.gridState, this.cellIndex(i, j, k), this.selectedColor);
-    },
-    mouseEnter(i, j, k) {
-      if (this.isMouseDown) {
-        const [i1, j1] = this.toXY(i, j, k);
-        const [i2, j2] = this.startMouseDown;
-        const [i3, j3] = this.lastMouseOver;
-        // first reset not marked cells
+    };
+
+    const mouseDown = (i, j, k) => {
+      const [x, y] = toXY(i, j, k);
+      gridStateCopy.value = [...gridState.value];
+      startMouseDown.value = [x, y];
+      lastMouseOver.value = startMouseDown.value;
+      isMouseDown.value = true;
+      gridState.value[cellIndex(i, j, k)] = selectedColor.value;
+    };
+
+    const mouseEnter = (i, j, k) => {
+      if (isMouseDown.value) {
+        const [i1, j1] = toXY(i, j, k);
+        const [i2, j2] = startMouseDown.value;
+        const [i3, j3] = lastMouseOver.value;
         if (i1 !== i3) {
           for (let x = Math.min(i1, i3); x <= Math.max(i1, i3); x++) {
             for (let y = Math.min(j2, j3); y <= Math.max(j2, j3); y += 1) {
-              const [i, j, k] = this.toIJK(x, y);
+              const [i, j, k] = toIJK(x, y);
               if (i != -1) {
-                const cellIndex = this.cellIndex(i, j, k);
-                this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+                const cellIndex = cellIndex(i, j, k);
+                gridState.value[cellIndex] = gridStateCopy.value[cellIndex];
               }
             }
           }
@@ -388,43 +313,41 @@ export default {
         if (j1 !== j3) {
           for (let y = Math.min(j1, j3); y <= Math.max(j1, j3); y++) {
             for (let x = Math.min(i2, i3); x <= Math.max(i2, i3); x += 1) {
-              const [i, j, k] = this.toIJK(x, y);
+              const [i, j, k] = toIJK(x, y);
               if (i != -1) {
-                const cellIndex = this.cellIndex(i, j, k);
-                // this.gridCells[ind].style.background = this.colors[this.gridState[ind]];
-                this.$set(this.gridState, cellIndex, this.gridStateCopy[cellIndex]);
+                const cellIndex = cellIndex(i, j, k);
+                gridState.value[cellIndex] = gridStateCopy.value[cellIndex];
               }
             }
           }
         }
-        // then mark nearly marked cells
         for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a += 1) {
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b += 1) {
-            // this.gridCells[b * this.width + a].style.background = this.colors[this.selectedColor];
-            const [i, j, k] = this.toIJK(a, b);
+            const [i, j, k] = toIJK(a, b);
             if (i != -1) {
-              const cellIndex = this.cellIndex(i, j, k);
-              this.$set(this.gridState, cellIndex, this.selectedColor);
+              const cellIndex = cellIndex(i, j, k);
+              gridState.value[cellIndex] = selectedColor.value;
             }
           }
         }
-        this.lastMouseOver = [i1, j1];
+        lastMouseOver.value = [i1, j1];
       }
-    },
-    mainGridMouseUp() {
-      if (this.isMouseDown) {
-        this.isMouseDown = false;
-        const [i1, j1] = this.startMouseDown;
-        const [i2, j2] = this.lastMouseOver;
+    };
+
+    const mainGridMouseUp = () => {
+      if (isMouseDown.value) {
+        isMouseDown.value = false;
+        const [i1, j1] = startMouseDown.value;
+        const [i2, j2] = lastMouseOver.value;
         const stateBefore = [];
         for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
           const stateBeforeRow = [];
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
-            const [i, j, k] = this.toIJK(a, b);
+            const [i, j, k] = toIJK(a, b);
             if (i != -1) {
-              const cellIndex = this.cellIndex(i, j, k);
-              stateBeforeRow.push(this.gridStateCopy[cellIndex]);
-              this.gridState[cellIndex] = this.selectedColor;
+              const cellIndex = cellIndex(i, j, k);
+              stateBeforeRow.push(gridStateCopy.value[cellIndex]);
+              gridState.value[cellIndex] = selectedColor.value;
             }
           }
           stateBefore.push(stateBeforeRow);
@@ -434,56 +357,123 @@ export default {
           'x1': Math.max(i1, i2),
           'y0': Math.min(j1, j2),
           'y1': Math.max(j1, j2),
-          'colorAfter': this.selectedColor,
+          'colorAfter': selectedColor.value,
           'colorsBefore': stateBefore
-        }
-        
-        if (this.revertIndex < this.revertHistory.length) {
-          this.revertHistory[this.revertIndex] = revertObj;
-          this.revertHistory.length = this.revertIndex + 1;
+        };
+
+        if (revertIndex.value < revertHistory.value.length) {
+          revertHistory.value[revertIndex.value] = revertObj;
+          revertHistory.value.length = revertIndex.value + 1;
         } else {
-          this.revertHistory.push(revertObj);
+          revertHistory.value.push(revertObj);
         }
-        this.revertIndex += 1;
+        revertIndex.value += 1;
       }
-    },
-    drawOutline() {
-      // draw horizontal lines
-      let pathStr = `M0 0H${this.blockWidth * (this.numAttributes - 1)}`;
-      for(let i = 0; i < this.numAttributes - 1; i++){
-          pathStr += `M0 ${this.blockWidth * (i + 1)}H${this.blockWidth * (this.numAttributes - 1 - i)}`;
+    };
+
+    const drawOutline = () => {
+      let pathStr = `M0 0H${blockWidth.value * (numAttributes.value - 1)}`;
+      for (let i = 0; i < numAttributes.value - 1; i++) {
+        pathStr += `M0 ${blockWidth.value * (i + 1)}H${blockWidth.value * (numAttributes.value - 1 - i)}`;
       }
-      // draw vertical lines
-      pathStr += `M0 0V${this.blockWidth * (this.numAttributes - 1)}`;
-      for(let i = 0; i < this.numAttributes - 1; i++){
-          pathStr += `M${this.blockWidth * (i + 1)} 0V${this.blockWidth * (this.numAttributes - 1 - i)}`;
+      pathStr += `M0 0V${blockWidth.value * (numAttributes.value - 1)}`;
+      for (let i = 0; i < numAttributes.value - 1; i++) {
+        pathStr += `M${blockWidth.value * (i + 1)} 0V${blockWidth.value * (numAttributes.value - 1 - i)}`;
       }
       return pathStr;
-    },
-    setCell(i, j, k) {
-      const index = this.cellIndex(i, j, k);
-      this.$set(this.gridState, index, this.selectedColor);
-      // if a cross is set, consider it for the solution
-      const row = (k - 1) % this.numAttrValues;
-      if (this.selectedColor == 0) {
-        if (i == 1) {
-          this.attrInputs[`${row}_${j - 1}`] = this.attributes[j].values[Math.floor((k - 1) / this.numAttrValues)];
+    };
+
+    const cellIndex = (i, j, k) => {
+      let index = 0;
+      for (let c = 0; c < i - 1; c++) {
+        index += numAttributes.value - 1 - c;
+      }
+      return (index + j - 1) * numAttrValues.value * numAttrValues.value + (k - 1);
+    };
+
+    const selectColor = (i) => {
+      selectedColor.value = i;
+    };
+
+    onMounted(() => {
+      fetchLogical(route.params.id);
+      tableVisible.value = true;
+      document.addEventListener("mouseup", mainGridMouseUp);
+      window.ondragstart = () => false;
+      setPadding();
+      window.onbeforeunload = () => "Möchten Sie die Seite wirklich verlassen. Nicht gespeicherte Rätsel sind für immer verloren!";
+    });
+
+    onBeforeUnmount(() => {
+      document.removeEventListener("mouseup", mainGridMouseUp);
+    });
+
+    watch(route, (newRoute) => {
+      fetchLogical(newRoute.params.id);
+    });
+
+    watch(loggedIn, (newValue) => {
+      if (newValue) {
+        checkIfAlreadySolved();
+        setRating(route.params.id);
+      }
+    });
+
+    watch(rating, async (newRating) => {
+      if (newRating != null) {
+        try {
+          await LogicalRatingService.post({
+            LogicalId: parseInt(route.params.id, 10),
+            rating: newRating,
+          });
+        } catch (err) {
+          console.log(err);
         }
       }
-    },
-    cellIndex(i, j, k) {
-      // i: y pos of block group of size (numAttrValues * numAttrValues)
-      // j: x pos of block group
-      // k: index in block group
-      let index = 0;
-      for(let c = 0; c < i - 1; c++) {
-        index += this.numAttributes - 1 - c;
-      }
-      return (index + j - 1) * this.numAttrValues * this.numAttrValues + (k - 1);
-    },
-    selectColor(i) {
-      this.selectedColor = i;
-    }
+    });
+
+    return {
+      revertHistory,
+      revertIndex,
+      attrInputs,
+      solved,
+      gridState,
+      gridStateCopy,
+      cellWidth,
+      paddingLeft,
+      paddingTop,
+      tableVisible,
+      selectedColor,
+      colors,
+      solveLabel,
+      logical,
+      rating,
+      rateMax,
+      alreadySolved,
+      computedId,
+      loggedIn,
+      numAttrValues,
+      numAttributes,
+      blockWidth,
+      svgWidth,
+      svgHeight,
+      fetchLogical,
+      setRating,
+      checkIfAlreadySolved,
+      setPadding,
+      revertState,
+      restoreState,
+      checkSolution,
+      saveSolvedLogical,
+      toXY,
+      toIJK,
+      mouseDown,
+      mouseEnter,
+      mainGridMouseUp,
+      drawOutline,
+      cellIndex,
+      selectColor,
+    };
   },
 };
 </script>
@@ -531,16 +521,12 @@ h1 {
 }
 
 #headerImage {
-  /* position: absolute;
-  right: 30px;
-  top: 30px; */
   width: 1000px;
   height: 200px;
   object-fit: cover;
 }
 
 .puzzleContainer {
-  /* background: white; */
   overflow: hidden;
   border-radius: 10px;
   margin-top: 20px;
@@ -579,11 +565,8 @@ h1 {
   margin: 20px 0;
   padding: 1em;
   padding-left: 2em;
-  /* background-color: $logicalColor; */
   background: #f5f5f5;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
-  /* box-shadow: 0px 0px 20px 3px rgb(211, 211, 211);
-  box-shadow: 0 2px 6px rgba(154,153,153,0.75); */
   color: $textColor;
   border-radius: 4px;
 }
@@ -597,14 +580,14 @@ h1 {
 }
 
 .clue:last-child {
- margin-bottom: 0px;
+  margin-bottom: 0px;
 }
 
 thead {
   background: white;
 }
 
-tbody{
+tbody {
   th {
     color: #5e5d52;
   }

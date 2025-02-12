@@ -1,10 +1,10 @@
-<template>
+b-navbar<template>
   <div id="app">
     <div id="mainContainer">
       <div class="header">
         <div class="headerContainer">
           <b-navbar>
-            <template slot="brand">
+            <template #brand>
               <b-navbar-item tag="router-link" :to="{ path: '/' }">
                 <img
                     src="@/assets/logo.svg"
@@ -12,7 +12,7 @@
                 >
               </b-navbar-item>
             </template>
-            <template slot="start">
+            <template #start>
               <b-navbar-item tag="router-link" :to="{ path: '/' }">
                 Startseite
               </b-navbar-item>
@@ -35,15 +35,14 @@
               </b-navbar-item>           
             </template>
 
-            <template slot="end">
+            <template #end>
               <b-dropdown v-if="!isUserLoggedIn" position="is-bottom-left" append-to-body aria-role="menu" trap-focus :can-close="false">
-                <a
-                  class="navbar-item"
-                  slot="trigger"
-                  role="button">
-                  <span>Login</span>
-                  <b-icon icon="menu-down"></b-icon>
-                </a>
+                <template #trigger>
+                  <a class="navbar-item" role="button">
+                    <span>Login</span>
+                    <b-icon icon="menu-down"></b-icon>
+                  </a>
+                </template>
                 <b-dropdown-item
                   aria-role="menu-item"
                   :focusable="false"
@@ -70,16 +69,15 @@
               <b-navbar-item v-if="!isUserLoggedIn" tag="router-link" :to="{ path: '/register' }">
                 Registrieren
               </b-navbar-item>
-              <b-navbar-item v-if="isUserLoggedIn" tag="router-link" :to="{ path: `/user/${$store.state.user.id}` }">
-                <img class="avatarImg" :src="getUserAvatar($store.state.user.userImageId)">
+              <b-navbar-item v-if="isUserLoggedIn" tag="router-link" :to="{ path: `/user/${user.value.id}` }">
+                <img class="avatarImg" :src="getUserAvatar(user.value.userImageId)">
                 <p>
-                  Willkommen, {{ $store.state.user.username }}
+                  Willkommen, {{ user.value.username }}
                 </p>
               </b-navbar-item>
               <a v-if="isUserLoggedIn"
                 @click="logout()"
                 class="navbar-item"
-                slot="trigger"
                 role="button">
                 <span>Logout</span>
               </a>
@@ -98,53 +96,50 @@
             <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}, <router-link :to="`/impressum`" class="navLink">Impressum</router-link>
           </p>
         </div>
-        <cookie-law theme="base">
-          <div slot="message">
-            Diese Website benutzt Cookies, um das beste Nutzererlebnis auf der Seite zu ermöglichen.
-          </div>
-        </cookie-law>
+        <CookieConsent />
       </footer>
     </div>
   </div>
 </template>
 
 <script>
-// import axios from 'axios';
 import router from './router';
-import {mapState} from 'vuex';
+import { storeToRefs } from 'pinia';
+import { useMainStore } from './store/store';
 import AuthenticationService from '@/services/AuthenticationService';
-import CookieLaw from 'vue-cookie-law';
+import CookieConsent from './components/CookieConsent.vue'
 
 export default {
   name: 'App',
   components: {
-    CookieLaw 
+    CookieConsent
+  },
+  setup() {
+    const store = useMainStore();
+    const { isUserLoggedIn, user } = storeToRefs(store);
+
+    return {
+      isUserLoggedIn,
+      user,
+      store
+    };
   },
   data() {
     return {
-      /* pages: [
-        { id: 'home', name: 'Home', link: 'Dashboard' },
-        { id: 'login', name: 'Login', link: 'Login' },
-        { id: 'logical', name: 'Logical', link: 'Logical' },
-        { id: 'nonogram', name: 'Nonogram', link: 'Nonogram' },
-      ], */
       email: "",
       password: "",
       error: ""
     };
   },
-  computed: {
-    ...mapState(['isUserLoggedIn'])
-  },
   methods: {
     getUserAvatar(id) {
       const paths = ["bear", "chicken", "cat"];
       const index = id == null ? 0 : id % paths.length;
-      return require(`@/assets/${paths[index]}.svg`);
+      return new URL(`@/assets/${paths[index]}.svg`, import.meta.url).href;
     },
     logout() {
-      this.$store.dispatch('setToken', null);
-      this.$store.dispatch('setUser', null);
+      this.store.setToken(null);
+      this.store.setUser(null);
       router.push('/');
     },
     async login() {
@@ -153,8 +148,8 @@ export default {
           email: this.email,
           password: this.password
         });
-        this.$store.dispatch('setToken', response.data.token);
-        this.$store.dispatch('setUser', response.data.user);
+        this.store.setToken(response.data.token);
+        this.store.setUser(response.data.user);
         this.error = null;
         console.log(response.data);
       } catch (err) {

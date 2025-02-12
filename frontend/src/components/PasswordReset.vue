@@ -3,63 +3,90 @@
     <h2>Ändern des Passworts</h2>
     
     <b-field label="Passwort">
-      <input type="password"
-        v-model="password"/>
+      <b-input
+        type="password"
+        v-model="password"
+        class="inputForm"/>
     </b-field>  
 
     <b-field label="Passwort (Kontrolle)">
-      <input type="password"
-        v-model="passwordCheck"/>
+      <b-input
+        type="password"
+        v-model="passwordCheck"
+        class="inputForm"/>
     </b-field>
 
-    <button @click="changePassword">Passwort ändern</button>
+    <b-button @click="changePassword">Passwort ändern</b-button>
     <div class="error" v-html="error"/>
   </div>
 </template>
 
 <script>
-import AuthenticationService from '@/services/AuthenticationService';
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useMainStore } from '@/store/store'
+import AuthenticationService from '@/services/AuthenticationService'
 
 export default {
   name: 'PasswordReset',
-  data() {
-    return {
-      password: '',
-      passwordCheck: '',
-      error: null,
-      token: null
-    };
-  },
-  mounted() {
-    this.token = this.$store.state.route.params.token;
-  },
-  methods: {
-    async changePassword() {
-      if (this.password == this.passwordCheck) {
+  setup() {
+    const route = useRoute()
+    const store = useMainStore()
+    
+    const password = ref('')
+    const passwordCheck = ref('')
+    const error = ref(null)
+    const token = ref(null)
+
+    onMounted(() => {
+      token.value = route.params.token
+    })
+
+    const changePassword = async () => {
+      if (password.value === passwordCheck.value) {
         try {
-          const response = await AuthenticationService.reset(this.token, 
-          {
-            password: this.password
-          });
-          this.$store.dispatch('setToken', response.data.token);
-          this.$store.dispatch('setUser', response.data.user);
-          this.error = null;
+          const response = await AuthenticationService.reset(token.value, {
+            password: password.value
+          })
+          
+          store.setToken(response.data.token)
+          store.setUser(response.data.user)
+          error.value = null
+          
           this.$buefy.toast.open({
             duration: 3000,
-            message: `Das Passwort wurde erfolgreich geändert und eine Bestätigungs E-Mail versendet`,
-            position: 'is-top-right',
-            queue: false,
-            closable: false,
-            type: 'is-info'
-          });
-          console.log(response.data);
+            message: 'Das Passwort wurde erfolgreich geändert und eine Bestätigungs E-Mail versendet',
+            position: 'top-right',
+            type: 'info',
+            closable: false
+          })
+          
+          console.log(response.data)
         } catch (err) {
-          this.error = err.response.data.error;
+          error.value = err.response.data.error
         }
       } else {
-        this.error = "Die eingegebenen Passwörter stimmen nicht überein."
+        error.value = "Die eingegebenen Passwörter stimmen nicht überein."
       }
     }
-  },
-};
+
+    return {
+      password,
+      passwordCheck,
+      error,
+      changePassword
+    }
+  }
+}
 </script>
+
+<style scoped>
+.inputForm {
+  width: 100%;
+}
+
+.error {
+  color: red;
+  margin-top: 1rem;
+}
+</style>

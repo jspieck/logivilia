@@ -4,7 +4,6 @@
     <p>Angaben gemäß § 5 TMG:</p>
     <ul>
       <li>Jan Spieck</li>
-      <li>Großgründlacher Hauptstraße, 31 a</li>
       <li>90427 Nürnberg</li>
     </ul>
     <p>Kontakt:</p>
@@ -14,9 +13,9 @@
       <li>90427 Nürnberg</li>
     </ul>
     <p>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:
-      Jan, Spieck
-      Großgründlacher Hauptstraße, 31 a
-      90427, Nürnberg
+      Jan Spieck
+      Großgründlacher Hauptstraße 31 a
+      90427 Nürnberg
     </p>
 
     <h3>Haftungsausschluss (Disclaimer)</h3>
@@ -83,7 +82,7 @@
 <script>
 export default {
   name: 'Impressum',
-  data() {
+  setup() {
     return {
     };
   },

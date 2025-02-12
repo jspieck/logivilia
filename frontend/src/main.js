@@ -1,25 +1,25 @@
-import VueCookies from 'vue-cookies';
-import Vue from 'vue'
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
-import router from './router';
+import router from './router'
 import Buefy from 'buefy'
-import { sync } from 'vuex-router-sync';
-import store from '@/store/store';
-import '@/styles/buefy.css';
+import 'buefy/dist/buefy.css'
+import Oruga from '@oruga-ui/oruga-next';
 import Autocomplete from '@trevoreyre/autocomplete-vue'
 import '@/styles/searchbar.css'
+import VueCookies from 'vue-cookies'
 
-Vue.use(Autocomplete);
-Vue.use(Buefy);
-Vue.use(VueCookies);
+const app = createApp(App)
+const pinia = createPinia()
 
-Vue.config.ignoredElements = [/^ion-/];
-Vue.config.productionTip = false;
+app.use(pinia)
+app.use(router)
+app.use(Buefy)
+app.use(Oruga)
+app.use(Autocomplete)
+app.use(VueCookies)
 
-sync(store, router);
+app.config.compilerOptions.isCustomElement = tag => tag.startsWith('ion-')
+app.config.productionTip = false
 
-new Vue({
-  router,
-  store,
-  render: h => h(App),
-}).$mount('#app');
+app.mount('#app')
