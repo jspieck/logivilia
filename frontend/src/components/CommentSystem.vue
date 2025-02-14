@@ -1,7 +1,7 @@
 <template>
   <div id="comment-area" class="comment-area">
     <div class="comments-container">
-      <h2>Kommentare</h2>
+      <h3>Kommentare</h3>
       <div v-if="isUserLoggedIn">
         <textarea
           id="mainComment"
@@ -17,7 +17,9 @@
           <div v-if="commentSend" class="dankeBox replyInactive">Danke für den Kommentar!</div>
         </div>
       </div>
-      <span v-if="!isUserLoggedIn">Um einen Kommentar zu hinterlassen, müssen Sie sich einloggen.</span>
+      <p v-if="!isUserLoggedIn" class="login-message">
+        Um einen Kommentar zu hinterlassen, müssen Sie sich einloggen.
+      </p>
       <Comments :comments="comments" :commentLevel="1" :userVotes="userVotes" :replyId="-1"/>
     </div>
   </div>
@@ -118,6 +120,23 @@ export default {
 </script>
 
 <style scoped>
+.comment-area {
+  margin-top: 30px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+
+  h3 {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 15px;
+  }
+
+  .login-message {
+    color: #666;
+    font-style: italic;
+  }
+}
+
 .comment-action-label {
   vertical-align: text-bottom;
   margin-left: 3px;

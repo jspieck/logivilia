@@ -83,9 +83,9 @@
       <p class="category-text">Wohnort</p>
       <input v-model="editedCity"/>
       <p class="category-text">Geschlecht</p>
-      <MySelect :options="genderOptions" v-model="selectedGender" :sel="selectedGender"/>
+      <MySelect :options="genderOptions" v-model="selectedGender"/>
       <p class="category-text">Geburtsjahr</p>
-      <MySelect :options="years" v-model="selectedBirthyear" :sel="selectedBirthyear"/>
+      <MySelect :options="years" v-model="selectedBirthyear"/>
       <p class="category-text">Über mich</p>
       <textarea class="bio-area" v-model="aboutMe"></textarea>
       <button @click="updateProfile">Profil aktualisieren</button>

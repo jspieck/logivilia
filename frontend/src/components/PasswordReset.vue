@@ -25,6 +25,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMainStore } from '@/store/store'
+import { useOruga } from '@oruga-ui/oruga-next'
 import AuthenticationService from '@/services/AuthenticationService'
 
 export default {
@@ -32,6 +33,7 @@ export default {
   setup() {
     const route = useRoute()
     const store = useMainStore()
+    const oruga = useOruga()
     
     const password = ref('')
     const passwordCheck = ref('')
@@ -53,7 +55,7 @@ export default {
           store.setUser(response.data.user)
           error.value = null
           
-          this.$buefy.toast.open({
+          oruga.notification.open({
             duration: 3000,
             message: 'Das Passwort wurde erfolgreich geändert und eine Bestätigungs E-Mail versendet',
             position: 'top-right',

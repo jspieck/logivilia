@@ -20,23 +20,25 @@
 <script>
 import { ref } from 'vue'
 import AuthenticationService from '@/services/AuthenticationService'
+import { useOruga } from '@oruga-ui/oruga-next'
 
 export default {
   name: 'Forgot',
   setup() {
     const forgottenEmail = ref('')
     const error = ref(null)
+    const oruga = useOruga()
 
     const forgot = async () => {
       try {
         const response = await AuthenticationService.forgot({ email: forgottenEmail.value })
         error.value = null
         
-        this.$buefy.toast.open({
+        oruga.notification.open({
           duration: 3000,
           message: `Eine Email wurde erfolgreich an ${forgottenEmail.value} versendet`,
           position: 'top-right',
-          type: 'info',
+          variant: 'info',
           closable: false
         })
         

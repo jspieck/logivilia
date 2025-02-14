@@ -1,53 +1,40 @@
 <template>
-  <div>
-    <label :class="enabled ? ['toggle', 'checked'] : 'toggle'">
-      <span>
-        <svg width="10px" height="10px" viewBox="0 0 10 10">
-          <path d="M5,1 L5,1 C2.790861,1 1,2.790861 1,5 L1,5 C1,7.209139
-          2.790861,9 5,9 L5,9 C7.209139,9 9,7.209139 9,5 L9,5 C9,2.790861
-          7.209139,1 5,1 L5,9 L5,1 Z"></path>
-        </svg>
-      </span>
-      <input 
-        class="checkInput" 
-        type="checkbox" 
-        @change="toggle" 
-        :checked="modelValue"
-      />
-    </label>
+  <div :class="clicked ? 'selectBox clicked' : 'selectBox'" :disabled="isDisabled">
+    <select class="fpfSelect"
+      v-model="selectedOption"
+      :disabled="isDisabled"
+      @click="clicked = !clicked">
+      <option v-for="[i, option] in options.entries()" :value="option" :key="`sel${i}`">
+        {{ option }}
+      </option>
+    </select>
+    <ion-icon class="select-icon" name="caret-down-outline"></ion-icon>
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, watch } from 'vue'
 
-export default {
-  name: 'ToggleComponent',
-  props: {
-    modelValue: {
-      type: Boolean,
-      default: false
-    }
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    const enabled = ref(props.modelValue)
+const props = defineProps({
+  modelValue: [String, Number], // Allow both String and Number
+  options: Array,
+  isDisabled: Boolean
+})
 
-    watch(() => props.modelValue, (newValue) => {
-      enabled.value = newValue
-    })
+const emit = defineEmits(['update:modelValue'])
 
-    const toggle = (e) => {
-      enabled.value = e.target.checked
-      emit('update:modelValue', e.target.checked)
-    }
+const selectedOption = ref(props.modelValue)
+const clicked = ref(false)
 
-    return {
-      enabled,
-      toggle
-    }
-  }
-}
+// Watch for parent changes
+watch(() => props.modelValue, (newValue) => {
+  selectedOption.value = newValue
+})
+
+// Watch for local changes
+watch(selectedOption, (newValue) => {
+  emit('update:modelValue', newValue)
+})
 </script>
 
 <style scoped lang="scss">
@@ -76,9 +63,9 @@ select{
   font-size: 1.2em;
   position: absolute;
   right: 10px;
-  top: 12px;
+  top: 9px;
   transition: .3s all;
-  transform: rotate(90deg);
+  transform: rotate(0deg);
   pointer-events: none;
 }
 
@@ -90,7 +77,8 @@ select{
   display: inline-block;
 
   &.clicked .select-icon {
-    transform: rotate(270deg);
+    transform: rotate(180deg);
   }
 }
+
 </style>

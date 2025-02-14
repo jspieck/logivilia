@@ -1,179 +1,69 @@
 <template>
-  <div class="solvePage">
-    <div class="puzzleContainer" draggable="false">
-      <div id="puzzleHeader">
-        <h1 class="puzzleTitle">{{ linelog.name }}</h1>
-        <span class="difficulty"
-          >{{ linelog.difficulty }}/<strong>5</strong></span
-        >
-      </div>
-      <div id="puzzle" class="puzzleBody">
-        <div id="nonoArea">
-          <b-notification type="is-warning" role="alert">
-            Dieser Rätseltyp befindet sich noch in der Testphase. Es kann zu
-            Fehlern kommen.
-          </b-notification>
-          <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
+  <div class="puzzle-container">
+    <!-- Header -->
+    <div class="puzzle-header">
+      <h1 class="puzzle-title">{{ linelog.name }}</h1>
+      <span class="difficulty">{{ linelog.difficulty }}/<strong>5</strong></span>
+    </div>
+
+    <!-- Main Puzzle Area -->
+    <div class="puzzle-body">
+      <div id="nonoArea">
+        <!-- Warning Banner -->
+        <b-notification type="is-warning" role="alert">
+          Dieser Rätseltyp befindet sich noch in der Testphase. Es kann zu Fehlern kommen.
+        </b-notification>
+
+        <!-- Controls -->
+        <div class="puzzle-controls">
+          <button id="zoomIn" @click="zoomIn" class="control-button">
             <ion-icon v-pre name="add"></ion-icon>
           </button>
-          <button id="zoomOut" @click="zoomOut" class="nonoButton largerIcon">
+          <button id="zoomOut" @click="zoomOut" class="control-button">
             <ion-icon v-pre name="remove"></ion-icon>
           </button>
-          <svg
-            id="colors"
-            :height="cellWidthBase + 25"
-            :width="colors.length * (cellWidthBase + 10) + 15"
-          >
-            <g
-              v-for="[i, color] in colors.entries()"
-              v-bind:key="`color${i}`"
-              :transform="`translate(${5 + i * (cellWidthBase + 10)}, 5)`"
-            >
-              <rect
-                :fill="color"
-                stroke="black"
-                :width="cellWidthBase"
-                :height="cellWidthBase"
-                @click="selectColor(i)"
-              />
-              <rect
-                v-if="selectedColor == i"
-                fill="#f55656"
-                :width="cellWidthBase"
-                height="3"
-                :y="cellWidthBase + 4"
-              />
-            </g>
-          </svg>
-          <div id="linelogGridContainer">
-            <svg
-              id="mainArea"
-              draggable="false"
-              :class="solved ? 'solved' : 'mainArea'"
-              :width="width * cellWidth + 1"
-              :height="height * cellWidth + 1"
-              @mousedown="
-                (e) => {
-                  mouseDown(e);
-                }
-              "
-              @mousemove="
-                (e) => {
-                  mouseMove(e);
-                }
-              "
-              @touchstart="
-                (e) => {
-                  touchDown(e);
-                }
-              "
-              @touchmove="
-                (e) => {
-                  touchMove(e);
-                }
-              "
-            >
-              <defs>
-                <pattern
-                  id="smallGrid"
-                  :width="cellWidth"
-                  :height="cellWidth"
-                  patternUnits="userSpaceOnUse"
-                >
-                  <path
-                    :d="`M ${cellWidth} 0 L 0 0 0 ${cellWidth}`"
-                    fill="none"
-                    stroke="#929292"
-                    stroke-width="1"
-                  />
-                </pattern>
-                <pattern
-                  id="grid"
-                  :width="cellWidth * 5"
-                  :height="cellWidth * 5"
-                  patternUnits="userSpaceOnUse"
-                >
-                  <rect
-                    :width="cellWidth * 5"
-                    :height="cellWidth * 5"
-                    fill="url(#smallGrid)"
-                  />
-                  <path
-                    :d="`M ${cellWidth * 5} 0 L 0 0 0 ${cellWidth * 5}`"
-                    fill="none"
-                    stroke="black"
-                    stroke-width="2"
-                  />
-                </pattern>
-              </defs>
-              <rect
-                v-if="!solved"
-                width="100%"
-                height="100%"
-                fill="url(#grid)"
-                style="pointer-events: none"
-              />
-              <path
-                v-for="path in paths"
-                v-bind:key="`path${path.id}`"
-                class="linelogNoSelect"
-                :d="createPath(path.cells)"
-                :stroke-width="strokeWidth"
-                fill="none"
-                stroke-linejoin="round"
-                :stroke="colors[path.color]"
-              />
-              <path
-                v-if="currentPath != null"
-                v-bind:key="`currentpath`"
-                class="linelogNoSelect"
-                :d="createPath(currentPath.cells)"
-                :stroke-width="strokeWidth"
-                fill="none"
-                stroke-linejoin="round"
-                :stroke="colors[currentPath.color]"
-              />
-              <template v-for="[y, infoRow] in information.entries()">
-                <g
-                  v-for="[x, cell] in infoRow.entries()"
-                  v-bind:key="`cellMain${y}_${x}`"
-                  class="gridCell linelogNoSelect"
-                  :transform="`translate(${cellWidth * x}, ${cellWidth * y})`"
-                >
-                  <rect
-                    v-if="solved"
-                    :width="cellWidth"
-                    :height="cellWidth"
-                    :fill="colors[gridState[x + width * y]]"
-                  />
-                  <circle
-                    v-if="cell != 0"
-                    :cx="cellWidth / 2"
-                    :cy="cellWidth / 2"
-                    :r="cellWidth * 0.4"
-                    :fill="colors[gridState[y * width + x]]"
-                  />
-                  <text
-                    v-if="!solved && cell != 0"
-                    :x="cellWidth / 2"
-                    :y="cellWidth / 2"
-                    :fill="
-                      () => {
-                        console.log(y * width + x, gridState, fontColors);
-                        return fontColors[gridState[y * width + x]];
-                      }
-                    "
-                    dominant-baseline="middle"
-                    text-anchor="middle"
-                    :style="`font-size: ${fontSize}px;`"
-                  >
-                    {{ cell }}
-                  </text>
-                </g>
-              </template>
-            </svg>
+          <!-- Color Palette -->
+          <div class="color-buttons">
+            <button 
+              v-for="(color, index) in colors" 
+              :key="index"
+              :class="['color-button', { active: selectedColor === index }]"
+              :style="{ backgroundColor: color }"
+              @click="selectColor(index)">
+            </button>
           </div>
         </div>
+
+        <!-- Main Grid Area - Keeping original functionality intact -->
+        <div id="linelogGridContainer">
+          <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'" :width="width * cellWidth + 1" :height="height * cellWidth + 1"
+            @mousedown="e => {mouseDown(e)}" @mousemove="e => {mouseMove(e)}" @touchstart="e => {touchDown(e)}" @touchmove="e => {touchMove(e)}">
+            <!-- Keep all original SVG content exactly as is -->
+            <defs>
+              <pattern id="smallGrid" :width="cellWidth" :height="cellWidth" patternUnits="userSpaceOnUse">
+                <path :d="`M ${cellWidth} 0 L 0 0 0 ${cellWidth}`" fill="none" stroke="#929292" stroke-width="1"/>
+              </pattern>
+              <pattern id="grid" :width="cellWidth * 5" :height="cellWidth * 5" patternUnits="userSpaceOnUse">
+                <rect :width="cellWidth * 5" :height="cellWidth * 5" fill="url(#smallGrid)"/>
+                <path :d="`M ${cellWidth * 5} 0 L 0 0 0 ${cellWidth * 5}`" fill="none" stroke="black" stroke-width="2"/>
+              </pattern>
+            </defs>
+            <rect v-if="!solved" width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
+            <path v-for="path in paths" v-bind:key="`path${path.id}`" class="linelogNoSelect" :d="createPath(path.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[path.color]"/>
+            <path v-if="currentPath != null" v-bind:key="`currentpath`" class="linelogNoSelect" :d="createPath(currentPath.cells)" :stroke-width="strokeWidth" fill="none" stroke-linejoin="round" :stroke="colors[currentPath.color]"/>
+            <template v-for="[y, infoRow] in information.entries()">
+              <g v-for="[x, cell] in infoRow.entries()" v-bind:key="`cellMain${y}_${x}`" class="gridCell linelogNoSelect" :transform="`translate(${cellWidth * x}, ${cellWidth * y})`">
+                <rect v-if="solved" :width="cellWidth" :height="cellWidth" :fill="colors[gridState[x + width * y]]"/>
+                <circle v-if="cell != 0" :cx="cellWidth / 2" :cy="cellWidth / 2" :r="cellWidth * 0.4" :fill="colors[gridState[y * width + x]]"/>
+                <text v-if="!solved && cell != 0" :x="cellWidth / 2" :y="cellWidth / 2" :fill="fontColors[gridState[y * width + x]]" dominant-baseline="middle" text-anchor="middle" :style="`font-size: ${fontSize}px;`">{{cell}}</text>
+              </g>
+            </template>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Rating Section -->
+      <div class="rating-section">
         <h2>Rätsel bewerten</h2>
         <b-rate
           v-if="loggedIn"
@@ -184,30 +74,25 @@
           :show-text="false"
           :rtl="false"
           :spaced="false"
-          :disabled="false"
-        >
+          :disabled="false">
         </b-rate>
-        <p v-if="!loggedIn">
-          Um das Rätsel zu bewerten, müssen Sie sich einloggen.
-        </p>
-        <div id="checkSolutionBox">
-          <img
-            v-if="solved"
-            class="checking"
-            src="@/assets/haken.png"
-            width="40"
-            height="40"
-          />
-          <label v-if="solved" id="solved"
-            >Gratulation! Sie haben dieses Rätsel gelöst!</label
-          >
+        <p v-if="!loggedIn" class="login-message">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
+      </div>
+
+      <!-- Success Message -->
+      <div class="status-section">
+        <div v-if="solved" class="success-message">
+          <img class="checking" src='@/assets/haken.png' width='40' height='40'/>
+          <label id="solved">Gratulation! Sie haben dieses Rätsel gelöst!</label>
         </div>
-        <div v-if="!solved && alreadySolved">
+        <div v-if="!solved && alreadySolved" class="already-solved">
           Glückwunsch! Sie haben dieses Rätsel bereits gelöst.
         </div>
       </div>
     </div>
-    <CommentSystem :riddleType="'linelog'" :riddleId="computedId" />
+
+    <!-- Comments -->
+    <CommentSystem :riddleType="'linelog'" :riddleId="computedId"/>
   </div>
 </template>
 
@@ -267,7 +152,7 @@ watch(
     linelog.value = response.data;
     await setRating(newId);
 
-    if (loggedIn.value) {
+    if (store.isUserLoggedIn) {
       await checkIfAlreadySolved();
     }
 
@@ -278,7 +163,7 @@ watch(
   { immediate: true }
 );
 
-watch(loggedIn, async (newValue) => {
+watch(() => store.isUserLoggedIn, async (newValue) => {
   if (newValue) {
     await checkIfAlreadySolved();
     await setRating(route.params.id);
@@ -339,6 +224,7 @@ const fontColors = computed(() => {
   for (const color of colors.value) {
     fontColors.push(pickTextColorBasedOnBgColor(color));
   }
+  console.log(fontColors);
   return fontColors;
 });
 
@@ -358,7 +244,7 @@ onMounted(async () => {
       }
     }
   }
-  if (loggedIn.value) {
+  if (store.isUserLoggedIn) {
     checkIfAlreadySolved();
   }
 
@@ -397,24 +283,25 @@ const setRating = async (logicalId) => {
 };
 const showZoomLevel = () => {
   oruga.notification.open({
-    duration: 500,
+    duration: 1000,
     message: `Zoom: ${Math.round(
       (cellWidth.value / cellWidthBase.value) * 100
     )} %`,
     position: "top-right",
     closable: false,
-    type: "info",
+    variant: "info",
+    queue: true,
   });
 };
 const errorMessage = (text) => {
   if (!solved.value) {
     oruga.notification.open({
-      duration: 500,
+      duration: 1000,
       message: text,
       position: "top-right",
       queue: false,
       closable: false,
-      type: "danger",
+      variant: "danger",
     });
   }
 };
@@ -760,49 +647,196 @@ const mainGridMouseUp = () => {
     checkIfSolved();
   }
 };
+
+// Add a watch for gridState
+watch(gridState, (newState) => {
+  if (!solved.value) {
+    checkSolution(newState);
+  }
+}, { deep: true });
+
+const checkSolution = (state) => {
+  if (!state || !solution.value) return;
+  
+  let isCorrect = true;
+  for (let y = 0; y < height.value; y++) {
+    for (let x = 0; x < width.value; x++) {
+      if (state[x + y * width.value] !== solution.value[y][x]) {
+        isCorrect = false;
+        break;
+      }
+    }
+    if (!isCorrect) break;
+  }
+
+  if (isCorrect) {
+    solved.value = true;
+    if (store.isUserLoggedIn) {
+      try {
+        UserService.addSolvedLinelog(store.user.id, parseInt(route.params.id, 10));
+      } catch (err) {
+        console.error("Error updating solved puzzles:", err);
+      }
+    }
+  }
+};
 </script>
 
-<style lang="scss">
-.solvePage {
-  width: 100%;
+<style lang="scss" scoped>
+.color-buttons {
+  display: flex;
+  gap: 8px;
 }
+
+.color-button {
+  width: 32px;
+  height: 32px;
+  margin-top: 2px;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &.active {
+    border-color: #000;
+  }
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.puzzle-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.puzzle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  .puzzle-title {
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .difficulty {
+    font-size: 18px;
+  }
+}
+
+.puzzle-body {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.puzzle-controls {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.control-button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f5f5f5;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #e9ecef;
+  }
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
 #mainArea {
   display: block;
   touch-action: none;
   overflow-x: scroll;
 }
-#colors {
-  display: block;
-  margin-top: 15px;
-}
+
 .linelogNoSelect {
   user-select: none;
   pointer-events: none;
 }
-.notification {
-  padding: 0px 12px !important;
-}
-.notification > .delete {
-  position: absolute;
-  right: 2px !important;
-  top: 1px !important;
-}
+
 #linelogGridContainer {
   overflow-x: scroll;
+  margin: 20px 0;
 }
+
+.rating-section {
+  margin: 20px 0;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .login-message {
+    color: #666;
+  }
+}
+
+.status-section {
+  margin: 20px 0;
+
+  .success-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2e7d32;
+  }
+
+  .already-solved {
+    color: #666;
+    font-style: italic;
+  }
+}
+
 ::-webkit-scrollbar {
   -webkit-appearance: none;
 }
+
 ::-webkit-scrollbar-track {
   border-radius: 10px;
   background-color: #ffffff;
 }
+
 ::-webkit-scrollbar:horizontal {
   height: 12px;
   border-radius: 10px;
   border: 2px solid #ffffff;
 }
+
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, .5);
+}
+
+@media (max-width: 768px) {
+  .puzzle-container {
+    padding: 10px;
+  }
+
+  .puzzle-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 }
 </style>

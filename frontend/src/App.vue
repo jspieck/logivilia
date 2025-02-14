@@ -87,7 +87,11 @@ b-navbar<template>
       </div>
       <div class="body">
         <div class="bodyContainer">
-          <keep-alive :include="['LinelogOverview', 'NonogramOverview', 'LogicalOverview']"><router-view/></keep-alive>
+          <router-view v-slot="{ Component }">
+            <keep-alive :include="['LinelogOverview', 'NonogramOverview', 'LogicalOverview']">
+              <component :is="Component" />
+            </keep-alive>
+          </router-view>
         </div>
       </div>
       <footer class="logFooter">

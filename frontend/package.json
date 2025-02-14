@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@oruga-ui/oruga-next": "^0.9.3",
+    "@oruga-ui/theme-oruga": "^0.5.1",
     "@trevoreyre/autocomplete-vue": "^3.0.0",
     "axios": "^1.6.2",
     "buefy": "npm:@ntohq/buefy-next",
