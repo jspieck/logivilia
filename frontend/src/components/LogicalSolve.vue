@@ -210,7 +210,7 @@ export default {
     const paddingTop = ref(80);
     const tableVisible = ref(true);
     const selectedColor = ref(0);
-    const colors = ref(["#fff", "#333", "#fff"]);
+    const colors = ref(["#fff", "#777", "#fff"]);
     const solveLabel = ref("");
     const logical = ref({
       name: "",
@@ -324,7 +324,6 @@ export default {
 
     const revertState = () => {
       if (revertIndex.value > 0) {
-        console.log(revertHistory.value.length, revertIndex.value);
         revertIndex.value -= 1;
         const state = revertHistory.value[revertIndex.value];
         for (let b = state['x0']; b <= state['x1']; b++) {
@@ -341,7 +340,6 @@ export default {
 
     const restoreState = () => {
       if (revertIndex.value < revertHistory.value.length) {
-        console.log(revertHistory.value.length, revertIndex.value);
         const state = revertHistory.value[revertIndex.value];
         for (let b = state['x0']; b <= state['x1']; b++) {
           for (let a = state['y0']; a <= state['y1']; a++) {

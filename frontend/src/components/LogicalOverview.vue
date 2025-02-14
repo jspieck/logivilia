@@ -45,12 +45,9 @@
           <router-link :to="`/logicalSolve/${ props.row.id }`" class="navLink">{{ props.row.name }}</router-link>
         </b-table-column>
         <b-table-column field="difficulty" label="Schwierigkeit" v-slot="props" sortable>
-          <template>
             {{ props.row.difficulty }}
-          </template>
         </b-table-column>
         <b-table-column field="score" label="Bewertung" v-slot="props" sortable>
-          <template>
             <b-rate
               v-model="logicalRatings[props.row.id]"
               icon-pack="mdi"
@@ -61,7 +58,6 @@
               :spaced="false"
               :disabled="true">
             </b-rate>
-          </template>
         </b-table-column>
         <b-table-column field="date" label="Erstelldatum" v-slot="props" sortable>
           <span class="tag is-success">
