@@ -263,10 +263,6 @@ export default {
 
     const setPadding = () => {
       nextTick(() => {
-        console.log("Setting padding");
-        console.log("Horizontal refs:", horizontalLabelsRef.value);
-        console.log("Vertical refs:", verticalLabelsRef.value);
-
         if (!horizontalLabelsRef.value || !verticalLabelsRef.value) {
           console.log("Refs not available yet");
           return;
@@ -289,8 +285,6 @@ export default {
             maxVerticalWidth = Math.max(maxVerticalWidth, bbox.height);
           }
         });
-
-        console.log("Max widths:", { horizontal: maxHorizontalWidth, vertical: maxVerticalWidth });
 
         // Add padding with larger buffer space
         paddingLeft.value = Math.max(maxHorizontalWidth + 20, 80);
@@ -320,28 +314,42 @@ export default {
       });
     });
 
+    const getCellIndex = (i, j, k) => {
+      let index = 0;
+      for (let c = 0; c < i - 1; c++) {
+        index += numAttributes.value - 1 - c;
+      }
+      return (index + j - 1) * numAttrValues.value * numAttrValues.value + (k - 1);
+    };
+
     const revertState = () => {
       if (revertIndex.value > 0) {
-        const state = revertHistory.value[revertIndex.value - 1];
+        console.log(revertHistory.value.length, revertIndex.value);
+        revertIndex.value -= 1;
+        const state = revertHistory.value[revertIndex.value];
         for (let b = state['x0']; b <= state['x1']; b++) {
           for (let a = state['y0']; a <= state['y1']; a++) {
             const [i, j, k] = toIJK(b, a);
-            const cellIndex = cellIndex(i, j, k);
-            gridState.value[cellIndex] = state['colorsBefore'][b - state['x0']][a - state['y0']];
+            if (i !== -1) {
+              const idx = getCellIndex(i, j, k);
+              gridState.value[idx] = state['colorsBefore'][b - state['x0']][a - state['y0']];
+            }
           }
         }
-        revertIndex.value -= 1;
       }
     };
 
     const restoreState = () => {
       if (revertIndex.value < revertHistory.value.length) {
+        console.log(revertHistory.value.length, revertIndex.value);
         const state = revertHistory.value[revertIndex.value];
         for (let b = state['x0']; b <= state['x1']; b++) {
           for (let a = state['y0']; a <= state['y1']; a++) {
             const [i, j, k] = toIJK(b, a);
-            const cellIndex = cellIndex(i, j, k);
-            gridState.value[cellIndex] = state['colorAfter'];
+            if (i !== -1) {
+              const idx = getCellIndex(i, j, k);
+              gridState.value[idx] = state['colorAfter'];
+            }
           }
         }
         revertIndex.value += 1;
@@ -459,7 +467,7 @@ export default {
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
             const [ni, nj, nk] = toIJK(a, b);
             if (ni !== -1) {
-              const idx = cellIndex(ni, nj, nk);
+              const idx = getCellIndex(ni, nj, nk);
               stateBeforeRow.push(gridStateCopy.value[idx]);
             }
           }
@@ -476,12 +484,10 @@ export default {
         };
 
         if (revertIndex.value < revertHistory.value.length) {
-          revertHistory.value[revertIndex.value] = revertObj;
-          revertHistory.value.length = revertIndex.value + 1;
-        } else {
-          revertHistory.value.push(revertObj);
+          revertHistory.value = revertHistory.value.slice(0, revertIndex.value);
         }
-        revertIndex.value += 1;
+        revertHistory.value.push(revertObj);
+        revertIndex.value = revertHistory.value.length;
         isMouseDown.value = false;
       }
     };
@@ -591,6 +597,7 @@ export default {
       cellIndex,
       selectColor,
       initializeGridState,
+      getCellIndex,
     };
   },
 };
