@@ -1,109 +1,161 @@
 <template>
-  <div class="solvePage">
-    <div class="puzzleContainer" draggable="false">
-      <div id="puzzleHeader">
-        <h1 class="puzzleTitle">{{ nonogram.name }}</h1>
-        <span class="difficulty">{{ nonogram.difficulty }}/<strong>5</strong></span>
-      </div>
-      <div id="puzzle" class="puzzleBody">
-        <div id="nonoArea">
-          <button id="zoomIn" @click="zoomIn" class="nonoButton largerIcon">
+  <div class="puzzle-container">
+    <!-- Header -->
+    <div class="puzzle-header">
+      <h1 class="puzzle-title">{{ nonogram.name }}</h1>
+      <span class="difficulty">{{ nonogram.difficulty }}/<strong>5</strong></span>
+    </div>
+
+    <!-- Main Puzzle Area -->
+    <div class="puzzle-body">
+      <div id="nonoArea">
+        <!-- Controls -->
+        <div class="puzzle-controls">
+          <button id="zoomIn" @click="zoomIn" class="control-button">
             <ion-icon v-pre name="add" aria-label="Hineinzoomen"></ion-icon>
           </button>
-          <button id="zoomOut" @click="zoomOut" class="nonoButton largerIcon">
+          <button id="zoomOut" @click="zoomOut" class="control-button">
             <ion-icon v-pre name="remove"></ion-icon>
           </button>
-          <button id="revert" @click="revertState" class="nonoButton">
-            <ion-icon class="rotate" v-pre name="refresh"></ion-icon>
+          <button id="revert" @click="revertState" class="control-button">
+            <ion-icon v-pre name="return-up-back-outline"></ion-icon>
           </button>
-          <button id="restore" @click="restoreState" class="nonoButton">
+          <button id="restore" @click="restoreState" class="control-button">
             <ion-icon v-pre name="refresh"></ion-icon>
           </button>
+        </div>
 
-          <svg id="colors" :height="cellWidthBase + 25" :width="colors.length * (cellWidthBase + 10) + 15">
-            <g v-for="(color, i) in colors" :key="`color${i}`" :transform="`translate(${5 + i * (cellWidthBase + 10)}, 5)`">
-              <rect :fill="color" stroke="black" :width="cellWidthBase" :height="cellWidthBase" @click="selectColor(i)" />
-              <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidthBase / 2" :cy="cellWidthBase / 2" r="3" />
-              <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidthBase" height="3" :y="cellWidthBase + 4" />
-            </g>
-          </svg>
-          <div id="nonoMainArea">
-            <table class="nonoGrid">
-              <tr>
-                <td></td>
-                <td>
-                  <svg v-if="!solved" id="verticalInformation" ref="verticalInformation" draggable="false" :height="verticalHeight * cellWidth + 8" :width="width * cellWidth + 1">
-                    <defs>
-                      <pattern id="smallGrid" :width="cellWidth" :height="cellWidth" patternUnits="userSpaceOnUse">
-                        <path :d="`M ${cellWidth} 0 L 0 0 0 ${cellWidth}`" fill="none" stroke="#d7dadd" stroke-width="1" />
-                      </pattern>
-                      <pattern id="grid" :width="cellWidth * 5" :height="cellWidth * 5" patternUnits="userSpaceOnUse">
-                        <rect :width="cellWidth * 5" :height="cellWidth * 5" fill="url(#smallGrid)" />
-                        <path :d="`M ${cellWidth * 5} 0 L 0 0 0 ${cellWidth * 5}`" fill="none" stroke="black" stroke-width="2" />
-                      </pattern>
-                    </defs>
+        <!-- Color Palette -->
+        <svg id="colors" :height="cellWidthBase + 25" :width="colors.length * (cellWidthBase + 10) + 15">
+          <g v-for="(color, i) in colors" :key="`color${i}`" :transform="`translate(${5 + i * (cellWidthBase + 10)}, 5)`">
+            <rect :fill="color" stroke="black" :width="cellWidthBase" :height="cellWidthBase" @click="selectColor(i)" />
+            <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidthBase / 2" :cy="cellWidthBase / 2" r="3" />
+            <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidthBase" height="3" :y="cellWidthBase + 4" />
+          </g>
+        </svg>
 
-                    <template v-for="(group, groupIndex) in verticalInfo" :key="`group-${groupIndex}`">
-                      <template v-for="(row, rowIndex) in group" :key="`row-${rowIndex}`">
-                        <g v-for="(cell, cellIndex) in row" :key="`cellCol${cell.id}`" :id="cell.id" :transform="`translate(${cellWidth * rowIndex + groupIndex * 5 * cellWidth}, ${cellWidth * cellIndex})`">
-                          <rect :data-x="k" :data-y="j" :width="cellWidth" :height="cellWidth" :fill="cell.background" />
+        <!-- Main Grid Area -->
+        <div id="nonoMainArea">
+          <table class="nonoGrid">
+            <tr>
+              <td></td>
+              <td>
+                <!-- Vertical Information -->
+                <svg v-if="!solved" id="verticalInformation" ref="verticalInformation" draggable="false" 
+                     :height="verticalHeight * cellWidth + 8" :width="width * cellWidth + 1">
+                  <defs>
+                    <pattern id="smallGrid" :width="cellWidth" :height="cellWidth" patternUnits="userSpaceOnUse">
+                      <path :d="`M ${cellWidth} 0 L 0 0 0 ${cellWidth}`" fill="none" stroke="#d7dadd" stroke-width="1" />
+                    </pattern>
+                    <pattern id="grid" :width="cellWidth * 5" :height="cellWidth * 5" patternUnits="userSpaceOnUse">
+                      <rect :width="cellWidth * 5" :height="cellWidth * 5" fill="url(#smallGrid)" />
+                      <path :d="`M ${cellWidth * 5} 0 L 0 0 0 ${cellWidth * 5}`" fill="none" stroke="black" stroke-width="2" />
+                    </pattern>
+                  </defs>
+
+                  <template v-for="(group, groupIndex) in verticalInfo" :key="`group-${groupIndex}`">
+                    <template v-for="(row, rowIndex) in group" :key="`row-${rowIndex}`">
+                      <g v-for="(cell, cellIndex) in row" :key="`cellCol${cell.id}`" 
+                         :id="cell.id" 
+                         :transform="`translate(${cellWidth * rowIndex + groupIndex * 5 * cellWidth}, ${cellWidth * cellIndex})`">
+                        <rect :width="cellWidth" 
+                              :height="cellWidth" 
+                              :fill="cell.background" />
+                        <text :x="cellWidth / 2" 
+                              :y="cellWidth / 2" 
+                              :fill="cell.color" 
+                              dominant-baseline="middle" 
+                              text-anchor="middle" 
+                              :style="`font-size: ${fontSize}px;`">{{ cell.blockLength }}</text>
+                      </g>
+                      <rect :y="verticalHeight * cellWidth" 
+                            :x="cellWidth * (rowIndex + groupIndex * 5)" 
+                            :width="cellWidth" 
+                            height="7" 
+                            :fill="indicatorColors[indicatorVertical[groupIndex * 5 + rowIndex]]" />
+                    </template>
+                  </template>
+                  <rect width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
+                </svg>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <!-- Horizontal Information -->
+                <svg v-if="!solved" id="horizontalInformation" draggable="false" 
+                     :width="horizontalWidth * cellWidth + 8" :height="height * cellWidth + 1">
+                  <template v-for="(group, i) in horizontalInfo" :key="`group-${i}`">
+                    <template v-for="(row, j) in group" :key="`row-${i}-${j}`">
+                      <template v-for="(cell, k) in row" :key="`cell-${cell.id}`">
+                        <g class="gridCell noSelect" :id="cell.id" @click="selectColor(cell.colorId)" :transform="`translate(${cellWidth * k}, ${cellWidth * j + i * 5 * cellWidth})`">
+                          <rect :width="cellWidth" :height="cellWidth" :fill="cell.background" stroke="transparent" :data-x="k" :data-y="j" />
                           <text :x="cellWidth / 2" :y="cellWidth / 2" :fill="cell.color" dominant-baseline="middle" text-anchor="middle" :style="`font-size: ${fontSize}px;`">{{ cell.blockLength }}</text>
                         </g>
-                        <rect :y="verticalHeight * cellWidth" :x="cellWidth * (rowIndex + groupIndex * 5)" :width="cellWidth" height="7" :fill="indicatorColors[indicatorVertical[groupIndex * 5 + rowIndex]]" />
+                      </template>
+                      <rect :x="horizontalWidth * cellWidth" :y="cellWidth * (j + i * 5)" width="7" :height="cellWidth" :fill="indicatorColors[indicatorHorizontal[i * 5 + j]]" />
+                    </template>
+                  </template>
+                  <rect width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
+                </svg>
+              </td>
+              <td>
+                <!-- Main Grid -->
+                <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'"
+                     :width="width * cellWidth + 1" :height="height * cellWidth + 1"
+                     oncontextmenu="return false;"
+                     @touchstart="touchDownEvent"
+                     @touchmove="touchMoveEvent"
+                     @touchend="touchEndEvent">
+                  <template v-for="(groupRow, groupRowIndex) in mainArea" :key="`groupRow-${groupRowIndex}`">
+                    <template v-for="(group, groupIndex) in groupRow" :key="`group-${groupRowIndex}-${groupIndex}`">
+                      <template v-for="(row, rowIndex) in group" :key="`row-${groupRowIndex}-${groupIndex}-${rowIndex}`">
+                        <g v-for="cell in row" :key="`cellMain${cell.id}`" :id="cell.id" class="gridCell noSelect" :transform="`translate(${cellWidth * cell.x}, ${cellWidth * cell.y})`">
+                          <rect :width="cellWidth" :height="cellWidth" :data-x="cell.x" :data-y="cell.y" :fill="colors[gridState[cell.y * width + cell.x]]" stroke="transparent" :style="`line-height: ${cellWidth}px;`" @mousedown="cellMouseDown($event, cell.x, cell.y)" @mouseenter="cellMouseEnter($event, cell.x, cell.y)" />
+                          <circle v-if="gridState[cell.y * width + cell.x] == colors.length - 1 && !solved" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3" />
+                        </g>
                       </template>
                     </template>
-                    <rect width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
-                  </svg>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <svg v-if="!solved" id="horizontalInformation" draggable="false" :width="horizontalWidth * cellWidth + 8" :height="height * cellWidth + 1">
-                    <template v-for="(group, i) in horizontalInfo" :key="`group-${i}`">
-                      <template v-for="(row, j) in group" :key="`row-${i}-${j}`">
-                        <template v-for="(cell, k) in row" :key="`cell-${cell.id}`">
-                          <g class="gridCell noSelect" :id="cell.id" @click="selectColor(cell.colorId)" :transform="`translate(${cellWidth * k}, ${cellWidth * j + i * 5 * cellWidth})`">
-                            <rect :width="cellWidth" :height="cellWidth" :fill="cell.background" stroke="transparent" :data-x="k" :data-y="j" />
-                            <text :x="cellWidth / 2" :y="cellWidth / 2" :fill="cell.color" dominant-baseline="middle" text-anchor="middle" :style="`font-size: ${fontSize}px;`">{{ cell.blockLength }}</text>
-                          </g>
-                        </template>
-                        <rect :x="horizontalWidth * cellWidth" :y="cellWidth * (j + i * 5)" width="7" :height="cellWidth" :fill="indicatorColors[indicatorHorizontal[i * 5 + j]]" />
-                      </template>
-                    </template>
-                    <rect width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
-                  </svg>
-                </td>
-                <td>
-                  <svg id="mainArea" draggable="false" :class="solved ? 'solved' : 'mainArea'" :width="width * cellWidth + 1" :height="height * cellWidth + 1" oncontextmenu="return false;" @touchstart="touchDownEvent" @touchmove="touchMoveEvent" @touchend="touchEndEvent">
-                    <template v-for="(groupRow, groupRowIndex) in mainArea" :key="`groupRow-${groupRowIndex}`">
-                      <template v-for="(group, groupIndex) in groupRow" :key="`group-${groupRowIndex}-${groupIndex}`">
-                        <template v-for="(row, rowIndex) in group" :key="`row-${groupRowIndex}-${groupIndex}-${rowIndex}`">
-                          <g v-for="cell in row" :key="`cellMain${cell.id}`" :id="cell.id" class="gridCell noSelect" :transform="`translate(${cellWidth * cell.x}, ${cellWidth * cell.y})`">
-                            <rect :width="cellWidth" :height="cellWidth" :data-x="cell.x" :data-y="cell.y" :fill="colors[gridState[cell.y * width + cell.x]]" stroke="transparent" :style="`line-height: ${cellWidth}px;`" @mousedown="cellMouseDown($event, cell.x, cell.y)" @mouseenter="cellMouseEnter($event, cell.x, cell.y)" />
-                            <circle v-if="gridState[cell.y * width + cell.x] == colors.length - 1 && !solved" class="circlePath" :cx="cellWidth / 2" :cy="cellWidth / 2" r="3" />
-                          </g>
-                        </template>
-                      </template>
-                    </template>
-                    <rect v-if="!solved" width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
-                  </svg>
-                </td>
-              </tr>
-            </table>
-          </div>
+                  </template>
+                  <rect v-if="!solved" width="100%" height="100%" fill="url(#grid)" style="pointer-events: none" />
+                </svg>
+              </td>
+            </tr>
+          </table>
         </div>
       </div>
-      <h2>Rätsel bewerten</h2>
-      <b-rate v-if="loggedIn" v-model="rating" icon-pack="mdi" icon="star" :max="rateMax" :show-text="false" :rtl="false" :spaced="false" :disabled="false"></b-rate>
-      <p v-if="!loggedIn">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
-      <div id="checkSolutionBox">
-        <img v-if="solved" class="checking" src="@/assets/haken.png" width="40" height="40" />
-        <label v-if="solved" id="solved">Gratulation, dieses Rätsel ist gelöst!</label>
+
+      <!-- Rating Section -->
+      <div class="rating-section">
+        <h2>Rätsel bewerten</h2>
+        <b-rate
+          v-if="loggedIn"
+          v-model="rating"
+          icon-pack="mdi"
+          icon="star"
+          :max="rateMax"
+          :show-text="false"
+          :rtl="false"
+          :spaced="false"
+          :disabled="false">
+        </b-rate>
+        <p v-if="!loggedIn" class="login-message">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
       </div>
-      <div v-if="!solved && alreadySolved">Glückwunsch! Sie haben dieses Rätsel bereits gelöst.</div>
+
+      <!-- Success Message -->
+      <div class="status-section">
+        <div v-if="solved" class="success-message">
+          <img class="checking" src='@/assets/haken.png' width='40' height='40'/>
+          <label id="solved">Gratulation! Sie haben dieses Rätsel gelöst!</label>
+        </div>
+        <div v-if="!solved && alreadySolved" class="already-solved">
+          Glückwunsch! Sie haben dieses Rätsel bereits gelöst.
+        </div>
+      </div>
     </div>
+
+    <!-- Comments -->
+    <CommentSystem :riddleType="'nonogram'" :riddleId="computedId"/>
   </div>
-  <CommentSystem :riddleType="'nonogram'" :riddleId="computedId" />
 </template>
 
 <script>
@@ -401,6 +453,8 @@ export default {
       gridState.value = new Array(width.value * height.value).fill(backgroundNumber.value);
       indicatorHorizontal.value = new Array(height.value).fill(0);
       indicatorVertical.value = new Array(width.value).fill(0);
+      revertHistory.value = [[...gridState.value]];
+      revertIndex.value = 0;
       checkTotalNonogram();
     };
 
@@ -419,26 +473,28 @@ export default {
 
     const revertState = () => {
       if (revertIndex.value > 0) {
-        const state = revertHistory.value[revertIndex.value - 1];
-        for (let b = state['x0']; b <= state['x1']; b++) {
-          for (let a = state['y0']; a <= state['y1']; a++) {
-            gridState.value[a * width.value + b] = state['colorsBefore'][b - state['x0']][a - state['y0']];
-          }
-        }
-        revertIndex.value -= 1;
+        revertIndex.value--;
+        gridState.value = [...revertHistory.value[revertIndex.value]];
+        checkTotalNonogram();
       }
     };
 
     const restoreState = () => {
-      if (revertIndex.value < revertHistory.value.length) {
-        const state = revertHistory.value[revertIndex.value];
-        for (let b = state['x0']; b <= state['x1']; b++) {
-          for (let a = state['y0']; a <= state['y1']; a++) {
-            gridState.value[a * width.value + b] = state['colorAfter'];
-          }
-        }
-        revertIndex.value += 1;
+      if (revertIndex.value < revertHistory.value.length - 1) {
+        revertIndex.value++;
+        gridState.value = [...revertHistory.value[revertIndex.value]];
+        checkTotalNonogram();
       }
+    };
+
+    const saveSolvedState = async () => {
+      if (!loggedIn.value) return;
+      
+      const userId = store.user.value.id;
+      const nonogramId = parseInt(route.params.id, 10) - 1;
+      const isSuccess = await UserService.nonogramSolved(userId, nonogramId);
+      console.log("Suc", isSuccess);
+      alreadySolved.value = true;
     };
 
     const zoomIn = () => {
@@ -503,6 +559,7 @@ export default {
 
     const cellMouseDown = (e, i, j) => {
       if (!solved.value) {
+        isMouseDown.value = true;
         startMouseDown.value = [i, j];
         lastMouseOver.value = startMouseDown.value;
         rightMouseButtonPressed.value = e.which == 3;
@@ -515,6 +572,8 @@ export default {
       if (isMouseDown.value) {
         const [i2, j2] = startMouseDown.value;
         const [i3, j3] = lastMouseOver.value;
+        
+        // Restore previous state from copy
         if (i1 !== i3) {
           for (let b = Math.min(i1, i3); b <= Math.max(i1, i3); b++) {
             for (let a = Math.min(j2, j3); a <= Math.max(j2, j3); a++) {
@@ -529,6 +588,8 @@ export default {
             }
           }
         }
+        
+        // Apply new state
         for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
           for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
             gridState.value[b * width.value + a] = getSelectedColor();
@@ -539,15 +600,19 @@ export default {
     };
 
     const checkRow = (b) => {
-      let rowInfo = horizontalClues.value[b];
+      const rowInfo = horizontalClues.value[b];
       let checkIndex = 0;
       const startIndex = b * width.value;
       let currentNumber = gridState.value[startIndex];
       let currentNumberCounter = 1;
+
       for (let a = 1; a < width.value; a++) {
-        if (gridState.value[startIndex + a] != currentNumber) {
-          if (currentNumber != backgroundNumber.value && currentNumber != colors.value.length - 1) {
-            if (checkIndex >= rowInfo.length || currentNumber != rowInfo[checkIndex].currentNumber || currentNumberCounter != rowInfo[checkIndex].currentNumberCounter) {
+        if (gridState.value[startIndex + a] !== currentNumber) {
+          if (currentNumber !== backgroundNumber.value && 
+              currentNumber !== colors.value.length - 1) {
+            if (checkIndex >= rowInfo.length || 
+                currentNumber !== rowInfo[checkIndex].currentNumber || 
+                currentNumberCounter !== rowInfo[checkIndex].currentNumberCounter) {
               return 0;
             }
             checkIndex += 1;
@@ -558,27 +623,33 @@ export default {
           currentNumberCounter += 1;
         }
       }
-      if (currentNumber != backgroundNumber.value && currentNumber != colors.value.length - 1) {
-        if (checkIndex >= rowInfo.length || currentNumber != rowInfo[checkIndex].currentNumber || currentNumberCounter != rowInfo[checkIndex].currentNumberCounter) {
+
+      if (currentNumber !== backgroundNumber.value && 
+          currentNumber !== colors.value.length - 1) {
+        if (checkIndex >= rowInfo.length || 
+            currentNumber !== rowInfo[checkIndex].currentNumber || 
+            currentNumberCounter !== rowInfo[checkIndex].currentNumberCounter) {
           return 0;
         }
         checkIndex += 1;
       }
-      if (checkIndex != rowInfo.length) {
-        return 0;
-      }
-      return 1;
+
+      return checkIndex === rowInfo.length ? 1 : 0;
     };
 
     const checkColumn = (b) => {
-      let columnInfo = verticalClues.value[b];
+      const columnInfo = verticalClues.value[b];
       let checkIndex = 0;
       let currentNumber = gridState.value[b];
       let currentNumberCounter = 1;
+
       for (let a = 1; a < height.value; a++) {
-        if (gridState.value[width.value * a + b] != currentNumber) {
-          if (currentNumber != backgroundNumber.value && currentNumber != colors.value.length - 1) {
-            if (checkIndex >= columnInfo.length || currentNumber != columnInfo[checkIndex].currentNumber || currentNumberCounter != columnInfo[checkIndex].currentNumberCounter) {
+        if (gridState.value[width.value * a + b] !== currentNumber) {
+          if (currentNumber !== backgroundNumber.value && 
+              currentNumber !== colors.value.length - 1) {
+            if (checkIndex >= columnInfo.length || 
+                currentNumber !== columnInfo[checkIndex].currentNumber || 
+                currentNumberCounter !== columnInfo[checkIndex].currentNumberCounter) {
               return 0;
             }
             checkIndex += 1;
@@ -589,61 +660,49 @@ export default {
           currentNumberCounter += 1;
         }
       }
-      if (currentNumber != backgroundNumber.value && currentNumber != colors.value.length - 1) {
-        if (checkIndex >= columnInfo.length || currentNumber != columnInfo[checkIndex].currentNumber || currentNumberCounter != columnInfo[checkIndex].currentNumberCounter) {
+
+      if (currentNumber !== backgroundNumber.value && 
+          currentNumber !== colors.value.length - 1) {
+        if (checkIndex >= columnInfo.length || 
+            currentNumber !== columnInfo[checkIndex].currentNumber || 
+            currentNumberCounter !== columnInfo[checkIndex].currentNumberCounter) {
           return 0;
         }
         checkIndex += 1;
       }
-      if (checkIndex != columnInfo.length) {
-        return 0;
-      }
-      return 1;
+
+      return checkIndex === columnInfo.length ? 1 : 0;
     };
 
     const mainGridMouseUp = () => {
       if (isMouseDown.value) {
         const [i1, j1] = startMouseDown.value;
         const [i2, j2] = lastMouseOver.value;
-        const stateBefore = [];
-        for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
-          const stateBeforeRow = [];
-          for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
-            stateBeforeRow.push(gridStateCopy.value[b * width.value + a]);
-            gridState.value[b * width.value + a] = getSelectedColor();
-          }
-          stateBefore.push(stateBeforeRow);
-        }
-        const revertObj = {
-          'x0': Math.min(i1, i2),
-          'x1': Math.max(i1, i2),
-          'y0': Math.min(j1, j2),
-          'y1': Math.max(j1, j2),
-          'colorAfter': getSelectedColor(),
-          'colorsBefore': stateBefore
-        };
 
-        if (revertIndex.value < revertHistory.value.length) {
-          revertHistory.value[revertIndex.value] = revertObj;
-          revertHistory.value.length = revertIndex.value + 1;
-        } else {
-          revertHistory.value.push(revertObj);
+        // Save current state for undo/redo
+        if (revertIndex.value < revertHistory.value.length - 1) {
+          revertHistory.value = revertHistory.value.slice(0, revertIndex.value + 1);
         }
-        revertIndex.value += 1;
+        revertHistory.value.push([...gridState.value]);
+        revertIndex.value = revertHistory.value.length - 1;
 
+        // Check affected rows and columns
         for (let b = Math.min(i1, i2); b <= Math.max(i1, i2); b++) {
           indicatorVertical.value[b] = checkColumn(b);
         }
         for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
           indicatorHorizontal.value[b] = checkRow(b);
         }
-        if (indicatorHorizontal.value.every(v => v === 1) && indicatorVertical.value.every(v => v === 1)) {
+
+        // Check if puzzle is solved
+        if (indicatorHorizontal.value.every(v => v === 1) && 
+            indicatorVertical.value.every(v => v === 1)) {
           solved.value = true;
-          zoomIn();
           if (!alreadySolved.value) {
-            saveSolvedNonogram();
+            saveSolvedState();
           }
         }
+
         isMouseDown.value = false;
       }
     };
@@ -655,14 +714,14 @@ export default {
       for (let i = 0; i < height.value; i++) {
         indicatorHorizontal.value[i] = checkRow(i);
       }
-    };
 
-    const saveSolvedNonogram = async () => {
-      if (loggedIn.value) {
-        const userId = store.user.value.id;
-        const nonogramId = parseInt(route.params.id, 10) - 1;
-        const isSuccess = await UserService.nonogramSolved(userId, nonogramId);
-        console.log("Suc", isSuccess);
+      // Check if puzzle is solved
+      if (indicatorHorizontal.value.every(v => v === 1) && 
+          indicatorVertical.value.every(v => v === 1)) {
+        solved.value = true;
+        if (!alreadySolved.value) {
+          saveSolvedState();
+        }
       }
     };
 
@@ -761,192 +820,133 @@ export default {
       cellMouseEnter,
       mainGridMouseUp,
       checkTotalNonogram,
-      saveSolvedNonogram,
+      saveSolvedState,
       selectColor,
     };
   },
 };
 </script>
 
-<style lang="scss">
-#solutionGrid {
-  margin: 30px 0;
+<style lang="scss" scoped>
+.puzzle-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-.crossPath, .circlePath {
-  pointer-events: none;
-}
-
-.verticalTextGroup text {
-  writing-mode: tb;
-}
-
-.blockGroups {
-  pointer-events: all;
-}
-
-.correctRow {
-  background: red;
-  width: 5px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.correctColumn {
-  background: red;
-  height: 5px;
-}
-
-#buttonBar {
-  border: 1px solid #dbdde0;
-  display: inline-block;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-#nonoArea {
-  margin: 0;
+.puzzle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+
+  .puzzle-title {
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .difficulty {
+    font-size: 18px;
+  }
 }
 
-#mainArea .gridRow .gridCell:last-child {
-  border-right: none;
+.puzzle-body {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px;
 }
 
-.noSelect {
+.puzzle-controls {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.control-button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f5f5f5;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #e9ecef;
+  }
+
+  ion-icon {
+    font-size: 20px;
+  }
+
+  &.rotate ion-icon {
+    transform: scaleX(-1);
+  }
+}
+
+#nonoMainArea {
+  margin: 20px 0;
   user-select: none;
 }
 
-.gridCell {
-  display: inline-block;
-  vertical-align: top;
-  border-right: 1px solid #d7dadd;
-  text-align: center;
-  line-height: 25px;
-  font-size: 18px;
-  color: #111111;
-}
-
-.gridGroup .gridRow {
-  border-top: 1px solid #d7dadd;
-}
-
-.gridGroup .gridRow:first-child {
-  border-top: none;
-}
-
-.gridGroup .gridColumn {
-  border-right: 1px solid #d7dadd;
-}
-
-.gridGroup .gridColumn:last-child {
-  border-right: none;
-}
-
-.rotate {
-  transform: scaleX(-1);
-}
-
-.gridCellVert {
-  display: block;
-  border-bottom: 1px solid #d7dadd;
-  text-align: center;
-  line-height: 25px;
-  font-size: 18px;
-  color: #111111;
-}
-
-.gridColumn {
-  display: inline-block;
-}
-
-.gridGroup .gridColumn .gridCellVert:first-child {
-  border-top: none;
-}
-
-.gridGroup .gridColumn:last-child .gridCellVert {
-  border-right: none;
-}
-
-.gridRow .gridGroup:last-child {
-  border-right: 2px solid #222222;
-}
-
-.gridRow:last-child .gridGroup {
-  border-bottom: 2px solid #222222;
-}
-
-.gridGroup {
-  display: inline-block;
-  border-top: 2px solid #222222;
-  border-left: 2px solid #222222;
-}
-
-.solved .gridCell, .solved .gridGroup .gridRow, .solved .gridGroup .gridColumn, .solved .gridGroup, .solved .gridRow:last-child .gridGroup, .solved .gridRow .gridGroup:last-child  {
-  border: none;
-}
-
-ion-icon {
-  pointer-events: none;
-}
-
 .nonoGrid {
-  border: none;
+  border-spacing: 0;
+  border-collapse: collapse;
 }
 
-.bold {
-  font-weight: bold;
-}
-
-input {
-  padding: 9px;
-  box-sizing: border-box;
-  height: 30px;
-}
-
-.nonoButton {
-  display: inline-block;
-  font-size: 21px;
-  color: black;
-  padding: 2px;
-  width: 35px;
-  height: 35px;
-  line-height: 35px;
-  position: relative;
-  text-align: center;
-  border: none;
+.mainArea {
   cursor: pointer;
-  vertical-align: top;
-  margin-right: 20px;
-  outline: none;
-  border-radius: 50%;
+  touch-action: none;
 }
 
-.nonoButton:last-child {
-  margin-right: 0;
+.rating-section {
+  margin: 20px 0;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .login-message {
+    color: #666;
+  }
 }
 
-.largerIcon {
-  font-size: 28px;
+.status-section {
+  margin: 20px 0;
+
+  .success-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2e7d32;
+  }
+
+  .already-solved {
+    color: #666;
+    font-style: italic;
+  }
 }
 
-.checking {
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 10px;
-}
+@media (max-width: 768px) {
+  .puzzle-container {
+    padding: 10px;
+  }
 
-ul {
-  margin-block-start: 5px;
-}
+  .puzzle-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 
-#verticalInformation {
-  display: block;
-  margin-bottom: 3px;
-}
-
-#horizontalInformation {
-  display: block;
-  margin-right: 3px;
+  .puzzle-controls {
+    flex-wrap: wrap;
+  }
 }
 </style>

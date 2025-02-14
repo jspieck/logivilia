@@ -203,6 +203,7 @@ h1, h2, h3, h4 {
   flex-grow: 0;
   flex-shrink: 1;
   height: 55px;
+  line-height: 55px;
 }
 
 #app {
