@@ -49,7 +49,7 @@
         </b-table-column>
         <b-table-column field="score" label="Bewertung" v-slot="props" sortable>
             <b-rate
-              v-model="logicalRatings[props.row.id]"
+              v-model="state.logicalRatings[props.row.id]"
               icon-pack="mdi"
               icon="star"
               :max="rateMax"
@@ -141,11 +141,13 @@ export default {
     const loadLogicalData = async () => {
       state.value.logicals = (await LogicalService.index()).data
       const ratings = (await LogicalRatingService.index()).data
+      console.log(ratings)
       const ratingDict = {}
       for (const rating of ratings) {
         ratingDict[rating.LogicalId] = rating.avgRating
       }
       state.value.logicalRatings = ratingDict
+      console.log(state.value.logicalRatings)
 
       if (isUserLoggedIn.value) {
         const userData = (await UserService.show(user.value.id)).data
@@ -158,7 +160,7 @@ export default {
     }
 
     const isSolved = (id) => {
-      return state.value.solved.includes(id - 1)
+      return state.value.solved.includes(id)
     }
 
     const toggle = (row) => {
@@ -210,7 +212,6 @@ export default {
     })
 
     return {
-      ...state.value,
       tableRef,
       filteredLogicals,
       logicalNames,
@@ -219,7 +220,8 @@ export default {
       getImg,
       getExtract,
       search,
-      handleSubmit
+      handleSubmit,
+      state
     }
   }
 }

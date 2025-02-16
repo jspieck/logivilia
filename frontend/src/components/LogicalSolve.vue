@@ -150,21 +150,22 @@
       </div>
 
       <!-- Rating Section -->
-      <div class="rating-section">
-        <h2>Rätsel bewerten</h2>
-        <b-rate v-if="loggedIn" 
-                v-model="rating" 
-                icon-pack="mdi" 
-                icon="star" 
-                :max="rateMax" 
-                :show-text="false" 
-                :rtl="false" 
-                :spaced="false" 
-                :disabled="false">
-        </b-rate>
-        <p v-if="!loggedIn" class="login-message">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
-        <div v-if="!solved && alreadySolved" class="already-solved">
-          Glückwunsch! Sie haben dieses Rätsel bereits gelöst.
+      <div v-if="!store.isUserLoggedIn" class="rating-message">
+        Bitte loggen Sie sich ein, um das Rätsel zu bewerten.
+      </div>
+      <div v-else class="rating-section">
+        <h3>Bewertung</h3>
+        <b-rate v-model="rating" :max="rateMax" />
+      </div>
+
+      <!-- Add solved status message -->
+      <div v-if="solved" class="status-section">
+        <div v-if="alreadySolved" class="already-solved">
+          Sie haben dieses Rätsel bereits gelöst.
+        </div>
+        <div v-else class="success-message">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          {{ solveLabel }}
         </div>
       </div>
     </div>
@@ -184,6 +185,7 @@ import UserService from '@/services/UserService';
 import LogicalService from '@/services/LogicalService';
 import LogicalRatingService from '@/services/LogicalRatingService';
 import CommentSystem from '@/components/CommentSystem.vue';
+import { useOruga } from '@oruga-ui/oruga-next';
 
 export default {
   name: 'LogicalSolve',
@@ -195,6 +197,7 @@ export default {
   setup() {
     const route = useRoute();
     const store = useMainStore();
+    const oruga = useOruga();
 
     const horizontalLabelsRef = ref(null);
     const verticalLabelsRef = ref(null);
@@ -240,11 +243,17 @@ export default {
     const svgHeight = computed(() => paddingTop.value + 20 + (numAttributes.value - 1) * blockWidth.value);
 
     const fetchLogical = async (id) => {
-      const response = await LogicalService.show(id);
-      logical.value = response.data;
-      setRating(id);
-      if (loggedIn.value) {
-        await checkIfAlreadySolved();
+      try {
+        const response = await LogicalService.show(id);
+        logical.value = response.data;
+        
+        // Check user-specific data only if logged in
+        if (store.isUserLoggedIn && store.user) {
+          await setRating(id);
+          await checkIfAlreadySolved();
+        }
+      } catch (error) {
+        console.error('Error loading logical:', error);
       }
     };
 
@@ -256,9 +265,35 @@ export default {
     };
 
     const checkIfAlreadySolved = async () => {
-      const userData = (await UserService.show(store.user.id)).data;
-      const logicalId = parseInt(route.params.id, 10) - 1;
-      alreadySolved.value = userData.solvedLogicals.includes(logicalId);
+      try {
+        console.log('Checking if already solved...');
+        if (!store.user || !store.user.id) {
+          console.log('No user data available');
+          return;
+        }
+
+        const response = await UserService.show(store.user.id);
+        console.log('User data response:', response.data);
+        
+        if (response && response.data) {
+          const userData = response.data;
+          const logicalId = parseInt(route.params.id, 10);
+          
+          if (Array.isArray(userData.solvedLogicals)) {
+            alreadySolved.value = userData.solvedLogicals.includes(logicalId);
+            console.log('Puzzle solved status:', alreadySolved.value);
+          } else {
+            console.log('No solvedLogicals array found');
+            alreadySolved.value = false;
+          }
+        } else {
+          console.log('No response data');
+          alreadySolved.value = false;
+        }
+      } catch (error) {
+        console.error('Error checking solved status:', error);
+        alreadySolved.value = false;
+      }
     };
 
     const setPadding = () => {
@@ -368,9 +403,10 @@ export default {
           }
         }
       }
+      
       if (solved.value) {
         if (!alreadySolved.value) {
-          saveSolvedLogical();
+          saveSolvedState();
         }
         solveLabel.value = "Gratulation, das Rätsel ist gelöst!";
       } else {
@@ -378,12 +414,38 @@ export default {
       }
     };
 
-    const saveSolvedLogical = async () => {
-      if (loggedIn.value) {
+    const saveSolvedState = async () => {
+      try {
+        if (!store.isUserLoggedIn) {
+          console.log('User not logged in, skipping save');
+          return;
+        }
+        
+        if (alreadySolved.value) {
+          console.log('Puzzle already marked as solved');
+          return;
+        }
+        
         const userId = store.user.id;
-        const logicalId = parseInt(route.params.id, 10) - 1;
-        const isSuccess = await UserService.logicalSolved(userId, logicalId);
-        console.log("Suc", isSuccess);
+        const logicalId = parseInt(route.params.id, 10);
+        console.log('Saving solved state for user:', userId, 'logical:', logicalId);
+        
+        await UserService.logicalSolved(userId, logicalId);
+        
+        alreadySolved.value = true;
+        oruga.notification.open({
+          message: 'Rätsel erfolgreich als gelöst markiert!',
+          duration: 3000,
+          variant: 'success'
+        });
+        console.log('Solved state saved successfully');
+      } catch (error) {
+        console.error('Error updating solved puzzles:', error);
+        oruga.notification.open({
+          message: 'Fehler beim Speichern des Lösungsstatus',
+          duration: 3000,
+          variant: 'danger'
+        });
       }
     };
 
@@ -539,14 +601,24 @@ export default {
     });
 
     watch(rating, async (newRating) => {
-      if (newRating != null) {
+      if (newRating != null && store.isUserLoggedIn) {
         try {
           await LogicalRatingService.post({
             LogicalId: parseInt(route.params.id, 10),
             rating: newRating,
           });
-        } catch (err) {
-          console.log(err);
+          oruga.notification.open({
+            message: 'Bewertung gespeichert',
+            duration: 3000,
+            variant: 'success'
+          });
+        } catch (error) {
+          console.error('Error updating rating:', error);
+          oruga.notification.open({
+            message: 'Fehler beim Speichern der Bewertung',
+            duration: 3000,
+            variant: 'danger'
+          });
         }
       }
     });
@@ -585,7 +657,7 @@ export default {
       revertState,
       restoreState,
       checkSolution,
-      saveSolvedLogical,
+      saveSolvedState,
       toXY,
       toIJK,
       mouseDown,
@@ -596,6 +668,7 @@ export default {
       selectColor,
       initializeGridState,
       getCellIndex,
+      store
     };
   },
 };
@@ -854,6 +927,40 @@ export default {
   
   svg {
     overflow: visible;
+  }
+}
+
+.status-section {
+  margin: 20px 0;
+
+  .success-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2e7d32;
+  }
+
+  .already-solved {
+    color: #666;
+    font-style: italic;
+  }
+}
+
+.rating-message {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #666;
+  text-align: center;
+}
+
+.rating-section {
+  margin: 1rem 0;
+  
+  h3 {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
   }
 }
 </style>
