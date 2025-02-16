@@ -1,20 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 // import Login from '@/components/Login';
 // import Dashboard from '@/components/Dashboard';
-import Home from '@/components/Home';
-import LogicalSolve from '@/components/LogicalSolve';
-import NonogramSolve from '@/components/NonogramSolve';
-import LinelogSolve from '@/components/LinelogSolve';
-import LogicalOverview from '@/components/LogicalOverview';
-import LogicalCreate from '@/components/LogicalCreate';
-import NonogramOverview from '@/components/NonogramOverview';
-import LinelogOverview from '@/components/LinelogOverview';
-import Register from '@/components/Register';
-import Login from '@/components/Login';
-import Forgot from '@/components/Forgot';
-import User from '@/components/User';
-import Impressum from '@/components/Impressum';
-import PasswordReset from '@/components/PasswordReset';
+import Home from '@/components/Home.vue';
+import LogicalSolve from '@/components/LogicalSolve.vue';
+import NonogramSolve from '@/components/NonogramSolve.vue';
+import LinelogSolve from '@/components/LinelogSolve.vue';
+import LogicalOverview from '@/components/LogicalOverview.vue';
+import LogicalCreate from '@/components/LogicalCreate.vue';
+import NonogramOverview from '@/components/NonogramOverview.vue';
+import LinelogOverview from '@/components/LinelogOverview.vue';
+import Register from '@/components/Register.vue';
+import Login from '@/components/Login.vue';
+import Forgot from '@/components/Forgot.vue';
+import User from '@/components/User.vue';
+import Impressum from '@/components/Impressum.vue';
+import PasswordReset from '@/components/PasswordReset.vue';
 
 const routes = [
   {
@@ -91,7 +91,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
 

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="register-container">
     <div class="styledCard columns">
       <div class="column columnLeft is-one-third">
         <h2 class="registerHeader">Registrierung</h2>
@@ -118,6 +118,13 @@ export default {
 </script>
 
 <style scoped>
+  .register-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
   .complete {
     border: 1px solid green;
   }
@@ -150,7 +157,7 @@ export default {
     margin-top: 10px;
   }
   .styledCard .column {
-    padding: 20px 70px;
+    padding: 10px 30px;
     padding-right: 0;
   }
   /*.styledCard input, .styledCard button {

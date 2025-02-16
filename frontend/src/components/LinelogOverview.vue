@@ -78,7 +78,7 @@ export default {
 
     const isSolved = (id) => {
       if (!id) return false
-      return solved.value.includes(id - 1)
+      return solved.value.includes(id)
     }
 
     const getRating = (id) => {
@@ -87,24 +87,33 @@ export default {
     }
 
     const loadLinelogData = async () => {
-      linelogs.value = (await LinelogService.index()).data
-      const ratings = (await LinelogRatingService.index()).data
-      const ratingDict = {}
-      for (const rating of ratings) {
-        ratingDict[rating.LinelogId] = rating.avgRating
-      }
-      linelogRatings.value = ratingDict
+      try {
+        linelogs.value = (await LinelogService.index()).data
+        const ratings = (await LinelogRatingService.index()).data
+        
+        const ratingDict = {}
+        for (const rating of ratings) {
+          ratingDict[rating.LinelogId] = rating.avgRating
+        }
+        linelogRatings.value = ratingDict
 
-      if (isUserLoggedIn.value) {
-        const userData = (await UserService.show(user.value.id)).data
-        solved.value = userData.solvedLinelogs
+        if (isUserLoggedIn.value && user.value) {
+          const userData = (await UserService.show(user.value.id)).data
+          solved.value = userData.solvedLinelogs || []
+        } else {
+          solved.value = []
+        }
+      } catch (error) {
+        console.error('Error loading linelog data:', error)
       }
     }
 
-    watch(isUserLoggedIn, async (newValue) => {
-      if (newValue) {
+    watch(() => isUserLoggedIn.value, async (newValue) => {
+      if (newValue && user.value) {
         const userData = (await UserService.show(user.value.id)).data
-        solved.value = userData.solvedLinelogs
+        solved.value = userData.solvedLinelogs || []
+      } else {
+        solved.value = []
       }
     })
 

@@ -125,30 +125,22 @@
       </div>
 
       <!-- Rating Section -->
-      <div class="rating-section">
-        <h2>Rätsel bewerten</h2>
-        <b-rate
-          v-if="loggedIn"
-          v-model="rating"
-          icon-pack="mdi"
-          icon="star"
-          :max="rateMax"
-          :show-text="false"
-          :rtl="false"
-          :spaced="false"
-          :disabled="false">
-        </b-rate>
-        <p v-if="!loggedIn" class="login-message">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
+      <div v-if="!store.isUserLoggedIn" class="rating-message">
+        Bitte loggen Sie sich ein, um das Rätsel zu bewerten.
+      </div>
+      <div v-else class="rating-section">
+        <h3>Bewertung</h3>
+        <b-rate v-model="rating" :max="rateMax" />
       </div>
 
       <!-- Success Message -->
-      <div class="status-section">
-        <div v-if="solved" class="success-message">
-          <img class="checking" src='@/assets/haken.png' width='40' height='40'/>
-          <label id="solved">Gratulation! Sie haben dieses Rätsel gelöst!</label>
+      <div v-if="solved" class="status-section">
+        <div v-if="alreadySolved" class="already-solved">
+          Sie haben dieses Rätsel bereits gelöst.
         </div>
-        <div v-if="!solved && alreadySolved" class="already-solved">
-          Glückwunsch! Sie haben dieses Rätsel bereits gelöst.
+        <div v-else class="success-message">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          Rätsel erfolgreich gelöst!
         </div>
       </div>
     </div>
@@ -162,10 +154,11 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMainStore } from "@/store/store";
+import { useOruga } from '@oruga-ui/oruga-next';
 import UserService from '@/services/UserService';
 import NonogramService from '@/services/NonogramService';
 import NonogramRatingService from '@/services/NonogramRatingService';
-import CommentSystem from '@/components/CommentSystem';
+import CommentSystem from '@/components/CommentSystem.vue';
 
 export default {
   name: 'NonogramSolve',
@@ -175,6 +168,7 @@ export default {
   setup() {
     const route = useRoute();
     const store = useMainStore();
+    const oruga = useOruga();
 
     const nonogram = ref({
       width: 0,
@@ -459,17 +453,50 @@ export default {
     };
 
     const setRating = async (nonogramId) => {
-      if (loggedIn.value && store.user.value) {
-        const res = await NonogramRatingService.show(nonogramId);
-        rating.value = res.data.rating;
+      try {
+        if (loggedIn.value && store.user.value) {
+          const res = await NonogramRatingService.show(nonogramId);
+          rating.value = res.data.rating;
+        } else {
+          rating.value = null;
+        }
+      } catch (error) {
+        console.error('Error setting rating:', error);
+        rating.value = null;
       }
     };
 
     const checkIfAlreadySolved = async () => {
-      const userData = (await UserService.show(store.user.value.id)).data;
-      const nonogramId = parseInt(route.params.id, 10) - 1;
-      alreadySolved.value = userData.solvedNonograms.includes(nonogramId);
-    };
+      try {
+        console.log('Checking if already solved...')
+        if (!store.user || !store.user.id) {
+          console.log('No user data available')
+          return
+        }
+
+        const response = await UserService.show(store.user.id)
+        console.log('User data response:', response.data)
+        
+        if (response && response.data) {
+          const userData = response.data
+          const nonogramId = parseInt(route.params.id, 10)
+          
+          if (Array.isArray(userData.solvedNonograms)) {
+            alreadySolved.value = userData.solvedNonograms.includes(nonogramId)
+            console.log('Puzzle solved status:', alreadySolved.value)
+          } else {
+            console.log('No solvedNonograms array found')
+            alreadySolved.value = false
+          }
+        } else {
+          console.log('No response data')
+          alreadySolved.value = false
+        }
+      } catch (error) {
+        console.error('Error checking solved status:', error)
+        alreadySolved.value = false
+      }
+    }
 
     const revertState = () => {
       if (revertIndex.value > 0) {
@@ -488,13 +515,38 @@ export default {
     };
 
     const saveSolvedState = async () => {
-      if (!loggedIn.value) return;
-      
-      const userId = store.user.value.id;
-      const nonogramId = parseInt(route.params.id, 10) - 1;
-      const isSuccess = await UserService.nonogramSolved(userId, nonogramId);
-      console.log("Suc", isSuccess);
-      alreadySolved.value = true;
+      try {
+        if (!store.isUserLoggedIn) {
+          console.log('User not logged in, skipping save')
+          return
+        }
+        
+        if (alreadySolved.value) {
+          console.log('Puzzle already marked as solved')
+          return
+        }
+        
+        const userId = store.user.id
+        const nonogramId = parseInt(route.params.id, 10)
+        console.log('Saving solved state for user:', userId, 'nonogram:', nonogramId)
+        
+        await UserService.nonogramSolved(userId, nonogramId)
+        
+        alreadySolved.value = true
+        oruga.notification.open({
+          message: 'Rätsel erfolgreich als gelöst markiert!',
+          duration: 3000,
+          variant: 'success'
+        })
+        console.log('Solved state saved successfully')
+      } catch (error) {
+        console.error('Error updating solved puzzles:', error)
+        oruga.notification.open({
+          message: 'Fehler beim Speichern des Lösungsstatus',
+          duration: 3000,
+          variant: 'danger'
+        })
+      }
     };
 
     const zoomIn = () => {
@@ -752,14 +804,24 @@ export default {
     });
 
     watch(rating, async (newRating) => {
-      if (newRating != null) {
+      if (newRating != null && store.isUserLoggedIn) {
         try {
           await NonogramRatingService.post({
             NonogramId: parseInt(route.params.id, 10),
             rating: newRating,
           });
-        } catch (err) {
-          console.log(err);
+          oruga.notification.open({
+            message: 'Bewertung gespeichert',
+            duration: 3000,
+            variant: 'success'
+          });
+        } catch (error) {
+          console.error('Error updating rating:', error);
+          oruga.notification.open({
+            message: 'Fehler beim Speichern der Bewertung',
+            duration: 3000,
+            variant: 'danger'
+          });
         }
       }
     });
@@ -822,6 +884,7 @@ export default {
       checkTotalNonogram,
       saveSolvedState,
       selectColor,
+      store
     };
   },
 };
@@ -829,6 +892,7 @@ export default {
 
 <style lang="scss" scoped>
 .puzzle-container {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;

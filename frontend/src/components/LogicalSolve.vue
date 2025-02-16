@@ -178,12 +178,12 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMainStore } from "@/store/store";
-import Toggle from './Toggle';
-import MySelect from './MySelect';
+import Toggle from './Toggle.vue';
+import MySelect from './MySelect.vue';
 import UserService from '@/services/UserService';
 import LogicalService from '@/services/LogicalService';
 import LogicalRatingService from '@/services/LogicalRatingService';
-import CommentSystem from '@/components/CommentSystem';
+import CommentSystem from '@/components/CommentSystem.vue';
 
 export default {
   name: 'LogicalSolve',

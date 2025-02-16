@@ -98,7 +98,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMainStore } from '@/store/store';
 import UserService from '@/services/UserService';
-import MySelect from '@/components/MySelect';
+import MySelect from '@/components/MySelect.vue';
 
 export default {
   name: 'UserProfile',

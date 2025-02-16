@@ -1,4 +1,4 @@
-b-navbar<template>
+<template>
   <div id="app">
     <div id="mainContainer">
       <div class="header">
@@ -36,49 +36,86 @@ b-navbar<template>
             </template>
 
             <template #end>
-              <b-dropdown v-if="!isUserLoggedIn" position="is-bottom-left" append-to-body aria-role="menu" trap-focus :can-close="false">
+              <b-dropdown 
+                v-if="!isLoggedIn" 
+                position="is-bottom-left" 
+                append-to-body 
+                aria-role="menu" 
+                trap-focus
+                :can-close="false"
+              >
                 <template #trigger>
                   <a class="navbar-item" role="button">
                     <span>Login</span>
                     <b-icon icon="menu-down"></b-icon>
                   </a>
                 </template>
-                <b-dropdown-item
-                  aria-role="menu-item"
-                  :focusable="false"
-                  custom
-                  paddingless>
-                    <div class="modal-card" style="width:250px;">
-                      <section class="modal-card-body">
-                        <b-field label="E-Mail">
-                          <input style="width: 100%" type="email" v-model="email"/>
-                        </b-field>
-                        <b-field label="Passwort">
-                          <input style="width: 100%" type="password" v-model="password"/>
-                        </b-field>
-                        <router-link :to="{ path: '/forgot' }" class="navLink"><a>Passwort vergessen?</a></router-link>
-                        <button style="float: right"
-                          @click="login">
-                          Login
-                        </button>
-                        <div v-html="error"/>
-                      </section>
-                    </div>
+
+                <b-dropdown-item aria-role="menu-item" :focusable="false" custom paddingless>
+                  <div class="modal-card" style="width:250px;">
+                    <section class="modal-card-body">
+                      <b-field label="E-Mail">
+                        <input 
+                          style="width: 100%" 
+                          type="email" 
+                          v-model="loginForm.email"
+                        />
+                      </b-field>
+
+                      <b-field label="Passwort">
+                        <input 
+                          style="width: 100%" 
+                          type="password" 
+                          v-model="loginForm.password"
+                        />
+                      </b-field>
+
+                      <router-link :to="{ path: '/forgot' }" class="navLink">
+                        <a>Passwort vergessen?</a>
+                      </router-link>
+
+                      <button 
+                        style="float: right"
+                        @click="handleLogin"
+                        :disabled="isLoading"
+                      >
+                        {{ isLoading ? 'Wird geladen...' : 'Login' }}
+                      </button>
+
+                      <div v-if="error" class="error-message" v-html="error"/>
+                    </section>
+                  </div>
                 </b-dropdown-item>
               </b-dropdown>
-              <b-navbar-item v-if="!isUserLoggedIn" tag="router-link" :to="{ path: '/register' }">
+
+              <b-navbar-item 
+                v-if="!isLoggedIn" 
+                tag="router-link" 
+                :to="{ path: '/register' }"
+              >
                 Registrieren
               </b-navbar-item>
-              <b-navbar-item v-if="isUserLoggedIn" tag="router-link" :to="{ path: `/user/${user.value.id}` }">
-                <img class="avatarImg" :src="getUserAvatar(user.value.userImageId)">
+
+              <b-navbar-item 
+                v-if="isLoggedIn" 
+                tag="router-link" 
+                :to="{ path: `/user/${currentUser?.id}` }"
+              >
+                <img 
+                  class="avatarImg" 
+                  src="@/assets/bear.svg"
+                >
                 <p>
-                  Willkommen, {{ user.value.username }}
+                  Willkommen, {{ currentUser?.username }}
                 </p>
               </b-navbar-item>
-              <a v-if="isUserLoggedIn"
-                @click="logout()"
+
+              <a 
+                v-if="isLoggedIn"
+                @click="handleLogout"
                 class="navbar-item"
-                role="button">
+                role="button"
+              >
                 <span>Logout</span>
               </a>
             </template>
@@ -106,62 +143,72 @@ b-navbar<template>
   </div>
 </template>
 
-<script>
-import router from './router';
-import { storeToRefs } from 'pinia';
-import { useMainStore } from './store/store';
-import AuthenticationService from '@/services/AuthenticationService';
+<script setup>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMainStore } from '@/store/store'
+import { useNotification } from '@/composables/useNotification'
+import AuthenticationService from '@/services/AuthenticationService'
 import CookieConsent from './components/CookieConsent.vue'
 
-export default {
-  name: 'App',
-  components: {
-    CookieConsent
-  },
-  setup() {
-    const store = useMainStore();
-    const { isUserLoggedIn, user } = storeToRefs(store);
+// Router and store setup
+const router = useRouter()
+const mainStore = useMainStore()
+const { showNotification } = useNotification()
 
-    return {
-      isUserLoggedIn,
-      user,
-      store
-    };
-  },
-  data() {
-    return {
-      email: "",
-      password: "",
-      error: ""
-    };
-  },
-  methods: {
-    getUserAvatar(id) {
-      const paths = ["bear", "chicken", "cat"];
-      const index = id == null ? 0 : id % paths.length;
-      return new URL(`@/assets/${paths[index]}.svg`, import.meta.url).href;
-    },
-    logout() {
-      this.store.setToken(null);
-      this.store.setUser(null);
-      router.push('/');
-    },
-    async login() {
-      try {
-        const response = await AuthenticationService.login({
-          email: this.email,
-          password: this.password
-        });
-        this.store.setToken(response.data.token);
-        this.store.setUser(response.data.user);
-        this.error = null;
-        console.log(response.data);
-      } catch (err) {
-        this.error = err.response.data.error;
-      }
-    },
-  },
-};
+// Reactive state
+const loginForm = ref({
+  email: '',
+  password: ''
+})
+const error = ref(null)
+const isLoading = ref(false)
+
+// Computed properties to replace authStore references
+const isLoggedIn = computed(() => mainStore.isUserLoggedIn)
+const currentUser = computed(() => mainStore.user)
+
+// Methods
+const getUserAvatar = (id) => {
+  const paths = ["bear", "chicken", "cat"]
+  const index = id ? id % paths.length: 0
+  console.log(index)
+  return new URL(`@/assets/${paths[index]}.svg`, import.meta.url).href
+}
+
+const handleLogin = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+    
+    const response = await AuthenticationService.login({
+      email: loginForm.value.email,
+      password: loginForm.value.password
+    })
+
+    mainStore.setToken(response.data.token)
+    mainStore.setUser(response.data.user)
+    
+    loginForm.value = { email: '', password: '' }
+    showNotification({
+      message: 'Erfolgreich eingeloggt',
+      type: 'success'
+    })
+  } catch (err) {
+    error.value = err.response?.data?.error || 'Ein Fehler ist aufgetreten'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleLogout = () => {
+  mainStore.logout()
+  router.push('/')
+  showNotification({
+    message: 'Erfolgreich ausgeloggt',
+    type: 'success'
+  })
+}
 </script>
 
 <style>
@@ -184,6 +231,10 @@ button {
 
 h1, h2, h3, h4 {
   color: #262664;
+}
+
+h2 {
+  font-size: 24px;
 }
 
 #mainContainer {
@@ -282,9 +333,10 @@ input:focus {
   }
   .websiteText {
     margin: 0;
+    left: 0;
   }
   .imgCard {
-    height: 300px;
+    height: 350px;
     background-size: auto;
   }
   .subtile {
@@ -342,5 +394,41 @@ input:focus {
 
 .navLink:hover {
   color: #da1260;
+}
+
+// Add some new styles for better UX
+.error-message {
+  color: #e74c3c;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.modal-card-body {
+  padding: 20px;
+  
+  button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: #2980b9;
+    }
+
+    &:disabled {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.avatarImg {
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
 }
 </style>

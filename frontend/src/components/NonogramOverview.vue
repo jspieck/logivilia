@@ -77,7 +77,7 @@ export default {
     const solved = ref([])
 
     const isSolved = (id) => {
-      return solved.value.includes(id - 1)
+      return solved.value.includes(id)
     }
 
     const loadNonoData = async () => {

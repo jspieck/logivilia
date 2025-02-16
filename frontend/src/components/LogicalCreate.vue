@@ -207,8 +207,8 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useOruga } from '@oruga-ui/oruga-next';
-import Toggle from './Toggle';
-import MySelect from './MySelect';
+import Toggle from './Toggle.vue';
+import MySelect from './MySelect.vue';
 import LogicalService from '@/services/LogicalService';
 import draggable from 'vuedraggable';
 

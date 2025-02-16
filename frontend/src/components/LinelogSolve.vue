@@ -105,7 +105,7 @@ import { useOruga } from '@oruga-ui/oruga-next'
 import LinelogService from "@/services/LinelogService";
 import LinelogRatingService from "@/services/LinelogRatingService";
 import UserService from "@/services/UserService";
-import CommentSystem from "@/components/CommentSystem";
+import CommentSystem from "@/components/CommentSystem.vue";
 
 
 const oruga = useOruga();
@@ -148,20 +148,38 @@ const linelog = ref({
 watch(
   () => route.params.id,
   async (newId) => {
-    const response = await LinelogService.show(newId);
-    linelog.value = response.data;
-    await setRating(newId);
+    try {
+      // Load riddle data regardless of login status
+      const response = await LinelogService.show(newId)
+      linelog.value = response.data
+      
+      // Initialize grid state
+      gridState.value = new Array(width.value * height.value).fill(
+        backgroundNumber.value
+      )
 
-    if (store.isUserLoggedIn) {
-      await checkIfAlreadySolved();
+      // Check user-specific data only if logged in
+      if (store.isUserLoggedIn && store.user) {
+        await setRating(newId)
+        await checkIfAlreadySolved()
+      }
+    } catch (error) {
+      console.error('Error loading linelog:', error)
     }
-
-    gridState.value = new Array(width.value * height.value).fill(
-      backgroundNumber.value
-    );
   },
   { immediate: true }
-);
+)
+
+watch(
+  () => store.user,
+  async (newUser) => {
+    if (newUser && store.isUserLoggedIn && route.params.id) {
+      await checkIfAlreadySolved()
+      await setRating(route.params.id)
+    }
+  },
+  { immediate: true }
+)
 
 watch(() => store.isUserLoggedIn, async (newValue) => {
   if (newValue) {
@@ -269,11 +287,38 @@ const scaleToScreenSize = () => {
   );
   cellWidth.value = targetedWidth / linelog.value.width;
 };
-const checkIfAlreadySolved = () => {
-  // New request in case the user solved the puzzle since logging in
-  const userData = UserService.show(store.user.id).data;
-  const linelogId = parseInt(route.params.id, 10) - 1;
-  alreadySolved.value = userData.solvedLinelogs.includes(linelogId);
+const checkIfAlreadySolved = async () => {
+  try {
+    console.log('Current user:', store.user)
+    if (!store.user || !store.user.id) {
+      console.log('No user data available')
+      return
+    }
+
+    // Get fresh user data
+    const response = await UserService.show(store.user.id)
+    console.log('API Response:', response)
+    
+    if (response && response.data) {
+      console.log('User data from API:', response.data)
+      const userData = response.data
+      const linelogId = parseInt(route.params.id, 10)
+      
+      if (Array.isArray(userData.solvedLinelogs)) {
+        alreadySolved.value = userData.solvedLinelogs.includes(linelogId)
+        console.log('Solved status:', alreadySolved.value)
+      } else {
+        console.log('No solvedLinelogs array found:', userData)
+        alreadySolved.value = false
+      }
+    } else {
+      console.log('No response data')
+      alreadySolved.value = false
+    }
+  } catch (error) {
+    console.error('Error checking solved status:', error)
+    alreadySolved.value = false
+  }
 };
 const setRating = async (logicalId) => {
   if (store.user != null) {
@@ -673,7 +718,7 @@ const checkSolution = (state) => {
     solved.value = true;
     if (store.isUserLoggedIn) {
       try {
-        UserService.addSolvedLinelog(store.user.id, parseInt(route.params.id, 10));
+        UserService.linelogSolved(store.user.id, parseInt(route.params.id, 10));
       } catch (err) {
         console.error("Error updating solved puzzles:", err);
       }
@@ -707,6 +752,7 @@ const checkSolution = (state) => {
 }
 
 .puzzle-container {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;

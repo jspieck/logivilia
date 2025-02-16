@@ -29,7 +29,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMainStore } from '@/store/store'
-import Comments from '@/components/Comments'
+import Comments from '@/components/Comments.vue'
 import CommentService from '@/services/CommentService'
 import CommentUpvoteService from '@/services/CommentUpvoteService'
 
