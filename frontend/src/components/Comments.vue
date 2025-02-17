@@ -170,6 +170,9 @@ export default {
   width: 100%;
   height: 75px;
   padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: none;
 }
 .sendIcon {
   width: 20px;
@@ -246,8 +249,6 @@ export default {
  =======================*/
 .comments-container {
   margin: 0 auto;
-  padding: 10px;
-  background:white;
   /*margin: 60px auto 15px;*/
 }
 

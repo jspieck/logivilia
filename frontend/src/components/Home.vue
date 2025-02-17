@@ -8,7 +8,9 @@
         <span class="highlight">Geistige Fitness</span>
       </h1>
       <p class="hero-subtitle">Lösen Sie kostenlos eine Auswahl an abwechslungsreichen Logikrätseln</p>
-      <button class="secondary-button" @click="$router.push('/nonogram')">Jetzt Rätseln</button>
+      <div class="hero-buttons">
+        <button class="secondary-button" @click="$router.push('/nonogram-overview')">Jetzt Rätseln</button>
+      </div>
     </div>
   </div>
 
@@ -21,7 +23,7 @@
         <p class="card-description">
           Entdecken Sie die Kunst der Nonogramme - Logische Bilderrätsel, die Ihre Fähigkeiten herausfordern.
         </p>
-        <button class="secondary-button" @click="$router.push('/nonogram')">Ausprobieren</button>
+        <button class="secondary-button" @click="$router.push('/nonogram-overview')">Ausprobieren</button>
       </div>
     </div>
 
@@ -42,7 +44,7 @@
             </ol>
           </div>
         </div>
-        <button class="secondary-button" @click="$router.push('/logical')">Ausprobieren</button>
+        <button class="secondary-button" @click="$router.push('/logical-overview')">Ausprobieren</button>
       </div>
     </div>
   </div>
@@ -63,7 +65,6 @@ export default {
 <style lang="scss" scoped>
 .homeScreen {
   width: 100%;
-  background: #f8f9fa;
 }
 
 .hero {
@@ -86,6 +87,7 @@ export default {
   margin-top: 2rem;
   margin-bottom: 1rem;
   line-height: 1.2;
+  text-align: center;
 
   .highlight {
     color: #3498db;
@@ -99,6 +101,13 @@ export default {
   color: #34495e;
   margin-bottom: 2rem;
   line-height: 1.5;
+  text-align: center;
+}
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .cta-button {

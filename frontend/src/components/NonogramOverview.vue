@@ -123,10 +123,6 @@ export default {
 </script>
 
 <style lang="scss">
-.overviewPage {
-  padding: 1rem;
-}
-
 .tableTitle {
   margin-bottom: 1rem;
 }

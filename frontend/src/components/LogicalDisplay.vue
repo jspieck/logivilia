@@ -18,7 +18,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['update:solution'])
+const emit = defineEmits(['update:solution', 'solution-check', 'solution-update'])
 
 const tableVisible = ref(true)
 const selectedColor = ref(0)
@@ -35,10 +35,8 @@ const gridStateCopy = ref([]);
 const cellWidth = ref(25);
 const paddingLeft = ref(100);
 const paddingTop = ref(80);
-const solveLabel = ref("");
 const isSolved = ref(false);
 
-const alreadySolved = ref(false);
 const startMouseDown = ref([0, 0]);
 const lastMouseOver = ref([0, 0]);
 const isMouseDown = ref(false);
@@ -82,25 +80,57 @@ const setPadding = () => {
 
 // Initialize grid state with empty cells (white)
 const initializeGridState = () => {
-    const totalCells = computed(() => {
-    let total = 0;
-    for (let i = 0; i < numAttributes.value - 1; i++) {
-        total += (numAttributes.value - 1 - i) * numAttrValues.value * numAttrValues.value;
+    if (!props.logical?.attributes?.length) {
+        console.log("Logical data not ready yet")
+        return
     }
-    return total;
-    });
-    
-    gridState.value = new Array(totalCells.value).fill(2); // 2 represents white/empty cell
-    gridStateCopy.value = [...gridState.value];
-};
 
-// Call initialization when logical data is loaded
-watch(() => props.logical.value, () => {
+    const totalCells = computed(() => {
+        let total = 0
+        const numAttributes = props.logical.attributes.length
+        const numAttrValues = props.logical.attributes[0].values.length
+        
+        for (let i = 0; i < numAttributes - 1; i++) {
+            total += (numAttributes - 1 - i) * numAttrValues * numAttrValues
+        }
+        return total
+    })
+    
+    gridState.value = new Array(totalCells.value).fill(2) // 2 represents white/empty cell
+    gridStateCopy.value = [...gridState.value]
+    console.log("Initialized gridState with size:", totalCells.value)
+}
+
+// Initialize attribute inputs
+const initializeAttrInputs = () => {
+  if (!props.logical?.attributes?.length) {
+    console.log("Logical data not ready for attrInputs initialization")
+    return
+  }
+
+  const numValues = props.logical.attributes[0].values.length
+  const numAttributes = props.logical.attributes.length
+
+  // Initialize all possible combinations
+  for (let i = 0; i < numValues; i++) {
+    for (let j = 0; j < numAttributes - 1; j++) {
+      attrInputs.value[`${i}_${j}`] = null
+    }
+  }
+  console.log("Initialized attrInputs:", attrInputs.value)
+}
+
+// Update the watch to include attrInputs initialization
+watch(() => props.logical, (newValue) => {
+  if (newValue && newValue.attributes && newValue.attributes.length > 0) {
+    console.log("Logical data updated, reinitializing states")
     nextTick(() => {
-    initializeGridState();
-    setPadding();
-    });
-});
+      initializeGridState()
+      initializeAttrInputs()
+      setPadding()
+    })
+  }
+}, { deep: true, immediate: true })
 
 const getCellIndex = (i, j, k) => {
     let index = 0;
@@ -142,30 +172,51 @@ const restoreState = () => {
     }
 };
 
+// Validate the solution
+const validateSolution = () => {
+  if (!props.logical?.solution || !attrInputs.value) {
+    console.log("Missing data for validation:", { 
+      hasSolution: !!props.logical?.solution, 
+      hasAttrInputs: !!attrInputs.value 
+    })
+    return false
+  }
+
+  console.log("Validating solution with:", {
+    solution: props.logical.solution,
+    attrInputs: attrInputs.value
+  })
+
+  try {
+    // Check attribute inputs
+    for (let i = 0; i < props.logical.solution.length; i++) {
+      for (let j = 1; j < props.logical.solution[i].length; j++) {
+        const inputKey = `${i}_${j-1}`
+        if (attrInputs.value[inputKey] === null || attrInputs.value[inputKey] === undefined) {
+          console.log(`Missing input for ${inputKey}`)
+          return false
+        }
+        if (props.logical.solution[i][j] !== attrInputs.value[inputKey]) {
+          console.log(`Mismatch at ${inputKey}:`, {
+            expected: props.logical.solution[i][j],
+            got: attrInputs.value[inputKey]
+          })
+          return false
+        }
+      }
+    }
+    return true
+  } catch (error) {
+    console.error("Error during solution validation:", error)
+    return false
+  }
+}
+
+// Add solution checking logic
 const checkSolution = () => {
-    isSolved.value = true;
-    for (let i = 0; i < props.logical.value.solution.length; i++) {
-    for (let j = 1; j < props.logical.value.solution[i].length; j++) {
-        if (attrInputs.value[`${i}_${j - 1}`] == null) {
-            isSolved.value = false;
-            solveLabel.value = "Es sind Attribute noch nicht zugewiesen!";
-            return;
-        }
-        if (props.logical.value.solution[i][j] != attrInputs.value[`${i}_${j - 1}`]) {
-            isSolved.value = false;
-        }
-    }
-    }
-    
-    if (isSolved.value) {
-        if (!alreadySolved.value) {
-            // TODO saveSolvedState();
-        }
-        solveLabel.value = "Gratulation, das Rätsel ist gelöst!";
-    } else {
-        solveLabel.value = "Es existieren noch Fehler!";
-    }
-};
+  const isCorrect = validateSolution()
+  emit('solution-check', isCorrect)
+}
 
 const toXY = (i, j, k) => {
     const x = (j - 1) * numAttrValues.value + Math.floor((k - 1) / numAttrValues.value);
@@ -299,12 +350,22 @@ onMounted(() => {
     document.addEventListener("mouseup", mainGridMouseUp);
     window.ondragstart = () => false;
     setPadding();
+    initializeGridState();
     window.onbeforeunload = () => "Möchten Sie die Seite wirklich verlassen. Nicht gespeicherte Rätsel sind für immer verloren!";
 });
 
 onBeforeUnmount(() => {
     document.removeEventListener("mouseup", mainGridMouseUp);
 });
+
+// Add solution update watcher
+watch([gridState, attrInputs], () => {
+    const currentState = {
+        gridState: gridState.value,
+        attrInputs: attrInputs.value
+    }
+    emit('solution-update', currentState)
+}, { deep: true })
 
 // Expose necessary methods and state
 defineExpose({
@@ -313,6 +374,7 @@ defineExpose({
     colors,
     attrInputs,
     // ... other necessary state
+    checkSolution,
 })
 </script>
 
