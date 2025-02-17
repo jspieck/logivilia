@@ -396,7 +396,6 @@ input:focus {
   color: #da1260;
 }
 
-// Add some new styles for better UX
 .error-message {
   color: #e74c3c;
   margin-top: 10px;

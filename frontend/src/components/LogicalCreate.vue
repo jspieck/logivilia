@@ -41,27 +41,31 @@
           <!--<input type="number" @input="setAttributeValNumber"/>-->
           <MySelect :options='attrValNumberOptions' v-model="numAttributeValues"/>
           <table class="attributeTable">
-            <!-- All the attribute names -->
-            <tr>
-              <td>Attributname</td>
-              <td v-for="[i, attr] in logical.attributes.entries()" v-bind:key="'attrN' + i">
-                <input v-model="attr.name"/>
-              </td>
-            </tr>
-            <!-- All the attribute values -->
-            <tr v-for="i in numAttributeValues" v-bind:key="'attrR' + i">
-              <td><p>Attributgruppe {{i}}</p></td>
-              <td v-for="[j, attr] in logical.attributes.entries()" v-bind:key="'attrVal' + i + ' ' + j">
-                <!--<p>{{attr.values[i - 1]}}</p>-->
-                <input v-model='attr.values[i - 1].name'/>
-              </td>
-            </tr>
-            <tr>
-              <td></td>
-              <td v-for="i in logical.attributes.length" v-bind:key="`attrDel${i}`">
-                <i class="fa fa-times delAttr" @click="removeAttribute(i - 1)"></i>
-              </td>
-            </tr>
+            <thead>
+              <!-- All the attribute names -->
+              <tr>
+                <td>Attributname</td>
+                <td v-for="[i, attr] in logical.attributes.entries()" v-bind:key="'attrN' + i">
+                  <input v-model="attr.name"/>
+                </td>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- All the attribute values -->
+              <tr v-for="i in numAttributeValues" v-bind:key="'attrR' + i">
+                <td><p>Attributgruppe {{i}}</p></td>
+                <td v-for="[j, attr] in logical.attributes.entries()" v-bind:key="'attrVal' + i + ' ' + j">
+                  <!--<p>{{attr.values[i - 1]}}</p>-->
+                  <input v-model='attr.values[i - 1].name'/>
+                </td>
+              </tr>
+              <tr>
+                <td></td>
+                <td v-for="i in logical.attributes.length" v-bind:key="`attrDel${i}`">
+                  <i class="fa fa-times delAttr" @click="removeAttribute(i - 1)"></i>
+                </td>
+              </tr>
+            </tbody>
           </table>
           <o-modal v-model="isModalActive" :destroy-on-hide="true">
             <div class="box">
@@ -89,149 +93,25 @@
       </div>
     </div>
     <div class="column" v-if="preview">
-      <div class="puzzlePreview">
-        <div class="puzzleContainer" v-if="logical != null">
-          <div id="puzzleHeader">
-            <h1 class="puzzleTitle">{{logical.name}}</h1>
-            <span class="difficulty">{{logical.difficulty}}/<strong>5</strong></span>
-          </div>
-          <div id="puzzle" class="puzzleBody">
-            <h3 id="descrHeader">Beschreibung</h3>
-            <p id="description">{{logical.description}}</p>
-            <label class="logicalQuestion"><strong>{{logical.question}}</strong></label>
-            <h3>Hinweise</h3>
-            <ol id="clues">
-              <li v-for="[i, clue] in logical.clues.entries()" v-bind:key='`clueActual${i}`' class="clue">{{clue.text}}</li>
-            </ol>
-            <label class="bold">Attribute</label>
-            <ul id="attrList">
-              <li v-for="[i, attr] in logical.attributes.entries()" v-bind:key='`realAtr${i}`'>
-                <div class="attrRow">
-                  <strong>{{attr.name}}: </strong>
-                  <span v-for="[j, v] in attr.values.entries()" v-bind:key='`realAt${j}`'>
-                    {{v.name}}<span v-if="j != attr.values.length - 1">, </span>
-                  </span>
-                </div>
-              </li>
-            </ul>
-            <h3>Lösung</h3>
-            <div class="eitherOr">
-              <div id="wrapMe" class="wrapMe">
-                <label id="nummerierung">Zeige die erweiterte Tabelle:</label>
-                <Toggle class="solutionToggle" v-model="tableVisible"/>
-              </div>
-              <div v-if="tableVisible" id="solutionGrid">
-                <div id="cDiv">
-                  <svg id="colors" height="50" width="150">
-                    <g v-for="[i, color] in colors.entries()" v-bind:key="`color${i}`" :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
-                      <rect :fill="color" stroke="black" :width="cellWidth" :height="cellWidth" @click="selectColor(i)"/>
-                      <path v-if="i == 0" class="crossPath" :d="`M5 5L${cellWidth - 5} ${cellWidth - 5}M5 ${cellWidth - 5}L${cellWidth - 5} 5`" stroke="#565656"/>
-                      <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3" :y="cellWidth + 4"/> 
-                    </g>
-                  </svg>
-                  <button id="revert" @click="revertState" class="nonoButton">
-                    <ion-icon class="rotate" name="refresh"></ion-icon>
-                  </button>
-                  <button id="restore" @click="restoreState" class="nonoButton">
-                    <ion-icon name="refresh"></ion-icon>
-                  </button>
-                </div>
-                <div id="classicGrid" class="gridContainer">
-                  <div id="solutionGridNonCanvas">
-                    <svg :width="svgWidth" :height="svgHeight">
-                      <g v-for="[i, attr] in (logical.attributes.slice(0, 1).concat(logical.attributes.slice(2, logical.attributes.length))).entries()"
-                      :transform="`translate(0, ${paddingTop + i * numAttrValues * cellWidth})`"
-                      v-bind:key='`hgroup${i}`' class="horizontalTextGroup">
-                        <text v-for="[j, val] in attr.values.entries()" ref="horizontalLabelsRef" v-bind:key='`htext${j}`' x="0"
-                        :y="j * cellWidth + cellWidth / 2 + 2">{{val.name}}</text>
-                      </g>
-                      <g v-for="[i, attr] in logical.attributes.slice(1, logical.attributes.length).entries()"
-                      :transform="`translate(${paddingLeft + i * numAttrValues * cellWidth}, 0)`"
-                      v-bind:key='`vgroup${i}`' class="verticalTextGroup">
-                        <text v-for="[j, val] in attr.values.entries()" ref="verticalLabelsRef" v-bind:key='`vtext${j}`' y="0"
-                        :x="j * cellWidth + cellWidth / 2 + 2">{{val.name}}</text>
-                      </g>
-                      <g id="blockArea" :transform="`translate(${paddingLeft}, ${paddingTop})`">
-                        <template v-for="i in numAttributes">
-                          <g v-for="j in numAttributes - i" v-bind:key="`cblock${i}_${j}`"
-                          :transform="`translate(${(j - 1) * blockWidth}, ${(i - 1) * blockWidth})`">
-                            <g v-for="k in numAttrValues * numAttrValues" v-bind:key="`cell${k}`"
-                            :transform="`translate(${Math.floor((k - 1) / numAttrValues) * cellWidth}, ${((k - 1) % numAttrValues) * cellWidth})`">
-                              <rect :width="cellWidth" :height="cellWidth" class="blockGroups" :fill="colors[gridState[cellIndex(i, j, k)]]"
-                              stroke="#c5c5c5" @mousedown="mouseDown(i, j, k)" @mouseenter="mouseEnter(i, j, k)"/>
-                              <path v-if="gridState[cellIndex(i, j, k)] == 0" class="crossPath"
-                              :d="`M5 5L${cellWidth - 5} ${cellWidth - 5}M5 ${cellWidth - 5}L${cellWidth - 5} 5`" stroke="#565656"/>
-                            </g>
-                          </g>
-                        </template>
-                        <path stroke="black" stroke-width="1" :d="drawOutline()"/>
-                      </g>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <div class="responsive-table">
-                <table id="solTable" class="dataTable sortable">
-                  <thead>
-                    <tr>
-                      <th v-for="[i, attr] in logical.attributes.entries()" v-bind:key='`tableAttr${i}`' scope='col' class='tableH'>
-                        {{attr.name}}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="[i, v] in logical.attributes[0].values.entries()" v-bind:key='`tabAttrRow${i}`'>
-                      <td scope='row'>{{v.name}}</td>
-                      <td v-for="[j, attr] in logical.attributes.slice(1).entries()"
-                        v-bind:key='`tableCell${i}_${j}`' :data-title='attr.name'>
-                        <MySelect :options='transformValues(logical.attributes[j + 1].values)' v-model='attrInputs[i + "_" + j]'/>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div id='checkSolutionBox'>
-              <button id='checkButton' class='loes' @click="checkSolution">Überprüfen</button>
-              <img v-if="solved" class="checking" src='@/assets/haken.png' width='40' height='40'/>
-            </div>
-            <h4 id="solved">{{solveLabel}}</h4>
-          </div>
-        </div>
-      </div>
+      <LogicalDisplay :logical="previewLogical" :solved="false" />
     </div>
   </div>
 </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useOruga } from '@oruga-ui/oruga-next';
 import Toggle from './Toggle.vue';
 import MySelect from './MySelect.vue';
 import LogicalService from '@/services/LogicalService';
 import draggable from 'vuedraggable';
-
-// Props
-const props = defineProps(['id']);
+import LogicalDisplay from './LogicalDisplay.vue';
 
 // Composables
 const oruga = useOruga();
 
 // State
-const revertHistory = ref([]);
-const revertIndex = ref(0);
-const attrInputs = ref({});
-const solved = ref(false);
-const gridState = ref([]);
-const gridStateCopy = ref([]);
-const cellWidth = ref(25);
-const paddingLeft = ref(50);
-const paddingTop = ref(50);
-const tableVisible = ref(true);
-const selectedColor = ref(0);
-const colors = ref(["#fff", "#333", "#fff"]);
-const solveLabel = ref("");
 const difficulties = ref([1, 2, 3, 4, 5]);
 const attrValNumberOptions = ref([2, 3, 4, 5, 6, 7, 8, 9, 10]);
 const numAttributeValues = ref(2);
@@ -240,10 +120,6 @@ const preview = ref(true);
 // For confirmation oruga modal
 const isModalActive = ref(false);
 const deleteIndex = ref(null);
-
-const startMouseDown = ref([0, 0]);
-const lastMouseOver = ref([0, 0]);
-const isMouseDown = ref(false);
 
 const logical = ref({
   name: "",
@@ -256,13 +132,27 @@ const logical = ref({
     {"name": "", "values": [{name: ""}, {name: ""}]}
   ],
   image: "",
-  date: "",
+  date: new Date().toISOString().slice(0, 10),
   author: ""
 });
 
-// Template refs - initialize with null
-const horizontalLabels = ref(null);
-const verticalLabels = ref(null);
+const previewLogical = computed(() => {
+  return {
+    name: logical.value.name,
+    difficulty: logical.value.difficulty,
+    description: logical.value.description,
+    question: logical.value.question,
+    clues: logical.value.clues.map(clue => clue.text),
+    attributes: logical.value.attributes.map(attr => ({
+      name: attr.name,
+      values: attr.values.map(v => v.name)
+    })),
+    image: logical.value.image,
+    date: logical.value.date,
+    author: logical.value.author,
+    solution: solution.value
+  }
+})
 
 // Computed properties
 const cluesFinished = computed(() => {
@@ -312,24 +202,6 @@ const riddleFinished = computed(() => {
          solutionFinished.value;
 });
 
-const numAttributes = computed(() => logical.value.attributes.length);
-const numAttrValues = computed(() => {
-  if (logical.value.attributes.length == 0) {
-    return 0;
-  }
-  return logical.value.attributes[0].values.length;
-});
-
-const blockWidth = computed(() => numAttrValues.value * cellWidth.value);
-const svgWidth = computed(() => {
-  const margin = 20;
-  return paddingLeft.value + margin + (numAttributes.value - 1) * blockWidth.value;
-});
-const svgHeight = computed(() => {
-  const margin = 20;
-  return paddingTop.value + margin + (numAttributes.value - 1) * blockWidth.value;
-});
-
 const solution = computed(() => {
   const sol = [];
   for (let i = 0; i < numAttributeValues.value; i += 1) {
@@ -340,19 +212,6 @@ const solution = computed(() => {
     sol.push(solRow);
   }
   return sol;
-});
-
-// Helper functions
-const calculateCellIndex = (i, j, k, numAttributes, numAttrValues) => {
-  let index = 0;
-  for(let c = 0; c < i - 1; c++) {
-    index += numAttributes - 1 - c;
-  }
-  return (index + j - 1) * numAttrValues * numAttrValues + (k - 1);
-};
-
-const cellIndex = computed(() => (i, j, k) => {
-  return calculateCellIndex(i, j, k, numAttributes.value, numAttrValues.value);
 });
 
 // Methods
@@ -399,14 +258,19 @@ const createLogical = async () => {
         flatAttr.values = attr.values.map(v => v.name)
         flattenedAttributes.push(flatAttr)
       }
-      
+
+      const cluesTextList = []
+      for (const clue of logical.value.clues) {
+        cluesTextList.push(clue.text)
+      }
+  
       const logicalData = {
         name: logical.value.name,
         solution: solution.value,
         difficulty: logical.value.difficulty,
         description: logical.value.description,
         question: logical.value.question,
-        clues: logical.value.clues,
+        clues: cluesTextList,
         attributes: flattenedAttributes,
         image: "",
         date: new Date().toISOString().slice(0, 10),
@@ -419,6 +283,12 @@ const createLogical = async () => {
         duration: 2000,
         variant: 'success'
       })
+    } else {
+      oruga.notification.open({
+        message: 'Das Rätsel ist noch nicht vollständig!',
+        duration: 2000,
+        variant: 'danger'
+      })
     }
   } catch(err) {
     console.error(err)
@@ -428,10 +298,6 @@ const createLogical = async () => {
       variant: 'danger'
     })
   }
-};
-
-const transformValues =(values) => {
-  return values.map((x) => x.name); 
 };
 
 watch(numAttributeValues, (newValue) => {
@@ -466,261 +332,6 @@ const addClue = () => {
     "text": ""
   });
 };
-
-const revertState = () => {
-  if (revertIndex.value > 0 && revertHistory.value.length > 0) {
-    const state = revertHistory.value[revertIndex.value - 1];
-    if (!state) return;
-
-    for (let b = state.x0; b <= state.x1; b++) {
-      for (let a = state.y0; a <= state.y1; a++) {
-        const [i, j, k] = toIJK(b, a);
-        if (i !== -1) {
-          const cellIdx = cellIndex.value(i, j, k);
-          gridState.value[cellIdx] = state.colorsBefore[b - state.x0][a - state.y0];
-        }
-      }
-    }
-    revertIndex.value -= 1;
-  }
-};
-
-const restoreState = () => {
-  if (revertIndex.value < revertHistory.value.length) {
-    const state = revertHistory.value[revertIndex.value];
-    if (!state) return;
-
-    for (let b = state.x0; b <= state.x1; b++) {
-      for (let a = state.y0; a <= state.y1; a++) {
-        const [i, j, k] = toIJK(b, a);
-        if (i !== -1) {
-          const cellIdx = cellIndex.value(i, j, k);
-          gridState.value[cellIdx] = state.colorAfter;
-        }
-      }
-    }
-    revertIndex.value += 1;
-  }
-};
-
-const checkSolution = () => {
-  solved.value = true;
-  for(let i = 0; i < solution.value.length; i++) {
-    for(let j = 1; j < solution[i].length; j++) {
-      if (attrInputs[`${i}_${j - 1}`] == null) {
-        solved.value = false;
-        solveLabel.value = "Es sind Attribute noch nicht zugewiesen!";
-        return;
-      }
-      if (solution[i][j] != attrInputs[`${i}_${j - 1}`]) {
-        solved.value = false;
-      }
-    }
-  }
-  if (solved.value) {
-    solveLabel.value = "Gratulation, das Rätsel ist gelöst!";
-  } else {
-    solveLabel.value = "Es existieren noch Fehler!";
-  }
-};
-
-const toXY = (i, j, k) => {
-  // i = row, j = column (block), k = cell in nxn block
-  const x = (j - 1) * numAttrValues.value + Math.floor((k - 1) / numAttrValues.value);
-  const y = (i - 1) * numAttrValues.value + (k - 1) % numAttrValues.value;
-  return [x, y];
-};
-
-const toIJK = (x, y) => {
-  const i = Math.floor(y / numAttrValues.value);
-  const j = Math.floor(x / numAttrValues.value);
-  if (j >= numAttributes.value - 1 - i) {
-    // block not in grid
-    return [-1, -1, -1];
-  }
-  const k = (x % numAttrValues.value) * numAttrValues.value + (y % numAttrValues.value);
-  return [i + 1, j + 1, k + 1];
-};
-
-const mouseDown = (i, j, k) => {
-  const [x, y] = toXY(i, j, k);
-  gridStateCopy.value = Array.from(gridState.value);
-  startMouseDown.value = [x, y];
-  lastMouseOver.value = [x, y];
-  isMouseDown.value = true;
-  gridState.value[cellIndex.value(i, j, k)] = selectedColor.value;
-};
-
-const mouseEnter = (i, j, k) => {
-  if (isMouseDown.value) {
-    const [i1, j1] = toXY(i, j, k);
-    const [i2, j2] = startMouseDown.value;
-    const [i3, j3] = lastMouseOver.value;
-    // first reset not marked cells
-    if (i1 !== i3) {
-      for (let x = Math.min(i1, i3); x <= Math.max(i1, i3); x++) {
-        for (let y = Math.min(j2, j3); y <= Math.max(j2, j3); y += 1) {
-          const [i, j, k] = toIJK(x, y);
-          if (i != -1) {
-            const cellIndex = cellIndex.value(i, j, k);
-            this.$set(gridState, cellIndex, gridStateCopy.value[cellIndex]);
-          }
-        }
-      }
-    }
-    if (j1 !== j3) {
-      for (let y = Math.min(j1, j3); y <= Math.max(j1, j3); y++) {
-        for (let x = Math.min(i2, i3); x <= Math.max(i2, i3); x += 1) {
-          const [i, j, k] = toIJK(x, y);
-          if (i != -1) {
-            const cellIndex = cellIndex.value(i, j, k);
-            // gridCells[ind].style.background = colors[gridState[ind]];
-            this.$set(gridState, cellIndex, gridStateCopy.value[cellIndex]);
-          }
-        }
-      }
-    }
-    // then mark nearly marked cells
-    for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a += 1) {
-      for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b += 1) {
-        // gridCells[b * width + a].style.background = colors[selectedColor];
-        const [i, j, k] = toIJK(a, b);
-        if (i != -1) {
-          const cellIndex = cellIndex.value(i, j, k);
-          this.$set(gridState, cellIndex, selectedColor.value);
-        }
-      }
-    }
-    lastMouseOver.value = [i1, j1];
-  }
-};
-
-const mainGridMouseUp = () => {
-  if (!isMouseDown.value) return;
-
-  const start = startMouseDown.value;
-  const last = lastMouseOver.value;
-  const currentColor = selectedColor.value;
-  const gridCopy = gridStateCopy.value;
-  
-  if (!start || !last) return;
-
-  const [i1, j1] = start;
-  const [i2, j2] = last;
-  const stateBefore = [];
-  
-  for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
-    const stateBeforeRow = [];
-    for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
-      const [i, j, k] = toIJK(a, b);
-      if (i !== -1) {
-        const idx = cellIndex.value(i, j, k);
-        stateBeforeRow.push(gridCopy[idx]);
-        gridState.value[idx] = currentColor;
-      }
-    }
-    stateBefore.push(stateBeforeRow);
-  }
-  
-  const revertObj = {
-    x0: Math.min(i1, i2),
-    x1: Math.max(i1, i2),
-    y0: Math.min(j1, j2),
-    y1: Math.max(j1, j2),
-    colorAfter: currentColor,
-    colorsBefore: stateBefore
-  };
-  
-  if (revertIndex.value < revertHistory.value.length) {
-    revertHistory.value[revertIndex.value] = revertObj;
-    revertHistory.value.length = revertIndex.value + 1;
-  } else {
-    revertHistory.value.push(revertObj);
-  }
-  
-  revertIndex.value += 1;
-  isMouseDown.value = false;
-};
-
-const drawOutline = () => {
-  // draw horizontal lines
-  let pathStr = `M0 0H${blockWidth.value * (numAttributes.value - 1)}`;
-  for(let i = 0; i < numAttributes.value - 1; i++){
-      pathStr += `M0 ${blockWidth.value * (i + 1)}H${blockWidth.value * (numAttributes.value - 1 - i)}`;
-  }
-  // draw vertical lines
-  pathStr += `M0 0V${blockWidth.value * (numAttributes.value - 1)}`;
-  for(let i = 0; i < numAttributes.value - 1; i++){
-      pathStr += `M${blockWidth.value * (i + 1)} 0V${blockWidth.value * (numAttributes.value - 1 - i)}`;
-  }
-  return pathStr;
-};
-
-const selectColor = (i) => {
-  selectedColor.value = i;
-};
-
-// Helper function to safely calculate padding
-const calculatePadding = () => {
-  if (!horizontalLabels.value || !verticalLabels.value) return;
-
-  let maxLabelWidth = 0;
-  let maxLabelHeight = 0;
-
-  // Safe iteration with optional chaining
-  horizontalLabels.value?.forEach(label => {
-    if (label) {
-      maxLabelWidth = Math.max(maxLabelWidth, label.getBBox().width);
-    }
-  });
-
-  verticalLabels.value?.forEach(label => {
-    if (label) {
-      maxLabelHeight = Math.max(maxLabelHeight, label.getBBox().height);
-    }
-  });
-
-  paddingLeft.value = maxLabelWidth + 10;
-  paddingTop.value = maxLabelHeight + 10;
-};
-
-// Lifecycle hooks
-onMounted(() => {
-  gridState.value = new Array(
-    (numAttributes.value * (numAttributes.value + 1)) / 2 * 
-    numAttrValues.value * 
-    numAttrValues.value
-  ).fill(2);
-
-  nextTick(() => {
-    calculatePadding();
-  });
-
-  document.addEventListener("mouseup", mainGridMouseUp, false);
-  window.ondragstart = function() { return false; };
-});
-
-// Watchers
-watch(() => props.id, async () => {
-  gridState.value = new Array(
-    (numAttributes.value * (numAttributes.value + 1)) / 2 * 
-    numAttrValues.value * 
-    numAttrValues.value
-  ).fill(2);
-  
-  await nextTick();
-  calculatePadding();
-});
-
-watch(tableVisible, async () => {
-  await nextTick();
-  calculatePadding();
-});
-
-watch(() => logical.value.attributes, async () => {
-  await nextTick();
-  calculatePadding();
-}, { deep: true });
 </script>
 
 <style lang="scss">
@@ -745,39 +356,6 @@ h1 {
   cursor: pointer;
 }
 
-#descrHeader {
-  margin-top: 0;
-}
-
-.bodyContainer {
-  background: white;
-}
-
-.puzzleTitle {
-  float: left;
-}
-
-.difficulty {
-  float: right;
-  font-size: 22px;
-}
-
-#solutionGrid {
-  margin: 30px 0;
-}
-
-.crossPath {
-  pointer-events: none;
-}
-
-.verticalTextGroup text {
-  writing-mode: tb;
-}
-
-.blockGroups {
-  pointer-events: all;
-}
-
 .puzzleSet {
   margin-top: 20px;
 }
@@ -793,27 +371,6 @@ h1 {
   width: 1000px;
   height: 200px;
   object-fit: cover;
-}
-
-.puzzleContainer {
-  /* background: white; */
-  overflow: hidden;
-  border-radius: 10px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  position: relative;
-  border: 1px solid rgba(188, 188, 188, 0.08);
-  display: inline-block;
-  width: 100%;
-}
-
-.puzzleBody {
-  position: relative;
-  padding: 30px;
-  background: #ffffffab;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
 }
 
 #clues {
@@ -846,26 +403,6 @@ h1 {
 .attributeTable td {
   vertical-align: middle;
   padding: 0 10px;
-}
-
-thead {
-  background: white;
-}
-
-#classicGrid {
-  margin-top: 10px;
-}
-
-tbody{
-  th {
-    color: #5e5d52;
-  }
-  tr {
-    margin-bottom: 1em;
-  }
-  td {
-    padding: 8px 10px;
-  }
 }
 
 th, td {
@@ -942,6 +479,7 @@ button {
   vertical-align: middle;
   margin-left: 10px;
 }
+
 .solutionToggle {
   display: inline-block;
   vertical-align: middle;
