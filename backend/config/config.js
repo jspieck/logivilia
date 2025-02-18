@@ -16,5 +16,26 @@ module.exports = {
   },
   authentication: {
     jwtSecret: process.env.JWT_SECRET || 'secret'
+  },
+  development: {
+    database: 'logivilia',
+    username: 'logivilia',
+    password: 'logivilia',
+    host: 'localhost',
+    dialect: 'postgres'
+  },
+  production: {
+    database: process.env.PGDATABASE,
+    username: process.env.PGUSER,
+    password: process.env.PGPASSWORD,
+    host: process.env.PGHOST,
+    port: process.env.PGPORT,
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
   }
 };

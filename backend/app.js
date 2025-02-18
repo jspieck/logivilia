@@ -14,7 +14,12 @@ const app = express();
 // Middleware
 app.use(morgan('combined'));
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? ['frontend-production-0af6.up.railway.app']  // Replace with your actual frontend URL
+    : 'http://localhost:8080',
+  credentials: true
+}));
 
 require('./passport');
 
