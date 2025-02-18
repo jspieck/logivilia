@@ -139,8 +139,8 @@ module.exports = (app) => {
   app.get('/rankings',
     RankingController.index);
 
-  // Serve static files
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(publicRoot, 'index.html'));
+  // Health check route
+  app.get('/', (req, res) => {
+    res.json({ message: 'Backend API is running' })
   });
 };
