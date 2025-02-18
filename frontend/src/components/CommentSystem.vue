@@ -159,6 +159,7 @@ export default {
 .divsend {
   position: relative;
   margin-top: 10px;
+  padding-bottom: 10px;
 }
 
 .dankeBox {

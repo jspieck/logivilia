@@ -3,36 +3,57 @@
     <!-- Header -->
     <div class="puzzle-header">
       <h1 class="puzzle-title">{{ nonogram.name }}</h1>
-      <span class="difficulty">{{ nonogram.difficulty }}/<strong>5</strong></span>
+      <DifficultyIndicator 
+        :difficulty="nonogram.difficulty"
+        :maxDifficulty="5"
+      />
     </div>
 
     <!-- Main Puzzle Area -->
     <div class="puzzle-body">
       <div id="nonoArea">
         <!-- Controls -->
-        <div class="puzzle-controls">
-          <button id="zoomIn" @click="zoomIn" class="control-button">
-            <ion-icon v-pre name="add" aria-label="Hineinzoomen"></ion-icon>
-          </button>
-          <button id="zoomOut" @click="zoomOut" class="control-button">
-            <ion-icon v-pre name="remove"></ion-icon>
-          </button>
-          <button id="revert" @click="revertState" class="control-button">
-            <ion-icon v-pre name="return-up-back-outline"></ion-icon>
-          </button>
-          <button id="restore" @click="restoreState" class="control-button">
-            <ion-icon v-pre name="refresh"></ion-icon>
-          </button>
-        </div>
+        <div class="control-panels">
+          <div class="control-card">
+            <div class="control-label">Farben</div>
+            <div class="color-controls">
+              <button 
+                v-for="(color, index) in colors" 
+                :key="index"
+                class="color-button"
+                :style="{ backgroundColor: color }"
+                :class="{ active: selectedColor === index }"
+                @click="selectColor(index)"
+              >
+                <div v-if="index === colors.length - 1" class="empty-cell-dot"></div>
+              </button>
+            </div>
+          </div>
 
-        <!-- Color Palette -->
-        <svg id="colors" :height="cellWidthBase + 25" :width="colors.length * (cellWidthBase + 10) + 15">
-          <g v-for="(color, i) in colors" :key="`color${i}`" :transform="`translate(${5 + i * (cellWidthBase + 10)}, 5)`">
-            <rect :fill="color" stroke="black" :width="cellWidthBase" :height="cellWidthBase" @click="selectColor(i)" />
-            <circle v-if="i == colors.length - 1" class="circlePath" :cx="cellWidthBase / 2" :cy="cellWidthBase / 2" r="3" />
-            <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidthBase" height="3" :y="cellWidthBase + 4" />
-          </g>
-        </svg>
+          <div class="control-card">
+            <div class="control-label">Zoom</div>
+            <div class="size-controls">
+              <button class="size-button" @click="zoomOut">
+                <ion-icon name="remove-outline"></ion-icon>
+              </button>
+              <button class="size-button" @click="zoomIn">
+                <ion-icon name="add-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <div class="control-label">Rückgängig</div>
+            <div class="size-controls">
+              <button @click="revertState" class="size-button">
+                <ion-icon v-pre name="return-up-back-outline"></ion-icon>
+              </button>
+              <button  @click="restoreState" class="size-button">
+                <ion-icon v-pre name="refresh"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
 
         <!-- Main Grid Area -->
         <div id="nonoMainArea">
@@ -55,7 +76,8 @@
 
                   <template v-for="(group, groupIndex) in verticalInfo" :key="`group-${groupIndex}`">
                     <template v-for="(row, rowIndex) in group" :key="`row-${rowIndex}`">
-                      <g v-for="(cell, cellIndex) in row" :key="`cellCol${cell.id}`" 
+                      <g v-for="(cell, cellIndex) in row" :key="`cellCol${cell.id}`"
+                          @click="selectColor(cell.colorId)"
                          :id="cell.id" 
                          :transform="`translate(${cellWidth * rowIndex + groupIndex * 5 * cellWidth}, ${cellWidth * cellIndex})`">
                         <rect :width="cellWidth" 
@@ -159,11 +181,13 @@ import UserService from '@/services/UserService';
 import NonogramService from '@/services/NonogramService';
 import NonogramRatingService from '@/services/NonogramRatingService';
 import CommentSystem from '@/components/CommentSystem.vue';
+import DifficultyIndicator from './DifficultyIndicator.vue';
 
 export default {
   name: 'NonogramSolve',
   components: {
     CommentSystem,
+    DifficultyIndicator
   },
   setup() {
     const route = useRoute();
@@ -921,39 +945,104 @@ export default {
   padding: 20px;
 }
 
-.puzzle-controls {
+.control-panels {
   display: flex;
-  gap: 10px;
-  margin: 10px 0;
+  gap: 20px;
+  margin: 5px 0;
 }
 
-.control-button {
+.control-card {
+  background: white;
+  border-radius: 12px;
+  padding: 10px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+  border: 1px solid #dddddd;
+}
+
+.control-label {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 0 10px;
+  font-size: 14px;
+  color: #666;
+  border-radius: 12px;
+}
+
+.color-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 5px;
+}
+
+.empty-cell-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #000;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.color-button {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &.active {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+  }
+}
+
+.size-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 5px;
+}
+
+.size-button {
   width: 36px;
   height: 36px;
-  border: none;
   border-radius: 50%;
+  border: none;
   background: #f5f5f5;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 
   &:hover {
-    background: #e9ecef;
+    background: #e0e0e0;
+    transform: scale(1.1);
   }
 
   ion-icon {
     font-size: 20px;
-  }
-
-  &.rotate ion-icon {
-    transform: scaleX(-1);
+    color: #666;
   }
 }
 
 #nonoMainArea {
-  margin: 20px 0;
   user-select: none;
 }
 
@@ -1009,7 +1098,7 @@ export default {
     gap: 10px;
   }
 
-  .puzzle-controls {
+  .control-panels {
     flex-wrap: wrap;
   }
 }

@@ -2,6 +2,7 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import Toggle from './Toggle.vue'
 import MySelect from './MySelect.vue'
+import DifficultyIndicator from './DifficultyIndicator.vue'
 
 const props = defineProps({
     logical: {
@@ -383,7 +384,10 @@ defineExpose({
         <!-- Header -->
         <div class="puzzle-header" v-if="logical != null">
             <h1 class="puzzle-title">{{ logical.name }}</h1>
-            <span class="difficulty">{{ logical.difficulty }}/<strong>5</strong></span>
+            <DifficultyIndicator 
+                :difficulty="logical.difficulty"
+                :maxDifficulty="5"
+            />
         </div>
 
         <!-- Main Puzzle Area -->
@@ -758,6 +762,10 @@ defineExpose({
     width: 100%;
     height: auto;
   }
+}
+
+.puzzle-display {
+    padding-top: 10px;
 }
 
 .horizontal-text-group {
