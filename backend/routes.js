@@ -139,7 +139,8 @@ module.exports = (app) => {
   app.get('/rankings',
     RankingController.index);
 
-  app.get("/", (req, res, next) => {
-    res.sendFile("index.html", { root: publicRoot });
+  // Serve static files
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(publicRoot, 'index.html'));
   });
 };
