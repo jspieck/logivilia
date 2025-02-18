@@ -7,30 +7,50 @@ const db = {};
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
 
-// Log the database configuration (for debugging)
-console.log('Database Config:', {
-  database: dbConfig.database,
-  username: dbConfig.username,
-  host: dbConfig.host,
-  port: dbConfig.port,
-  dialect: dbConfig.dialect
+// Log environment variables (for debugging)
+console.log('Environment:', env);
+console.log('Database URL:', process.env.DATABASE_URL);
+console.log('Postgres Variables:', {
+  PGDATABASE: process.env.PGDATABASE,
+  PGHOST: process.env.PGHOST,
+  PGPORT: process.env.PGPORT,
+  PGUSER: process.env.PGUSER,
 });
 
 let sequelize;
 if (env === 'production') {
-  // For production, use the DATABASE_URL from Railway
-  const databaseUrl = process.env.DATABASE_URL;
-  sequelize = new Sequelize(databaseUrl, {
-    dialect: 'postgres',
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
+  // Check if we have individual Postgres variables
+  if (process.env.PGDATABASE && process.env.PGHOST) {
+    sequelize = new Sequelize({
+      database: process.env.PGDATABASE,
+      username: process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+      host: process.env.PGHOST,
+      port: process.env.PGPORT,
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
       }
-    }
-  });
+    });
+  } else if (process.env.DATABASE_URL) {
+    // Use DATABASE_URL if available
+    sequelize = new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      }
+    });
+  } else {
+    throw new Error('No database configuration found. Please set DATABASE_URL or Postgres variables.');
+  }
 } else {
-  // For development, use the regular config
+  // Development configuration
   sequelize = new Sequelize(
     dbConfig.database,
     dbConfig.username,
@@ -38,17 +58,17 @@ if (env === 'production') {
     {
       dialect: dbConfig.dialect,
       host: dbConfig.host,
-      port: dbConfig.port,
-      ...dbConfig.dialectOptions
+      storage: dbConfig.storage
     }
   );
 }
 
-fs.readdirSync(__dirname)
+fs
+  .readdirSync(__dirname)
   .filter((file) =>
-    file !== 'index.js')
+    file !== 'index.js'
+  )
   .forEach((file) => {
-    console.log(file);
     const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
     db[model.name] = model;
   });
@@ -57,7 +77,7 @@ Object.keys(db).forEach(function (modelName) {
   if ('associate' in db[modelName]) {
     db[modelName].associate(db);
   }
-})
+});
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
