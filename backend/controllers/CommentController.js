@@ -4,7 +4,7 @@ const {sequelize, Comment, CommentUpvote, User} = require('../models');
 module.exports = {
   async index (req, res) {
     try {
-      const { type, id } = req.params
+      const { riddleType, riddleId } = req.params
       const comments = await Comment.findAll({
         include: [{
           model: User,
@@ -14,8 +14,8 @@ module.exports = {
           attributes: ['id', 'UserId']
         }],
         where: {
-          riddleType: type,
-          riddleId: id
+          riddleType: riddleType,
+          riddleId: riddleId
         },
         attributes: [
           'id', 'riddleType', 'riddleId', 'replyId', 'text', 'date', 
