@@ -46,8 +46,41 @@ module.exports = (sequelize, DataTypes) => {
     }
   });
 
+  User.associate = function(models) {
+    // Associations for solved puzzles with renamed aliases
+    User.belongsToMany(models.Logical, {
+      through: 'UserSolvedLogicals',
+      as: 'solvedLogicalsRel',
+      foreignKey: 'userId'
+    });
+    User.belongsToMany(models.Nonogram, {
+      through: 'UserSolvedNonograms',
+      as: 'solvedNonogramsRel',
+      foreignKey: 'userId'
+    });
+    User.belongsToMany(models.Linelog, {
+      through: 'UserSolvedLinelogs',
+      as: 'solvedLinelogsRel',
+      foreignKey: 'userId'
+    });
+
+    // Associations for created puzzles with renamed aliases
+    User.hasMany(models.Logical, {
+      as: 'createdLogicalsRel',
+      foreignKey: 'userId'
+    });
+    User.hasMany(models.Nonogram, {
+      as: 'createdNonogramsRel',
+      foreignKey: 'userId'
+    });
+    User.hasMany(models.Linelog, {
+      as: 'createdLinelogsRel',
+      foreignKey: 'userId'
+    });
+  };
+
   User.prototype.comparePassword = function (password) {
-    return bcrypt.compareAsync(password, this.password)
+    return bcrypt.compareAsync(password, this.password);
   };
 
   return User;

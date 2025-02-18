@@ -15,5 +15,8 @@ export default {
   },
   logicalSolved (userId, logicalId) {
     return Api().patch(`users/${userId}/logical/${logicalId}`);
+  },
+  getRankings () {
+    return Api().get('rankings');
   }
 };

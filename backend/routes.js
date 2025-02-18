@@ -10,6 +10,7 @@ const UserController = require('./controllers/UserController');
 const CommentController = require('./controllers/CommentController');
 const CommentUpvoteController = require('./controllers/CommentUpvoteController');
 const isAuthenticated = require('./policies/isAuthenticated');
+const RankingController = require('./controllers/RankingController');
 
 module.exports = (app) => {
   app.post('/register', 
@@ -133,6 +134,10 @@ module.exports = (app) => {
   app.get('/logicalratings/:logicalId',
     isAuthenticated,
     LogicalRatingController.show);
+
+  // Rankings Route
+  app.get('/rankings',
+    RankingController.index);
 
   app.get("/", (req, res, next) => {
     res.sendFile("index.html", { root: publicRoot });

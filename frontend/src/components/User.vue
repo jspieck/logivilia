@@ -1,304 +1,441 @@
 <template>
-  <div class="overviewPage">
-    <h2>Benutzerprofil</h2>
-
-    <div class="tile is-ancestor user-card">
-      <div class="tile is-parent is-3 userCardBox">
-        <div class="is-child box profile-box">
-          <!-- <img class="profile-picture" src="@/assets/stock.jpg"/>
-          <div class="profile-picture"></div> -->
-          <img class="profile-picture" src="@/assets/bear.svg"/>
-          <p class="user-name">{{user.username}}</p>
-          <p class="user-role">{{user.role}}</p>
+  <div class="profile-page">
+    <div class="profile-header">
+      <div class="header-content">
+        <div class="user-avatar">
+          <img class="avatar-image" src="@/assets/bear.svg" alt="Profile picture" />
+          <div class="user-status" :class="{ 'online': isOnline }"></div>
         </div>
-      </div>
-      <div class="tile is-parent is-4 userCardBox">
-        <div class="is-child box profile-box">
-          <p class="category-text">Wohnort</p>
-          <p class="category-sub">{{user.city}}</p>
-          <p class="category-text">Geschlecht</p>
-          <p class="category-sub">{{user.gender}}</p>
-          <p class="category-text">Alter</p>
-          <p class="category-sub">{{age}}</p>
-          <p class="category-text">Beitrittsdatum</p>
-          <p class="category-sub">{{formatDate(user.joined)}}</p>
-        </div>
-      </div>
-      <div class="tile is-parent is-vertical is-5 userCardBox">
-        <div class="tile is-parent statBox">
-          <div class="is-child box">
-            <p class="tile-heading">Gelöste Rätsel</p>
-            <nav class="level">
-              <div class="level-item has-text-centered">
-                <div>
-                  <p class="heading">Logikrätsel</p>
-                  <p class="title">{{user.solvedLogicals.length}}</p>
-                </div>
-              </div>
-              <div class="level-item has-text-centered">
-                <div>
-                  <p class="heading">Nonogramme</p>
-                  <p class="title">{{user.solvedNonograms.length}}</p>
-                </div>
-              </div>
-              <div class="level-item has-text-centered">
-                <div>
-                  <p class="heading">Linelogs</p>
-                  <p class="title">{{user.solvedLinelogs.length}}</p>
-                </div>
-              </div>
-            </nav>
+        <div class="user-info">
+          <h1 class="username">{{ user.username }}</h1>
+          <span class="user-role">{{ user.role }}</span>
+          
+          <div class="user-details">
+            <div class="detail-item" v-if="user.gender">
+              <ion-icon name="person-outline"></ion-icon>
+              <span>{{ user.gender }}</span>
+            </div>
+            <div class="detail-item" v-if="user.birthyear">
+              <ion-icon name="gift-outline"></ion-icon>
+              <span>{{ age }} Jahre</span>
+            </div>
+            <div class="detail-item" v-if="user.city">
+              <ion-icon name="location-outline"></ion-icon>
+              <span>{{ user.city }}</span>
+            </div>
+            <div class="detail-item">
+              <ion-icon name="calendar-outline"></ion-icon>
+              <span>Dabei seit {{ formatDate(user.joined) }}</span>
+            </div>
           </div>
-        </div>
-        <div class="tile is-parent statBox">
-          <div class="is-child box">
-            <p class="tile-heading">Erstellte Rätsel</p>
-            <nav class="level">
-              <div class="level-item has-text-centered">
-                <div>
-                  <p class="heading">Logikrätsel</p>
-                  <p class="title">{{user.createdLogicals.length}}</p>
-                </div>
-              </div>
-              <div class="level-item has-text-centered">
-                <div>
-                  <p class="heading">Nonogramme</p>
-                  <p class="title">{{user.createdNonograms.length}}</p>
-                </div>
-              </div>
-              <div class="level-item has-text-centered">
-                <div>
-                  <p class="heading">Linelogs</p>
-                  <p class="title">{{user.createdLinelogs.length}}</p>
-                </div>
-              </div>
-            </nav>
+
+          <div class="user-bio" v-if="user.bio">
+            <p>{{ user.bio }}</p>
           </div>
         </div>
       </div>
     </div>
 
-    <div id="editArea">
-      <h3>Passe dein Profil an</h3>
-      <p class="category-text">Wohnort</p>
-      <input v-model="editedCity"/>
-      <p class="category-text">Geschlecht</p>
-      <MySelect :options="genderOptions" v-model="selectedGender"/>
-      <p class="category-text">Geburtsjahr</p>
-      <MySelect :options="years" v-model="selectedBirthyear"/>
-      <p class="category-text">Über mich</p>
-      <textarea class="bio-area" v-model="aboutMe"></textarea>
-      <button @click="updateProfile">Profil aktualisieren</button>
+    <div class="profile-content">
+      <div class="stats-grid">
+        <div class="stats-card solved">
+          <h3>Gelöste Rätsel</h3>
+          <div class="stats-numbers">
+            <div class="stat-group">
+              <div class="stat-value">{{ user.solvedLogicals.length }}</div>
+              <div class="stat-label">Logikrätsel</div>
+            </div>
+            <div class="stat-group">
+              <div class="stat-value">{{ user.solvedNonograms.length }}</div>
+              <div class="stat-label">Nonogramme</div>
+            </div>
+            <div class="stat-group">
+              <div class="stat-value">{{ user.solvedLinelogs.length }}</div>
+              <div class="stat-label">Linelogs</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-card created">
+          <h3>Erstellte Rätsel</h3>
+          <div class="stats-numbers">
+            <div class="stat-group">
+              <div class="stat-value">{{ user.createdLogicals.length }}</div>
+              <div class="stat-label">Logikrätsel</div>
+            </div>
+            <div class="stat-group">
+              <div class="stat-value">{{ user.createdNonograms.length }}</div>
+              <div class="stat-label">Nonogramme</div>
+            </div>
+            <div class="stat-group">
+              <div class="stat-value">{{ user.createdLinelogs.length }}</div>
+              <div class="stat-label">Linelogs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-edit" v-if="loggedIn && (store.user.id == route.params.id)">
+        <h3>Profil bearbeiten</h3>
+        <div class="edit-form">
+          <div class="form-group">
+            <label>Wohnort</label>
+            <input 
+              v-model="editedCity" 
+              placeholder="Stadt eingeben"
+              @keyup.enter="updateProfile"
+            />
+          </div>
+          <div class="form-group">
+            <label>Geschlecht</label>
+            <div><MySelect :options="genderOptions" v-model="selectedGender" /></div>
+          </div>
+          <div class="form-group">
+            <label>Geburtsjahr</label>
+            <div><MySelect :options="years" v-model="selectedBirthyear" /></div>
+          </div>
+          <div class="form-group">
+            <label>Über mich</label>
+            <textarea 
+              class="bio-area" 
+              v-model="aboutMe" 
+              placeholder="Erzähle etwas über dich..."
+            ></textarea>
+          </div>
+          <button 
+            class="save-button" 
+            @click="updateProfile"
+          >
+            Speichern
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMainStore } from '@/store/store';
+import { useOruga } from '@oruga-ui/oruga-next';
 import UserService from '@/services/UserService';
 import MySelect from '@/components/MySelect.vue';
 
-export default {
-  name: 'UserProfile',
-  components: {
-    MySelect
-  },
-  setup() {
-    const store = useMainStore();
-    const route = useRoute();
-    const user = ref({
-      username: "",
-      solvedLogicals: [],
-      solvedNonograms: [],
-      solvedLinelogs: [],
-      createdLogicals: [],
-      createdNonograms: [],
-      createdLinelogs: []
-    });
-    const genderOptions = ["Männlich", "Weiblich", "Divers", ""];
-    const editedCity = ref("");
-    const aboutMe = ref("");
-    const selectedBirthyear = ref(1975);
-    const selectedGender = ref("");
+const store = useMainStore();
+const route = useRoute();
+const oruga = useOruga();
+const user = ref({
+  username: "",
+  solvedLogicals: [],
+  solvedNonograms: [],
+  solvedLinelogs: [],
+  createdLogicals: [],
+  createdNonograms: [],
+  createdLinelogs: []
+});
+const genderOptions = ["Männlich", "Weiblich", "Divers", ""];
+const editedCity = ref("");
+const aboutMe = ref("");
+const selectedBirthyear = ref(1975);
+const selectedGender = ref("");
 
-    const years = computed(() => {
-      const year = new Date().getFullYear();
-      return Array.from({ length: year - 1900 }, (value, index) => 1901 + index);
-    });
+const years = computed(() => {
+  const year = new Date().getFullYear();
+  return Array.from({ length: year - 1900 }, (value, index) => 1901 + index);
+});
 
-    const loggedIn = computed(() => store.isUserLoggedIn);
+const loggedIn = computed(() => store.isUserLoggedIn);
 
-    const age = computed(() => {
-      const year = new Date().getFullYear();
-      return year - user.value.birthyear;
-    });
+const isOnline = ref(true);
 
-    const updateUserEdit = () => {
-      if (loggedIn.value && (store.user.id == route.params.id)) {
-        editedCity.value = user.value.city;
-        aboutMe.value = user.value.bio;
-        selectedBirthyear.value = user.value.birthyear;
-        selectedGender.value = user.value.gender;
-      }
-    };
+const age = computed(() => {
+  const year = new Date().getFullYear();
+  return year - user.value.birthyear;
+});
 
-    const updateProfile = async () => {
-      await UserService.update(store.user.id, {
-        city: editedCity.value,
-        birthyear: selectedBirthyear.value,
-        bio: aboutMe.value,
-        gender: selectedGender.value
-      });
-    };
-
-    const formatDate = (inputFormat) => {
-      function pad(s) { return (s < 10) ? '0' + s : s; }
-      const d = new Date(inputFormat);
-      return [pad(d.getDate()), pad(d.getMonth() + 1), d.getFullYear()].join('/');
-    };
-
-    onMounted(async () => {
-      const id = route.params.id;
-      user.value = (await UserService.show(id)).data;
-      updateUserEdit();
-    });
-
-    watch(() => route.params.id, async () => {
-      const id = route.params.id;
-      user.value = (await UserService.show(id)).data;
-      updateUserEdit();
-    });
-
-    return {
-      user,
-      genderOptions,
-      editedCity,
-      aboutMe,
-      selectedBirthyear,
-      selectedGender,
-      years,
-      loggedIn,
-      age,
-      updateProfile,
-      updateUserEdit,
-      formatDate
-    };
+const updateUserEdit = () => {
+  if (loggedIn.value && (store.user.id == route.params.id)) {
+    editedCity.value = user.value.city;
+    aboutMe.value = user.value.bio;
+    selectedBirthyear.value = user.value.birthyear;
+    selectedGender.value = user.value.gender;
   }
 };
+
+const updateProfile = async () => {
+  try {
+    await UserService.update(store.user.id, {
+      city: editedCity.value,
+      birthyear: selectedBirthyear.value,
+      bio: aboutMe.value,
+      gender: selectedGender.value
+    });
+
+    // Update the displayed user data immediately
+    user.value = {
+      ...user.value,
+      city: editedCity.value,
+      birthyear: selectedBirthyear.value,
+      bio: aboutMe.value,
+      gender: selectedGender.value
+    };
+
+    // Show success notification
+    oruga.notification.open({
+      message: 'Profil erfolgreich aktualisiert!',
+      duration: 3000,
+      variant: 'success',
+      position: 'bottom-right'
+    });
+
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    oruga.notification.open({
+      message: 'Fehler beim Aktualisieren des Profils',
+      duration: 3000,
+      variant: 'danger',
+      position: 'bottom-right'
+    });
+  }
+};
+
+const formatDate = (inputFormat) => {
+  function pad(s) { return (s < 10) ? '0' + s : s; }
+  const d = new Date(inputFormat);
+  return [pad(d.getDate()), pad(d.getMonth() + 1), d.getFullYear()].join('/');
+};
+
+onMounted(async () => {
+  const id = route.params.id;
+  user.value = (await UserService.show(id)).data;
+  updateUserEdit();
+});
+
+watch(() => route.params.id, async () => {
+  const id = route.params.id;
+  user.value = (await UserService.show(id)).data;
+  updateUserEdit();
+});
 </script>
 
-<style scoped>
-  .user-card {
-    box-shadow: 0 4px 10px #0870b829;
+<style lang="scss" scoped>
+.profile-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.profile-header {
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.header-content {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.user-avatar {
+  position: relative;
+
+  .avatar-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 60px;
+    object-fit: cover;
+    background: #f0f0f0;
   }
-  @media (max-width: 770px) {
-    .is-3 {
-      width: 33%;
-    }
-    .is-4 {
-      width: 66%;
-    }
-    .is-3, .is-4 {
-      display: inline-block;
-      margin: 0;
-      padding: 0;
-    }
-    .box {
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    .tile.is-parent {
-      vertical-align: top;
-    }
-    .userCardBox[data-v-73968b0a] {
-      border-right: none;
-    }
-    .statBox {
-      width: 49% !important;
-      display: inline-block;
-    }
+
+  .user-status {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #4CAF50;
+    border: 2px solid white;
   }
-  @media (max-width: 1000px) {
-    .heading {
-      font-size: 10px !important;
-    }
-  }
-  .bio-area {
-    width: 50%;
-    height: 150px;
-    display: block;
-    margin-bottom: 15px;
-  }
-  .box {
-    background: #fcfcfc;
-    box-shadow: none;
-    width: 100%;
-    margin: 20px;
-    padding: 20px;
-    box-sizing: border-box;
-    /* box-shadow: 0 4px 10px rgb(8 112 184 / 16%); */
-  }
-  .userCardBox {
-    border-right: 1px solid #305bd73b;
-  }
-  .level {
-    width: 100%;
-  }
-  .title {
-    margin-top: 10px;
-  }
-  .tile-heading {
-    text-align: center;
-    font-size: 20px;
+}
+
+.user-info {
+  flex: 1;
+
+  .username {
+    font-size: 24px;
     font-weight: 600;
+    margin: 0 0 4px 0;
   }
-  .bodyContainer {
-    background: #f7f9fc;
-  }
-  .profile-box {
-    position: relative;
-    box-sizing: border-box;
-    background: white;
-    box-shadow: none;
-    border-radius: 0;
-    text-align: center;
-  }
-  .profile-picture {
-    /* width: 150px;
-    height: 150px; */
-    margin-top: 10px;
-    width: 100%;
-    background: #9595ea;
-    border-radius: 65px;
-  }
-  .user-name {
-    font-size: 20px;
-    font-weight: 600;
-    text-align: center;
-  }
+
   .user-role {
-    color: #a0a6b1;
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .user-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 14px;
+    padding: 4px 12px;
+    background: #f5f5f5;
+    border-radius: 20px;
+
+    ion-icon {
+      font-size: 18px;
+      color: #2196F3;
+    }
+  }
+
+  .user-bio {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.stats-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+  h3 {
+    margin: 0 0 20px 0;
     font-size: 18px;
+    color: #333;
+  }
+
+  .stats-numbers {
+    display: flex;
+    justify-content: space-around;
     text-align: center;
   }
-  .category-text {
-    color: #a0a6b1;
+
+  .stat-group {
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #2196F3;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #666;
+      margin-top: 4px;
+    }
+  }
+}
+
+.profile-edit {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+  h3 {
+    margin: 0 0 20px 0;
     font-size: 18px;
-  } 
-  .category-sub {
-    color: #343434;
-    font-weight: 600;
-    font-size: 18px;
+    color: #333;
   }
-  .heading {
-    font-size: 13px;
+
+  .edit-form {
+    display: grid;
+    gap: 20px;
+    max-width: 600px;
   }
-  .tile.is-ancestor {
-    margin: 0;
+
+  .form-group {
+    display: grid;
+    gap: 8px;
+
+    label {
+      font-size: 14px;
+      color: #666;
+    }
+
+    input,
+    select,
+    textarea {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+
+      &:focus {
+        outline: none;
+        border-color: #2196F3;
+      }
+    }
+
+    .bio-area {
+      min-height: 100px;
+      resize: vertical;
+    }
   }
-  .tile {
-    box-sizing: border-box;
+
+  .save-button {
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #1976D2;
+    }
   }
+}
+
+@media (max-width: 600px) {
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .user-details {
+    justify-content: center;
+  }
+
+  .user-bio {
+    text-align: left;
+  }
+
+  .stats-card .stats-numbers {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
 </style>

@@ -15,6 +15,7 @@ import Forgot from '@/components/Forgot.vue';
 import User from '@/components/User.vue';
 import Impressum from '@/components/Impressum.vue';
 import PasswordReset from '@/components/PasswordReset.vue';
+import Leaderboard from '@/components/Leaderboard.vue'
 
 const routes = [
   {
@@ -87,6 +88,11 @@ const routes = [
     name: 'Nonogram',
     component: NonogramSolve,
     props: true
+  },
+  {
+    path: '/leaderboard',
+    name: 'leaderboard',
+    component: Leaderboard
   },
 ];
 
