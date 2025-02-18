@@ -22,7 +22,8 @@ module.exports = {
     username: 'logivilia',
     password: 'logivilia',
     host: 'localhost',
-    dialect: 'postgres'
+    dialect: 'sqlite',
+    storage: './logivilia.sqlite'
   },
   production: {
     database: process.env.PGDATABASE,
@@ -36,6 +37,7 @@ module.exports = {
         require: true,
         rejectUnauthorized: false
       }
-    }
+    },
+    logging: false
   }
 };

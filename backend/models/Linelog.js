@@ -12,7 +12,14 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Linelog.associate = function(models) {
-    Linelog.belongsTo(models.User);
+    Linelog.belongsTo(models.User, {
+      foreignKey: 'userId',
+      as: 'creator'
+    });
+    
+    Linelog.hasMany(models.LinelogRating, {
+      foreignKey: 'linelogId'
+    });
   }
 
   return Linelog;
