@@ -4,34 +4,38 @@ const {sequelize, Comment, CommentUpvote, User} = require('../models');
 module.exports = {
   async index (req, res) {
     try {
+      const { type, id } = req.params
       const comments = await Comment.findAll({
-        attributes: {
-          include: [
-            [sequelize.fn('COUNT', sequelize.col('CommentUpvotes.CommentId')), 'upvotes']
-          ]
-        },
+        include: [{
+          model: User,
+          attributes: ['id', 'username', 'role', 'userImageId']
+        }, {
+          model: CommentUpvote,
+          attributes: ['id', 'UserId']
+        }],
         where: {
-          riddleType: req.params.riddleType,
-          riddleId: req.params.riddleId
+          riddleType: type,
+          riddleId: id
         },
-        include: [
-          {
-            model: User,
-            required: false, 
-            attributes: ['username', 'role', 'userImageId']
-          },
-          {
-            model: CommentUpvote,
-            required: false
-          }],
-        group: ['Comment.id']
-      });
-      res.send(comments);
+        attributes: [
+          'id', 'riddleType', 'riddleId', 'replyId', 'text', 'date', 
+          'createdAt', 'updatedAt', 'UserId',
+          [sequelize.fn('COUNT', sequelize.col('CommentUpvotes.id')), 'upvotes']
+        ],
+        group: [
+          'Comment.id', 'Comment.riddleType', 'Comment.riddleId', 
+          'Comment.replyId', 'Comment.text', 'Comment.date', 
+          'Comment.createdAt', 'Comment.updatedAt', 'Comment.UserId',
+          'User.id', 'User.username', 'User.role', 'User.userImageId',
+          'CommentUpvotes.id', 'CommentUpvotes.UserId'
+        ]
+      })
+      res.send(comments)
     } catch (err) {
-      console.log(err);
+      console.error(err)
       res.status(500).send({
-        error: 'Kommentare konnten nicht geladen werden.'
-      });
+        error: 'An error occurred trying to fetch comments'
+      })
     }
   },
   async post (req, res) {
