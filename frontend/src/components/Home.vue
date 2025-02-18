@@ -9,7 +9,10 @@
       </h1>
       <p class="hero-subtitle">Lösen Sie kostenlos eine Auswahl an abwechslungsreichen Logikrätseln</p>
       <div class="hero-buttons">
-        <button class="secondary-button" @click="$router.push('/nonogram-overview')">Jetzt Rätseln</button>
+        <button class="cta-button" @click="$router.push('/nonogram-overview')">
+          <ion-icon name="play-outline"></ion-icon>
+          Jetzt Rätseln
+        </button>
       </div>
     </div>
   </div>
@@ -17,18 +20,12 @@
   <!-- Puzzle Types Section -->
   <div class="puzzle-types">
     <div class="puzzle-card">
-      <h2 class="card-title">Nonogramme</h2>
-      <div class="card-content">
-        <img class="puzzle-image" src="../assets/nonoExample.png" alt="Nonogram example"/>
-        <p class="card-description">
-          Entdecken Sie die Kunst der Nonogramme - Logische Bilderrätsel, die Ihre Fähigkeiten herausfordern.
-        </p>
-        <button class="secondary-button" @click="$router.push('/nonogram-overview')">Ausprobieren</button>
+      <div class="card-header">
+        <div class="header-icon">
+          <ion-icon name="grid-outline"></ion-icon>
+        </div>
+        <h2 class="card-title">Logikrätsel</h2>
       </div>
-    </div>
-
-    <div class="puzzle-card">
-      <h2 class="card-title">Logicals</h2>
       <div class="card-content">
         <div class="logical-preview">
           <p class="preview-text">Frau Velan züchtet verschiedenfarbige Zwergpudel.</p>
@@ -44,7 +41,48 @@
             </ol>
           </div>
         </div>
-        <button class="secondary-button" @click="$router.push('/logical-overview')">Ausprobieren</button>
+        <button class="puzzle-button" @click="$router.push('/logical-overview')">
+          <span>Ausprobieren</span>
+          <ion-icon name="arrow-forward-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="puzzle-card">
+      <div class="card-header">
+        <div class="header-icon">
+          <ion-icon name="apps-outline"></ion-icon>
+        </div>
+        <h2 class="card-title">Nonogramme</h2>
+      </div>
+      <div class="card-content">
+        <img class="puzzle-image" src="../assets/nonoExample.png" alt="Nonogram example"/>
+        <p class="card-description">
+          Entdecken Sie die Kunst der Nonogramme - Logische Bilderrätsel, die Ihre Fähigkeiten herausfordern.
+        </p>
+        <button class="puzzle-button" @click="$router.push('/nonogram-overview')">
+          <span>Ausprobieren</span>
+          <ion-icon name="arrow-forward-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="puzzle-card">
+      <div class="card-header">
+        <div class="header-icon">
+          <ion-icon name="git-network-outline"></ion-icon>
+        </div>
+        <h2 class="card-title">Linelogs</h2>
+      </div>
+      <div class="card-content">
+        <img class="puzzle-image" src="../assets/linelogExample.png" alt="Linelog example"/>
+        <p class="card-description">
+          Verbinden Sie die Punkte nach logischen Regeln - Ein faszinierendes Rätsel für Musterdenker.
+        </p>
+        <button class="puzzle-button" @click="$router.push('/linelog-overview')">
+          <span>Ausprobieren</span>
+          <ion-icon name="arrow-forward-outline"></ion-icon>
+        </button>
       </div>
     </div>
   </div>
@@ -65,32 +103,32 @@ export default {
 <style lang="scss" scoped>
 .homeScreen {
   width: 100%;
+  background: #f8f9fa;
 }
 
 .hero {
   width: 100%;
-  height: 350px;
-  background-size: cover;
-  background-position: center;
+  height: 300px;
   display: flex;
   align-items: center;
-  padding: 0 10%;
+  padding: 20px 10%;
+  margin-bottom: 48px;
 }
 
 .hero-content {
-  max-width: 600px;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .hero-title {
   font-size: 3.5rem;
-  color: #2c3e50;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  color: #1a1a1a;
+  margin-bottom: 1.5rem;
   line-height: 1.2;
-  text-align: center;
 
   .highlight {
-    color: #3498db;
+    color: #2196F3;
     display: block;
     font-weight: 700;
   }
@@ -98,130 +136,177 @@ export default {
 
 .hero-subtitle {
   font-size: 1.5rem;
-  color: #34495e;
+  color: #666;
   margin-bottom: 2rem;
   line-height: 1.5;
-  text-align: center;
-}
-
-.hero-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
 }
 
 .cta-button {
-  padding: 1rem 2rem;
+  padding: 16px 32px;
   font-size: 1.2rem;
-  background: #3498db;
+  background: #2196F3;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 16px;
   cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
 
   &:hover {
-    background: #2980b9;
+    background: #1976D2;
     transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
+  }
+
+  ion-icon {
+    font-size: 20px;
   }
 }
 
 .puzzle-types {
-  padding: 1rem 5%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px 48px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
 }
 
 .puzzle-card {
-  background: #f4f4f4;
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+  background: white;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  .header-icon {
+    background: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+
+    ion-icon {
+      font-size: 24px;
+      color: #2196F3;
+    }
+  }
 }
 
 .card-title {
-  color: #2c3e50;
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .card-content {
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
+  gap: 20px;
 }
 
 .puzzle-image {
-  max-width: 100%;
+  width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 15px;
 }
 
 .card-description {
-  color: #34495e;
-  text-align: center;
+  color: #666;
   line-height: 1.6;
-}
-
-.secondary-button {
-  padding: 0.8rem 1.5rem;
-  background: #f8f9fa;
-  color: #3498db;
-  border: 2px solid #3498db;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  height: 40px;
-  line-height: 0px;
-
-  &:hover {
-    background: #3498db;
-    color: white;
-  }
+  margin: 0;
 }
 
 .logical-preview {
   background: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-  width: 100%;
+  padding: 20px;
+  border-radius: 16px;
 
   .preview-text {
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
+    color: #1a1a1a;
   }
 
   .preview-question {
-    margin-bottom: 1.5rem;
-    color: #2c3e50;
+    margin-bottom: 20px;
+    color: #2196F3;
   }
 
   .preview-hints {
     h3 {
-      color: #2c3e50;
-      margin-bottom: 0.8rem;
+      color: #1a1a1a;
+      margin-bottom: 12px;
+      font-size: 16px;
     }
 
     ol {
-      padding-left: 1.2rem;
+      padding-left: 20px;
       
       li {
-        margin-bottom: 0.5rem;
-        color: #34495e;
+        margin-bottom: 8px;
+        color: #666;
       }
     }
   }
 }
 
-@media (max-width: 768px) {
-  .hero {
-    padding: 0 5%;
-    text-align: center;
+.puzzle-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: transparent;
+  color: #2196F3;
+  border: 2px solid #2196F3;
+  border-radius: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #2196F3;
+    color: white;
+    transform: translateX(4px);
   }
 
+  ion-icon {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .puzzle-types {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
   .hero-title {
     font-size: 2.5rem;
   }
@@ -231,7 +316,8 @@ export default {
   }
 
   .puzzle-types {
-    padding: 2rem 5%;
+    grid-template-columns: 1fr;
+    padding: 0 12px 32px;
   }
 }
 </style>
