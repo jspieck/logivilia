@@ -7,17 +7,42 @@ const db = {};
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
 
-const sequelize = new Sequelize(
-  dbConfig.database,
-  dbConfig.username,
-  dbConfig.password,
-  {
-    dialect: dbConfig.dialect,
-    host: dbConfig.host,
-    port: dbConfig.port,
-    ...dbConfig.dialectOptions
-  }
-);
+// Log the database configuration (for debugging)
+console.log('Database Config:', {
+  database: dbConfig.database,
+  username: dbConfig.username,
+  host: dbConfig.host,
+  port: dbConfig.port,
+  dialect: dbConfig.dialect
+});
+
+let sequelize;
+if (env === 'production') {
+  // For production, use the DATABASE_URL from Railway
+  const databaseUrl = process.env.DATABASE_URL;
+  sequelize = new Sequelize(databaseUrl, {
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
+  });
+} else {
+  // For development, use the regular config
+  sequelize = new Sequelize(
+    dbConfig.database,
+    dbConfig.username,
+    dbConfig.password,
+    {
+      dialect: dbConfig.dialect,
+      host: dbConfig.host,
+      port: dbConfig.port,
+      ...dbConfig.dialectOptions
+    }
+  );
+}
 
 fs.readdirSync(__dirname)
   .filter((file) =>
