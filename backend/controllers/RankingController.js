@@ -1,69 +1,40 @@
 const {User} = require('../models')
-const {sequelize} = require('../models')
 
 module.exports = {
   async index (req, res) {
     try {
-      // Get users with their solved puzzles counts
       const users = await User.findAll({
-        attributes: [
-          'id',
-          'username',
-          [sequelize.fn('COUNT', sequelize.col('solvedLogicals.id')), 'logicalCount'],
-          [sequelize.fn('COUNT', sequelize.col('solvedNonograms.id')), 'nonogramCount'],
-          [sequelize.fn('COUNT', sequelize.col('solvedLinelogs.id')), 'linelogCount']
-        ],
-        include: [
-          {
-            association: 'solvedLogicals',
-            attributes: [],
-            required: false
-          },
-          {
-            association: 'solvedNonograms',
-            attributes: [],
-            required: false
-          },
-          {
-            association: 'solvedLinelogs',
-            attributes: [],
-            required: false
-          }
-        ],
-        group: [
-          'User.id',
-          'User.username'
-        ],
+        attributes: ['id', 'username', 'solvedLogicals', 'solvedNonograms', 'solvedLinelogs'],
         raw: true
       })
 
-      // Sort users for each category
+      // Process users for each category
       const logicals = [...users]
-        .sort((a, b) => b.logicalCount - a.logicalCount)
-        .slice(0, 10)
         .map(user => ({
           id: user.id,
           username: user.username,
-          solvedCount: parseInt(user.logicalCount)
+          solvedCount: user.solvedLogicals ? JSON.parse(user.solvedLogicals).length : 0
         }))
+        .sort((a, b) => b.solvedCount - a.solvedCount)
+        .slice(0, 10)
 
       const nonograms = [...users]
-        .sort((a, b) => b.nonogramCount - a.nonogramCount)
-        .slice(0, 10)
         .map(user => ({
           id: user.id,
           username: user.username,
-          solvedCount: parseInt(user.nonogramCount)
+          solvedCount: user.solvedNonograms ? JSON.parse(user.solvedNonograms).length : 0
         }))
+        .sort((a, b) => b.solvedCount - a.solvedCount)
+        .slice(0, 10)
 
       const linelogs = [...users]
-        .sort((a, b) => b.linelogCount - a.linelogCount)
-        .slice(0, 10)
         .map(user => ({
           id: user.id,
           username: user.username,
-          solvedCount: parseInt(user.linelogCount)
+          solvedCount: user.solvedLinelogs ? JSON.parse(user.solvedLinelogs).length : 0
         }))
+        .sort((a, b) => b.solvedCount - a.solvedCount)
+        .slice(0, 10)
 
       res.send({
         logicals,
