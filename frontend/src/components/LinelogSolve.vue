@@ -151,13 +151,47 @@ const rating = ref(null);
 const alreadySolved = ref(false);
 const linelog = ref({
   name: "",
-  difficulty: 0,
+  difficulty: 1,
   width: 0,
   height: 0,
   information: [],
   solution: [],
   colors: ["#FFFFFF"],
 });
+
+const checkIfAlreadySolved = async () => {
+  try {
+    console.log('Current user:', store.user)
+    if (!store.user || !store.user.id) {
+      console.log('No user data available')
+      return
+    }
+
+    // Get fresh user data
+    const response = await UserService.show(store.user.id)
+    console.log('API Response:', response)
+    
+    if (response && response.data) {
+      console.log('User data from API:', response.data)
+      const userData = response.data
+      const linelogId = parseInt(route.params.id, 10)
+      
+      if (Array.isArray(userData.solvedLinelogs)) {
+        alreadySolved.value = userData.solvedLinelogs.includes(linelogId)
+        console.log('Solved status:', alreadySolved.value)
+      } else {
+        console.log('No solvedLinelogs array found:', userData)
+        alreadySolved.value = false
+      }
+    } else {
+      console.log('No response data')
+      alreadySolved.value = false
+    }
+  } catch (error) {
+    console.error('Error checking solved status:', error)
+    alreadySolved.value = false
+  }
+};
 
 watch(
   () => route.params.id,
@@ -301,39 +335,7 @@ const scaleToScreenSize = () => {
   );
   cellWidth.value = targetedWidth / linelog.value.width;
 };
-const checkIfAlreadySolved = async () => {
-  try {
-    console.log('Current user:', store.user)
-    if (!store.user || !store.user.id) {
-      console.log('No user data available')
-      return
-    }
 
-    // Get fresh user data
-    const response = await UserService.show(store.user.id)
-    console.log('API Response:', response)
-    
-    if (response && response.data) {
-      console.log('User data from API:', response.data)
-      const userData = response.data
-      const linelogId = parseInt(route.params.id, 10)
-      
-      if (Array.isArray(userData.solvedLinelogs)) {
-        alreadySolved.value = userData.solvedLinelogs.includes(linelogId)
-        console.log('Solved status:', alreadySolved.value)
-      } else {
-        console.log('No solvedLinelogs array found:', userData)
-        alreadySolved.value = false
-      }
-    } else {
-      console.log('No response data')
-      alreadySolved.value = false
-    }
-  } catch (error) {
-    console.error('Error checking solved status:', error)
-    alreadySolved.value = false
-  }
-};
 const setRating = async (logicalId) => {
   if (store.user != null) {
     const res = await LinelogRatingService.show(logicalId);

@@ -197,6 +197,7 @@ export default {
     const nonogram = ref({
       width: 0,
       height: 0,
+      difficulty: 1,
       colors: ['#FFFFFF', '#FFFFFF'],
       solution: [],
     });
@@ -1000,7 +1001,7 @@ export default {
   border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 
   &:hover {
     transform: scale(1.1);

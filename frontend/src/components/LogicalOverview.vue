@@ -52,7 +52,7 @@
               v-model="state.logicalRatings[props.row.id]"
               icon-pack="mdi"
               icon="star"
-              :max="rateMax"
+              :max="state.rateMax"
               :show-text="false"
               :rtl="false"
               :spaced="false"
@@ -144,7 +144,7 @@ export default {
       console.log(ratings)
       const ratingDict = {}
       for (const rating of ratings) {
-        ratingDict[rating.LogicalId] = rating.avgRating
+        ratingDict[rating.LogicalId] = parseFloat(rating.avgRating)
       }
       state.value.logicalRatings = ratingDict
       console.log(state.value.logicalRatings)

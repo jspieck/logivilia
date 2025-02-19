@@ -85,7 +85,7 @@ export default {
       const ratings = (await NonogramRatingService.index()).data
       const ratingDict = {}
       for (const rating of ratings) {
-        ratingDict[rating.NonogramId] = rating.avgRating
+        ratingDict[rating.NonogramId] = parseFloat(rating.avgRating)
       }
       nonogramRatings.value = ratingDict
 
