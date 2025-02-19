@@ -18,7 +18,7 @@ app.use(cors({
     ? process.env.FRONTEND_URL
     : 'http://localhost:8080',
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -30,6 +30,14 @@ sequelize.sync()
   .then(() => {
     app.listen(process.env.PORT || 8081);
     console.log(`Server started on port ${process.env.PORT || 8081}`);
+  });
+
+sequelize.authenticate()
+  .then(() => {
+    console.log('Database connected successfully');
+  })
+  .catch(err => {
+    console.error('Unable to connect to the database:', err);
   });
 
 /*app.use(cookieSession({

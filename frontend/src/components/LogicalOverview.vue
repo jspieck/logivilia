@@ -1,10 +1,10 @@
 <template>
 <div class="overviewPage">
-  <h2 class="tableTitle">{{title}}</h2>
+  <h2 class="tableTitle">{{state.title}}</h2>
   <Autocomplete 
     :search="search"
     placeholder="Suche nach einem Rätsel"
-    :defaultValue="defaultSearch"
+    :defaultValue="state.defaultSearch"
     @submit="handleSubmit">
     <template #default="{rootProps, inputProps, inputListeners, resultListProps,
       resultListListeners, results, resultProps}">

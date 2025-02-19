@@ -8,12 +8,13 @@ module.exports = {
         raw: true
       })
 
+      console.log(users[0].solvedLogicals.length)
       // Process users for each category
       const logicals = [...users]
         .map(user => ({
           id: user.id,
           username: user.username,
-          solvedCount: user.solvedLogicals ? JSON.parse(user.solvedLogicals).length : 0
+          solvedCount: user.solvedLogicals ? user.solvedLogicals.length : 0
         }))
         .sort((a, b) => b.solvedCount - a.solvedCount)
         .slice(0, 10)
@@ -22,7 +23,7 @@ module.exports = {
         .map(user => ({
           id: user.id,
           username: user.username,
-          solvedCount: user.solvedNonograms ? JSON.parse(user.solvedNonograms).length : 0
+          solvedCount: user.solvedNonograms ? user.solvedNonograms.length : 0
         }))
         .sort((a, b) => b.solvedCount - a.solvedCount)
         .slice(0, 10)
@@ -31,7 +32,7 @@ module.exports = {
         .map(user => ({
           id: user.id,
           username: user.username,
-          solvedCount: user.solvedLinelogs ? JSON.parse(user.solvedLinelogs).length : 0
+          solvedCount: user.solvedLinelogs ? user.solvedLinelogs.length : 0
         }))
         .sort((a, b) => b.solvedCount - a.solvedCount)
         .slice(0, 10)

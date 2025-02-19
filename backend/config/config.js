@@ -18,12 +18,12 @@ module.exports = {
     jwtSecret: process.env.JWT_SECRET || 'secret'
   },
   development: {
-    database: 'logivilia',
-    username: 'logivilia',
-    password: 'logivilia',
-    host: 'localhost',
-    dialect: 'sqlite',
-    storage: './logivilia.sqlite'
+    database: process.env.DB_NAME || 'logivilia',
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASS || 'your_password',
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    dialect: 'postgres'
   },
   production: {
     database: process.env.PGDATABASE,
