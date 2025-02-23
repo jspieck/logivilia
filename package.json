@@ -1,0 +1,23 @@
+{
+  "name": "logivilia",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "build": "cd frontend && npm run build",
+    "start": "node app.js",
+    "deploy": "npm run install-all && npm run build && npm run start",
+    "seed": "cd backend && npm run seed",
+    "seed-prod": "cd backend && npm run seed-prod"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "dotenv": "^16.0.3",
+    "cors": "^2.8.5",
+    "morgan": "^1.10.0",
+    "body-parser": "^1.19.0",
+    "path": "^0.12.7",
+    "sequelize": "^6.6.2",
+    "mysql2": "^2.2.5"
+  }
+}

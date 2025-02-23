@@ -12,7 +12,9 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Nonogram.associate = function(models) {
-    Nonogram.belongsTo(models.User);
+    Nonogram.belongsTo(models.User, {
+      foreignKey: 'UserId'
+    });
   }
 
   return Nonogram;

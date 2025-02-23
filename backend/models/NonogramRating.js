@@ -7,8 +7,12 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   NonogramRating.associate = function(models) {
-    NonogramRating.belongsTo(models.User);
-    NonogramRating.belongsTo(models.Nonogram);
+    NonogramRating.belongsTo(models.User, {
+      foreignKey: 'UserId'
+    });
+    NonogramRating.belongsTo(models.Nonogram, {
+      foreignKey: 'NonogramId'
+    });
   }
 
   return NonogramRating;

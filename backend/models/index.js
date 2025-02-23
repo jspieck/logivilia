@@ -7,61 +7,24 @@ const db = {};
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
 
-// Log environment variables (for debugging)
 console.log('Environment:', env);
-console.log('Database URL:', process.env.DATABASE_URL);
-console.log('Postgres Variables:', {
-  PGDATABASE: process.env.PGDATABASE,
-  PGHOST: process.env.PGHOST,
-  PGPORT: process.env.PGPORT,
-  PGUSER: process.env.PGUSER,
+console.log('Database Config:', {
+  dialect: dbConfig.dialect,
+  host: dbConfig.host,
+  database: dbConfig.database
 });
 
-let sequelize;
-if (env === 'production') {
-  // Check if we have individual Postgres variables
-  if (process.env.PGDATABASE && process.env.PGHOST) {
-    sequelize = new Sequelize({
-      database: process.env.PGDATABASE,
-      username: process.env.PGUSER,
-      password: process.env.PGPASSWORD,
-      host: process.env.PGHOST,
-      port: process.env.PGPORT,
-      dialect: 'postgres',
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false
-        }
-      }
-    });
-  } else if (process.env.DATABASE_URL) {
-    // Use DATABASE_URL if available
-    sequelize = new Sequelize(process.env.DATABASE_URL, {
-      dialect: 'postgres',
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false
-        }
-      }
-    });
-  } else {
-    throw new Error('No database configuration found. Please set DATABASE_URL or Postgres variables.');
+let sequelize = new Sequelize(
+  dbConfig.database,
+  dbConfig.username,
+  dbConfig.password,
+  {
+    dialect: dbConfig.dialect,
+    host: dbConfig.host,
+    port: dbConfig.port,
+    logging: false
   }
-} else {
-  // Development configuration
-  sequelize = new Sequelize(
-    dbConfig.database,
-    dbConfig.username,
-    dbConfig.password,
-    {
-      dialect: dbConfig.dialect,
-      host: dbConfig.host,
-      storage: dbConfig.storage
-    }
-  );
-}
+);
 
 fs
   .readdirSync(__dirname)

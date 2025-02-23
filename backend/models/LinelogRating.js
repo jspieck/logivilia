@@ -7,8 +7,12 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   LinelogRating.associate = function(models) {
-    LinelogRating.belongsTo(models.User);
-    LinelogRating.belongsTo(models.Linelog);
+    LinelogRating.belongsTo(models.User, {
+      foreignKey: 'UserId'
+    });
+    LinelogRating.belongsTo(models.Linelog, {
+      foreignKey: 'LinelogId'
+    });
   }
 
   return LinelogRating;

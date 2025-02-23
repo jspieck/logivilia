@@ -7,8 +7,12 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   LogicalRating.associate = function(models) {
-    LogicalRating.belongsTo(models.User);
-    LogicalRating.belongsTo(models.Logical);
+    LogicalRating.belongsTo(models.User, {
+      foreignKey: 'UserId'
+    });
+    LogicalRating.belongsTo(models.Logical, {
+      foreignKey: 'LogicalId'
+    });
   }
 
   return LogicalRating;

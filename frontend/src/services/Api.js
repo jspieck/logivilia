@@ -5,10 +5,7 @@ export default () => {
   const store = useMainStore()
   
   return axios.create({
-    // Add https:// to the URL
-    baseURL: process.env.NODE_ENV === 'production' 
-      ? 'https://backend-production-d51b.up.railway.app'  // Added https://
-      : 'http://localhost:8081',
+    baseURL: '/api',  // Relative URL, da wir über den gleichen Server servieren
     headers: {
       Authorization: `Bearer ${store.token}`
     },

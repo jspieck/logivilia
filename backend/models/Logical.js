@@ -13,7 +13,9 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Logical.associate = function(models) {
-    Logical.belongsTo(models.User);
+    Logical.belongsTo(models.User, {
+      foreignKey: 'UserId'
+    });
   }
 
   return Logical;

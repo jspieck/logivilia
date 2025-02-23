@@ -47,35 +47,33 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   User.associate = function(models) {
-    // Associations for solved puzzles with renamed aliases
     User.belongsToMany(models.Logical, {
       through: 'UserSolvedLogicals',
       as: 'solvedLogicalsRel',
-      foreignKey: 'userId'
+      foreignKey: 'UserId'
     });
     User.belongsToMany(models.Nonogram, {
       through: 'UserSolvedNonograms',
       as: 'solvedNonogramsRel',
-      foreignKey: 'userId'
+      foreignKey: 'UserId'
     });
     User.belongsToMany(models.Linelog, {
       through: 'UserSolvedLinelogs',
       as: 'solvedLinelogsRel',
-      foreignKey: 'userId'
+      foreignKey: 'UserId'
     });
 
-    // Associations for created puzzles with renamed aliases
     User.hasMany(models.Logical, {
       as: 'createdLogicalsRel',
-      foreignKey: 'userId'
+      foreignKey: 'UserId'
     });
     User.hasMany(models.Nonogram, {
       as: 'createdNonogramsRel',
-      foreignKey: 'userId'
+      foreignKey: 'UserId'
     });
     User.hasMany(models.Linelog, {
       as: 'createdLinelogsRel',
-      foreignKey: 'userId'
+      foreignKey: 'UserId'
     });
   };
 

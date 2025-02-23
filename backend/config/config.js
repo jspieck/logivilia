@@ -18,26 +18,19 @@ module.exports = {
     jwtSecret: process.env.JWT_SECRET || 'secret'
   },
   development: {
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'password',
     database: process.env.DB_NAME || 'logivilia',
-    username: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASS || 'your_password',
     host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    dialect: 'postgres'
+    port: process.env.DB_PORT || 3306,
+    dialect: process.env.DB_DIALECT || 'mysql'
   },
   production: {
-    database: process.env.PGDATABASE,
-    username: process.env.PGUSER,
-    password: process.env.PGPASSWORD,
-    host: process.env.PGHOST,
-    port: process.env.PGPORT,
-    dialect: 'postgres',
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    },
-    logging: false
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 3306,
+    dialect: 'mysql'
   }
 };
