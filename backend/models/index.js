@@ -14,17 +14,27 @@ console.log('Database Config:', {
   database: dbConfig.database
 });
 
-let sequelize = new Sequelize(
-  dbConfig.database,
-  dbConfig.username,
-  dbConfig.password,
-  {
-    dialect: dbConfig.dialect,
-    host: dbConfig.host,
-    port: dbConfig.port,
+let sequelize;
+if (dbConfig.dialect === 'sqlite') {
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: dbConfig.storage || './logivilia.db',
     logging: false
-  }
-);
+  });
+} else {
+  // MySQL, PostgreSQL, etc.
+  sequelize = new Sequelize(
+    dbConfig.database,
+    dbConfig.username,
+    dbConfig.password,
+    {
+      dialect: dbConfig.dialect,
+      host: dbConfig.host,
+      port: dbConfig.port,
+      logging: false
+    }
+  );
+}
 
 fs
   .readdirSync(__dirname)

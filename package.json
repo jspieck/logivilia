@@ -11,13 +11,16 @@
     "seed-prod": "cd backend && npm run seed-prod"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "dotenv": "^16.0.3",
-    "cors": "^2.8.5",
-    "morgan": "^1.10.0",
+    "better-sqlite3": "^11.8.1",
     "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.17.1",
+    "morgan": "^1.10.0",
+    "mysql2": "^2.2.5",
     "path": "^0.12.7",
     "sequelize": "^6.6.2",
-    "mysql2": "^2.2.5"
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   }
 }

@@ -197,22 +197,57 @@ watch(
   () => route.params.id,
   async (newId) => {
     try {
+      // Reset state variables first
+      gridState.value = [];
+      paths.value = {};
+      pathIndex.value = 0;
+      currentPath.value = null;
+      solved.value = false;
+      
       // Load riddle data regardless of login status
       const response = await LinelogService.show(newId)
       linelog.value = response.data
       
-      // Initialize grid state
+      // Initialize grid state AFTER data is loaded
       gridState.value = new Array(width.value * height.value).fill(
         backgroundNumber.value
       )
+      
+      pathIndices.value = new Array(width.value * height.value).fill(-1);
+      
+      // Initialize grid state with information cells
+      for (let y = 0; y < information.value.length; y++) {
+        for (let x = 0; x < information.value[y].length; x++) {
+          if (information.value[y][x] != 0) {
+            gridState.value[x + y * width.value] = solution.value[y][x];
+          }
+        }
+      }
 
       // Check user-specific data only if logged in
       if (store.isUserLoggedIn && store.user) {
-        await setRating(newId)
-        await checkIfAlreadySolved()
+        try {
+          await setRating(newId)
+        } catch (error) {
+          console.error('Error setting rating:', error)
+        }
+        
+        try {
+          await checkIfAlreadySolved()
+        } catch (error) {
+          console.error('Error checking solved status:', error)
+          alreadySolved.value = false
+        }
       }
     } catch (error) {
       console.error('Error loading linelog:', error)
+      oruga.notification.open({
+        duration: 5000,
+        message: 'Fehler beim Laden des Rätsels. Bitte versuchen Sie es später erneut.',
+        position: "top-right",
+        closable: true,
+        variant: "danger",
+      });
     }
   },
   { immediate: true }
@@ -245,6 +280,13 @@ watch(rating, async (newRating) => {
       });
     } catch (err) {
       console.error("Error posting rating:", err);
+      oruga.notification.open({
+        duration: 3000,
+        message: 'Bewertung konnte nicht gespeichert werden.',
+        position: "top-right",
+        closable: true,
+        variant: "danger",
+      });
     }
   }
 });
@@ -338,8 +380,14 @@ const scaleToScreenSize = () => {
 
 const setRating = async (logicalId) => {
   if (store.user != null) {
-    const res = await LinelogRatingService.show(logicalId);
-    rating.value = res.data.rating;
+    try {
+      const res = await LinelogRatingService.show(logicalId);
+      rating.value = res.data.rating;
+    } catch (error) {
+      console.error("Error fetching rating:", error);
+      // Set a default rating or leave as null
+      rating.value = null;
+    }
   }
 };
 const showZoomLevel = () => {
@@ -642,11 +690,14 @@ const checkIfSolved = () => {
 };
 const saveSolvedLinelog = async () => {
   if (store.isUserLoggedIn) {
-    const userId = store.user.id;
-    const linelogId = parseInt(route.params.id, 10) - 1;
-    const isSuccess = await UserService.linelogSolved(userId, linelogId);
-    // TODO do something if riddle couldn't be saved
-    console.log("Suc", isSuccess);
+    try {
+      const userId = store.user.id;
+      const linelogId = parseInt(route.params.id, 10);
+      const isSuccess = await UserService.linelogSolved(userId, linelogId);
+      console.log("Puzzle saved as solved:", isSuccess);
+    } catch (error) {
+      console.error("Error saving solved status:", error);
+    }
   }
 };
 const setPathIndices = (cells, pathIndex) => {
@@ -741,6 +792,31 @@ const checkSolution = (state) => {
     }
   }
 };
+
+// Add a watch for the linelog data to ensure grid is properly initialized
+watch(
+  () => linelog.value,
+  (newLinelog) => {
+    if (newLinelog && newLinelog.width && newLinelog.height) {
+      // Re-initialize grid state when linelog data changes
+      gridState.value = new Array(width.value * height.value).fill(
+        backgroundNumber.value
+      );
+      
+      pathIndices.value = new Array(width.value * height.value).fill(-1);
+      
+      // Initialize grid state with information cells
+      for (let y = 0; y < information.value.length; y++) {
+        for (let x = 0; x < information.value[y].length; x++) {
+          if (information.value[y][x] != 0) {
+            gridState.value[x + y * width.value] = solution.value[y][x];
+          }
+        }
+      }
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <style lang="scss" scoped>

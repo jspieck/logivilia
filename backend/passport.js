@@ -27,4 +27,4 @@ passport.use(
   })
 );
 
-module.exports = null;
+module.exports = passport;
