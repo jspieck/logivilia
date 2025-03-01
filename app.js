@@ -28,13 +28,26 @@ app.use(passport.initialize());
 const backendRouter = require('./backend/routes');
 app.use('/api', backendRouter());
 
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, 'frontend/dist')));
-
-// Frontend catch-all route
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
-});
+// Conditionally serve static frontend files based on environment
+if (process.env.NODE_ENV === 'production') {
+  // Production: Serve static frontend files
+  app.use(express.static(path.join(__dirname, 'frontend/dist')));
+  
+  // Frontend catch-all route for production
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
+  });
+} else {
+  // Development: Proxy requests to the Vue dev server
+  const { createProxyMiddleware } = require('http-proxy-middleware');
+  
+  // Proxy all non-API requests to the Vue dev server
+  app.use('/', createProxyMiddleware({
+    target: 'http://localhost:8081', // Default Vite dev server port
+    changeOrigin: true,
+    ws: true, // Support WebSocket
+  }));
+}
 
 // Database connection
 const { sequelize } = require('./backend/models');
