@@ -105,6 +105,7 @@
         >
           <span v-if="!isRegistering">Registrieren</span>
           <span v-else class="spinner"></span>
+          <span class="button-glow"></span>
         </button>
         
         <p class="global-error" v-if="error" v-html="error"></p>
@@ -122,8 +123,13 @@
       </div>
       
       <div class="register-image">
+        <div class="floating-elements">
+          <div class="floating-element element1"></div>
+          <div class="floating-element element2"></div>
+          <div class="floating-element element3"></div>
+        </div>
         <div class="image-content">
-          <img src="../assets/registerNoBack.png" alt="Register"/>
+          <img src="../assets/registerNoBack.png" alt="Register" class="floating-image"/>
           <h2>Willkommen bei Logivilia!</h2>
           <p>Genießen Sie eine Vielzahl an Rätseln und trainieren Sie Ihr logisches Denken.</p>
           <ul class="benefits">
@@ -266,22 +272,40 @@ watch(email, (newValue) => {
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated background */
+.animated-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
 }
 
 .register-card {
   display: flex;
   width: 1000px;
   max-width: 100%;
-  background: white;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 1;
+  position: relative;
 }
 
 .register-form {
   flex: 1;
-  padding: 2rem; /* Reduced padding */
+  padding: 2rem;
   padding-right: 3rem;
+  position: relative;
 }
 
 .register-image {
@@ -295,20 +319,63 @@ watch(email, (newValue) => {
   overflow: hidden;
 }
 
+/* Floating elements in the right panel */
+.floating-elements {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.floating-element {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.element1 {
+  width: 100px;
+  height: 100px;
+  top: 10%;
+  left: 10%;
+  animation: float 8s ease-in-out infinite;
+}
+
+.element2 {
+  width: 60px;
+  height: 60px;
+  bottom: 20%;
+  right: 15%;
+  animation: float 12s ease-in-out infinite reverse;
+}
+
+.element3 {
+  width: 40px;
+  height: 40px;
+  top: 60%;
+  left: 20%;
+  animation: float 10s ease-in-out infinite 2s;
+}
+
 .image-content {
   padding: 3rem;
   text-align: center;
   z-index: 2;
+  position: relative;
 }
 
-.image-content img {
+.floating-image {
   max-width: 80%;
   margin-bottom: 2rem;
+  animation: floatImage 6s ease-in-out infinite;
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.2));
 }
 
 .image-content h2 {
   font-size: 1.8rem;
   margin-bottom: 1rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .benefits {
@@ -322,11 +389,25 @@ watch(email, (newValue) => {
   margin-bottom: 0.8rem;
   display: flex;
   align-items: center;
+  transition: transform 0.3s;
+}
+
+.benefits li:hover {
+  transform: translateX(5px);
 }
 
 .benefits li i {
   margin-right: 10px;
   color: #4caf50;
+  background: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .register-title {
@@ -334,6 +415,9 @@ watch(email, (newValue) => {
   font-weight: 700;
   margin-bottom: 0.5rem;
   color: #333;
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .register-subtitle {
@@ -343,6 +427,7 @@ watch(email, (newValue) => {
 
 .form-group {
   margin-bottom: 1.5rem;
+  transition: transform 0.3s;
 }
 
 .form-group label {
@@ -367,17 +452,20 @@ watch(email, (newValue) => {
 
 .input-wrapper input {
   width: 100%;
-  padding: 15px;
+  padding: 17px;
+  padding-left: 45px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.3s;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .input-wrapper input:focus {
   border-color: #6e8efb;
   box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.2);
   outline: none;
+  background: white;
 }
 
 .input-wrapper input:focus + i {
@@ -393,6 +481,11 @@ watch(email, (newValue) => {
   align-items: center;
   justify-content: center;
   height: 100%;
+  transition: color 0.3s;
+}
+
+.toggle-password:hover {
+  color: #6e8efb;
 }
 
 .validation-icon {
@@ -430,6 +523,7 @@ watch(email, (newValue) => {
   background-color: #eee;
   border-radius: 2px;
   margin-bottom: 0.5rem;
+  overflow: hidden;
 }
 
 .strength-bar {
@@ -485,11 +579,11 @@ watch(email, (newValue) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 48px; /* Fixed height for button */
+  height: 48px;
+  overflow: hidden;
 }
 
 .register-button:hover {
-  transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(110, 142, 251, 0.4);
 }
 
@@ -529,6 +623,7 @@ watch(email, (newValue) => {
   margin-top: 1rem;
   display: flex;
   align-items: center;
+  animation: successPulse 2s infinite;
 }
 
 .success-message i {
@@ -546,10 +641,12 @@ watch(email, (newValue) => {
   color: #6e8efb;
   text-decoration: none;
   font-weight: 500;
+  transition: all 0.3s;
 }
 
 .login-link a:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  color: #a777e3;
 }
 
 /* Animations */
@@ -560,6 +657,35 @@ watch(email, (newValue) => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes floatImage {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.2; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+}
+
+@keyframes glow {
+  0% { left: -100px; }
+  100% { left: 100%; }
+}
+
+@keyframes successPulse {
+  0% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(46, 125, 50, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0); }
 }
 
 .fade-enter-active, .fade-leave-active {
@@ -575,6 +701,7 @@ watch(email, (newValue) => {
 @media (max-width: 768px) {
   .register-card {
     flex-direction: column;
+    height: auto;
   }
   
   .register-form {

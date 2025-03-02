@@ -39,62 +39,15 @@
             </template>
 
             <template #end>
-              <b-dropdown 
-                v-if="!isLoggedIn" 
-                position="is-bottom-left" 
-                append-to-body 
-                aria-role="menu" 
-                trap-focus
-                :can-close="false"
-              >
-                <template #trigger>
-                  <a class="navbar-item" role="button">
-                    <span>Login</span>
-                    <b-icon icon="menu-down"></b-icon>
-                  </a>
-                </template>
-
-                <b-dropdown-item aria-role="menu-item" :focusable="false" custom paddingless>
-                  <div class="modal-card" style="width:250px;">
-                    <section class="modal-card-body">
-                      <b-field label="E-Mail">
-                        <input 
-                          style="width: 100%" 
-                          type="email" 
-                          v-model="loginForm.email"
-                        />
-                      </b-field>
-
-                      <b-field label="Passwort">
-                        <input 
-                          style="width: 100%" 
-                          type="password" 
-                          v-model="loginForm.password"
-                        />
-                      </b-field>
-
-                      <router-link :to="{ path: '/forgot' }" class="navLink">
-                        <a>Passwort vergessen?</a>
-                      </router-link>
-
-                      <button 
-                        style="float: right"
-                        @click="handleLogin"
-                        :disabled="isLoading"
-                      >
-                        {{ isLoading ? 'Wird geladen...' : 'Login' }}
-                      </button>
-
-                      <div v-if="error" class="error-message" v-html="error"/>
-                    </section>
-                  </div>
-                </b-dropdown-item>
-              </b-dropdown>
+              <div class="login-dropdown-container">
+                <LoginDropdown v-if="!isLoggedIn" />
+              </div>
 
               <b-navbar-item 
                 v-if="!isLoggedIn" 
                 tag="router-link" 
                 :to="{ path: '/register' }"
+                class="register-nav-button"
               >
                 Registrieren
               </b-navbar-item>
@@ -103,6 +56,7 @@
                 v-if="isLoggedIn" 
                 tag="router-link" 
                 :to="{ path: `/user/${currentUser?.id}` }"
+                class="user-profile-link"
               >
                 <img 
                   class="avatarImg" 
@@ -116,7 +70,7 @@
               <a 
                 v-if="isLoggedIn"
                 @click="handleLogout"
-                class="navbar-item logoutButton"
+                class="navbar-item logout-button"
                 role="button"
               >
                 <span>Logout</span>
@@ -151,21 +105,13 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMainStore } from '@/store/store'
 import { useNotification } from '@/composables/useNotification'
-import AuthenticationService from '@/services/AuthenticationService'
 import CookieConsent from './components/CookieConsent.vue'
+import LoginDropdown from './components/LoginDropdown.vue'
 
 // Router and store setup
 const router = useRouter()
 const mainStore = useMainStore()
 const { showNotification } = useNotification()
-
-// Reactive state
-const loginForm = ref({
-  email: '',
-  password: ''
-})
-const error = ref(null)
-const isLoading = ref(false)
 
 // Computed properties to replace authStore references
 const isLoggedIn = computed(() => mainStore.isUserLoggedIn)
@@ -177,31 +123,6 @@ const getUserAvatar = (id) => {
   const index = id ? id % paths.length: 0
   console.log(index)
   return new URL(`@/assets/${paths[index]}.svg`, import.meta.url).href
-}
-
-const handleLogin = async () => {
-  try {
-    isLoading.value = true
-    error.value = null
-    
-    const response = await AuthenticationService.login({
-      email: loginForm.value.email,
-      password: loginForm.value.password
-    })
-
-    mainStore.setToken(response.data.token)
-    mainStore.setUser(response.data.user)
-    
-    loginForm.value = { email: '', password: '' }
-    showNotification({
-      message: 'Erfolgreich eingeloggt',
-      type: 'success'
-    })
-  } catch (err) {
-    error.value = err.response?.data?.error || 'Ein Fehler ist aufgetreten'
-  } finally {
-    isLoading.value = false
-  }
 }
 
 const handleLogout = () => {
@@ -468,5 +389,194 @@ input:focus {
 // Add this at the top to ensure consistent scrollbar behavior
 html {
   overflow: hidden;
+}
+
+// Enhanced Login Dropdown Styles
+.login-dropdown-container {
+  position: relative;
+}
+
+.dropdown-content {
+  background-color: transparent!important;
+}
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 1.2rem;
+  
+  a {
+    color: #6e8efb;
+    font-size: 0.8rem;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.login-submit-button {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  
+  &:hover {
+    box-shadow: 0 5px 15px rgba(110, 142, 251, 0.4);
+    background: linear-gradient(135deg, #4e6ecb, #a777e3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  .button-glow {
+    position: absolute;
+    width: 50px;
+    height: 100%;
+    top: 0;
+    left: -100px;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: glow 2s infinite;
+    pointer-events: none;
+  }
+}
+
+.error-message {
+  color: #f44336;
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #666;
+  
+  a {
+    color: #6e8efb;
+    font-weight: 500;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.user-profile-link {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: rgba(110, 142, 251, 0.1);
+  }
+  
+  .avatarImg {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 10px;
+    border: 2px solid #6e8efb;
+  }
+  
+  p {
+    margin: 0;
+    font-weight: 500;
+  }
+}
+
+.logout-button {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  margin-left: 0.5rem;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: #f0f0f0;
+    color: #e74c3c;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glow {
+  0% { left: -100px; }
+  100% { left: 100%; }
+}
+
+// Mobile responsiveness
+@media (max-width: 768px) {
+  .navbar-menu {
+    padding: 0.5rem;
+  }
+  
+  .navbar-item {
+    padding: 0.5rem;
+  }
+  
+  .login-button, .register-nav-button, .logout-button {
+    padding: 0.5rem;
+    margin: 0.25rem;
+  }
+}
+
+// Add a mobile overlay for better UX
+@media (max-width: 768px) {
+  body.has-dropdown-active {
+    overflow: hidden;
+  }
+  
+  .dropdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+  }
+  
+  .dropdown.enhanced-dropdown.is-active + .dropdown-overlay {
+    display: block;
+  }
 }
 </style>
