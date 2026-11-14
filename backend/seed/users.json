@@ -2,17 +2,29 @@
   {
     "username": "Jan",
     "email": "jspnbg@gmail.com",
-    "password": "12345678",
     "gender": "Männlich",
     "role": "Admin",
     "city": "Nürnberg",
     "bio": "Gründer der Rätselseite",
     "birthyear": 1995,
     "userImageId": 1,
-    "solvedLogicals": [0, 1, 4],
-    "solvedNonograms": [2],
-    "solvedLinelogs": [0, 5, 6, 7],
-    "createdLogicals": [20],
+    "solvedLogicals": [
+      0,
+      1,
+      4
+    ],
+    "solvedNonograms": [
+      2
+    ],
+    "solvedLinelogs": [
+      0,
+      5,
+      6,
+      7
+    ],
+    "createdLogicals": [
+      20
+    ],
     "createdNonograms": [],
     "createdLinelogs": [],
     "joined": "2020-04-23",
@@ -28,13 +40,26 @@
     "bio": "Testperson",
     "birthyear": 1997,
     "userImageId": 2,
-    "solvedLogicals": [1, 2, 4, 5],
-    "solvedNonograms": [2, 3],
-    "solvedLinelogs": [0, 1],
+    "solvedLogicals": [
+      1,
+      2,
+      4,
+      5
+    ],
+    "solvedNonograms": [
+      2,
+      3
+    ],
+    "solvedLinelogs": [
+      0,
+      1
+    ],
     "createdLogicals": [],
-    "createdNonograms": [0, 1],
+    "createdNonograms": [
+      0,
+      1
+    ],
     "createdLinelogs": [],
-    "password": "12345678",
     "resetPasswordToken": "",
     "resetPasswordExpires": 0
   },
@@ -47,13 +72,24 @@
     "bio": "Hi there",
     "birthyear": 1987,
     "userImageId": 3,
-    "solvedLogicals": [0, 1],
-    "solvedNonograms": [5],
-    "solvedLinelogs": [2, 4],
+    "solvedLogicals": [
+      0,
+      1
+    ],
+    "solvedNonograms": [
+      5
+    ],
+    "solvedLinelogs": [
+      2,
+      4
+    ],
     "createdLogicals": [],
-    "createdNonograms": [2, 3, 4],
+    "createdNonograms": [
+      2,
+      3,
+      4
+    ],
     "createdLinelogs": [],
-    "password": "12345678",
     "resetPasswordToken": "",
     "resetPasswordExpires": 0
   }

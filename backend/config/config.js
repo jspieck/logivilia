@@ -50,6 +50,11 @@ module.exports = {
     port: process.env.DB_PORT || 3306,
     dialect: process.env.DB_DIALECT || 'mysql'
   },
+  // Used by `npm test`: a fresh in-memory database, never a real one.
+  test: {
+    dialect: 'sqlite',
+    storage: ':memory:'
+  },
   production: {
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,

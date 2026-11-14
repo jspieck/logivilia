@@ -1,0 +1,122 @@
+// Unit tests for the server-side solution checks, run against every seed
+// puzzle. If a puzzle's own solution stops passing, either the verifier or
+// the data broke.
+
+const { test, describe } = require('node:test');
+const assert = require('node:assert/strict');
+
+const { verifyNonogram, verifyLinelog, verifyLogical } = require('../utils/verifySolution');
+const { cropSolution, needsCrop } = require('../scripts/fixNonogramSizes');
+const nonograms = require('../seed/nonograms.json');
+const linelogs = require('../seed/linelogs.json');
+const logicals = require('../seed/logicals.json');
+
+const blank = (height, width) => Array.from({ length: height }, () => Array(width).fill(0));
+const clone = grid => grid.map(row => [...row]);
+
+describe('verifyNonogram', () => {
+  test('every seed nonogram accepts its own solution', () => {
+    const failing = nonograms
+      .filter(n => !verifyNonogram(n, cropSolution(n)))
+      .map(n => n.name);
+    assert.deepEqual(failing, []);
+  });
+
+  test('a blank grid never passes', () => {
+    const passing = nonograms
+      .filter(n => verifyNonogram(n, blank(Number(n.height), Number(n.width))))
+      .map(n => n.name);
+    assert.deepEqual(passing, []);
+  });
+
+  test('flipping one filled cell to empty fails', () => {
+    for (const n of nonograms) {
+      const grid = cropSolution(n);
+      const y = grid.findIndex(row => row.some(cell => cell > 0));
+      const x = grid[y].findIndex(cell => cell > 0);
+      grid[y][x] = 0;
+      assert.equal(verifyNonogram(n, grid), false, n.name);
+    }
+  });
+
+  test('rejects grids of the wrong size or shape', () => {
+    const n = nonograms[0];
+    const grid = cropSolution(n);
+    assert.equal(verifyNonogram(n, grid.slice(1)), false);
+    assert.equal(verifyNonogram(n, grid.map(row => row.slice(1))), false);
+    assert.equal(verifyNonogram(n, null), false);
+    assert.equal(verifyNonogram(n, 'not a grid'), false);
+  });
+
+  test('accepts a different grid that satisfies all clues', () => {
+    // 2x2 with clue "1" in every row and column: both diagonals are valid.
+    const puzzle = { width: 2, height: 2, colors: ['#000', '#fff'], solution: [[1, 0], [0, 1]] };
+    assert.equal(verifyNonogram(puzzle, [[0, 1], [1, 0]]), true);
+  });
+
+  test('the seed data has no cells outside the declared size', () => {
+    assert.deepEqual(nonograms.filter(needsCrop).map(n => n.name), []);
+  });
+});
+
+describe('verifyLinelog', () => {
+  test('every seed linelog accepts its own solution', () => {
+    const failing = linelogs.filter(l => !verifyLinelog(l, clone(l.solution))).map(l => l.name);
+    assert.deepEqual(failing, []);
+  });
+
+  test('changing one cell fails', () => {
+    for (const l of linelogs) {
+      const grid = clone(l.solution);
+      grid[0][0] = Number(grid[0][0]) === 0 ? 1 : 0;
+      assert.equal(verifyLinelog(l, grid), false, l.name);
+    }
+  });
+
+  test('a blank grid never passes', () => {
+    const passing = linelogs
+      .filter(l => verifyLinelog(l, blank(l.solution.length, l.solution[0].length)))
+      .map(l => l.name);
+    assert.deepEqual(passing, []);
+  });
+});
+
+describe('verifyLogical', () => {
+  test('every seed logical accepts its own solution', () => {
+    const failing = logicals
+      .filter(l => !verifyLogical(l, l.solution.map(row => [...row])))
+      .map(l => l.name);
+    assert.deepEqual(failing, []);
+  });
+
+  test('swapping two values in a column fails', () => {
+    for (const l of logicals) {
+      const table = l.solution.map(row => [...row]);
+      const col = table[0].findIndex((cell, j) => j > 0 && String(cell) !== String(table[1][j]));
+      if (col === -1) continue;
+      [table[0][col], table[1][col]] = [table[1][col], table[0][col]];
+      assert.equal(verifyLogical(l, table), false, l.name);
+    }
+  });
+
+  test('rejects missing or malformed tables', () => {
+    const l = logicals[0];
+    assert.equal(verifyLogical(l, undefined), false);
+    assert.equal(verifyLogical(l, []), false);
+    assert.equal(verifyLogical(l, l.solution.slice(1)), false);
+  });
+});
+
+describe('cropSolution', () => {
+  test('cuts rows and columns beyond the declared size', () => {
+    const puzzle = { width: 2, height: 2, solution: [[1, 2, 3], [4, 5, 6], [7, 8, 9]] };
+    assert.equal(needsCrop(puzzle), true);
+    assert.deepEqual(cropSolution(puzzle), [[1, 2], [4, 5]]);
+  });
+
+  test('leaves correctly sized puzzles alone', () => {
+    const puzzle = { width: 2, height: 1, solution: [[1, 0]] };
+    assert.equal(needsCrop(puzzle), false);
+    assert.deepEqual(cropSolution(puzzle), [[1, 0]]);
+  });
+});

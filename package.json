@@ -17,7 +17,8 @@
     "deploy": "npm ci && npm run build && npm run start",
     "seed": "npm run seed -w backend",
     "lint": "npm run lint -w frontend",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test -w backend"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

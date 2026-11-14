@@ -7,12 +7,14 @@ const db = {};
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
 
-console.log('Environment:', env);
-console.log('Database Config:', {
-  dialect: dbConfig.dialect,
-  host: dbConfig.host,
-  database: dbConfig.database
-});
+if (env !== 'test') {
+  console.log('Environment:', env);
+  console.log('Database Config:', {
+    dialect: dbConfig.dialect,
+    host: dbConfig.host,
+    database: dbConfig.database
+  });
+}
 
 let sequelize;
 if (dbConfig.dialect === 'sqlite') {

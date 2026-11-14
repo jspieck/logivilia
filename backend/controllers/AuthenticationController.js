@@ -39,12 +39,22 @@ function getTransporter () {
   });
 }
 
+// In tests, e-mails are collected here instead of being sent.
+const testOutbox = [];
+
 function sendMail (mailOptions) {
+  if (process.env.NODE_ENV === 'test') {
+    testOutbox.push(mailOptions);
+    return;
+  }
   try {
     const transporter = getTransporter();
-    transporter.sendMail({ from: config.mail.from, ...mailOptions }, function (error) {
+    transporter.sendMail({ from: config.mail.from, ...mailOptions }, function (error, info) {
       if (error) {
         console.error('E-mail could not be sent:', error.message);
+      } else {
+        // No recipient address in the log, only that the server accepted it.
+        console.log(`E-mail "${mailOptions.subject}" accepted by ${config.mail.host}:`, info && info.response);
       }
     });
   } catch (err) {
@@ -179,5 +189,6 @@ module.exports = {
       console.error('Login failed:', err.message);
       sendError(res, 500, 'AUTH_LOGIN_FAILED');
     }
-  }
+  },
+  testOutbox
 };

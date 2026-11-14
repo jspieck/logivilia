@@ -16,23 +16,27 @@ const rateLimit = require('./policies/rateLimit');
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
 const loginLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 10 });
-const accountLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
+// One budget per endpoint, so e.g. a few registrations from a shared IP do
+// not block "forgot password" for everyone behind it.
+const registerLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
+const forgotLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
+const resetLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
 
 module.exports = () => {
   const router = express.Router();
 
   router.post('/register',
-    accountLimiter,
+    registerLimiter,
     AuthenticationControllerPolicy.register,
     AuthenticationController.register);
   router.post('/login',
     loginLimiter,
     AuthenticationController.login);
   router.post('/forgot',
-    accountLimiter,
+    forgotLimiter,
     AuthenticationController.forgot);
   router.post('/reset/:token',
-    accountLimiter,
+    resetLimiter,
     AuthenticationControllerPolicy.reset,
     AuthenticationController.reset);
 
