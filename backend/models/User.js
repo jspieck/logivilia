@@ -31,12 +31,8 @@ module.exports = (sequelize, DataTypes) => {
     userImageId: DataTypes.INTEGER,
     city: DataTypes.STRING,
     joined: DataTypes.DATE,
-    solvedLogicals: DataTypes.JSON,
-    solvedNonograms: DataTypes.JSON,
-    solvedLinelogs: DataTypes.JSON,
-    createdLogicals: DataTypes.JSON,
-    createdNonograms: DataTypes.JSON,
-    createdLinelogs: DataTypes.JSON,
+    // The old solved*/created* JSON columns may still exist in older
+    // databases; they are unused since solves moved to PuzzleSolves.
     password: DataTypes.STRING,
     resetPasswordToken: DataTypes.STRING,
     resetPasswordExpires: DataTypes.INTEGER
@@ -47,34 +43,9 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   User.associate = function(models) {
-    User.belongsToMany(models.Logical, {
-      through: 'UserSolvedLogicals',
-      as: 'solvedLogicalsRel',
-      foreignKey: 'UserId'
-    });
-    User.belongsToMany(models.Nonogram, {
-      through: 'UserSolvedNonograms',
-      as: 'solvedNonogramsRel',
-      foreignKey: 'UserId'
-    });
-    User.belongsToMany(models.Linelog, {
-      through: 'UserSolvedLinelogs',
-      as: 'solvedLinelogsRel',
-      foreignKey: 'UserId'
-    });
-
-    User.hasMany(models.Logical, {
-      as: 'createdLogicalsRel',
-      foreignKey: 'UserId'
-    });
-    User.hasMany(models.Nonogram, {
-      as: 'createdNonogramsRel',
-      foreignKey: 'UserId'
-    });
-    User.hasMany(models.Linelog, {
-      as: 'createdLinelogsRel',
-      foreignKey: 'UserId'
-    });
+    User.hasMany(models.Puzzle, { foreignKey: 'UserId' });
+    User.hasMany(models.PuzzleSolve, { foreignKey: 'UserId' });
+    User.hasMany(models.PuzzleRating, { foreignKey: 'UserId' });
   };
 
   User.prototype.comparePassword = function (password) {

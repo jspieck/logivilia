@@ -42,7 +42,7 @@
       aria-page-label="Seite"
       aria-current-label="Gegenwärtige Seite">
         <o-table-column field="name" label="Name" v-slot="props" sortable>
-          <router-link :to="`/linelogSolve/${props.row.id}`" class="navLink">
+          <router-link :to="`/puzzle/${props.row.id}`" class="navLink">
             {{ props.row.name }}
           </router-link>
         </o-table-column>
@@ -58,8 +58,8 @@
         <o-table-column field="numColor" label="Farben" v-slot="props" sortable>
           {{ props.row.numColor }}
         </o-table-column>
-        <o-table-column field="score" label="Bewertung" v-slot="props" sortable>
-          <StarRating :model-value="state.linelogRatings[props.row.id]" :max="state.rateMax" disabled />
+        <o-table-column field="avgRating" label="Bewertung" v-slot="props" sortable>
+          <StarRating :model-value="props.row.avgRating || 0" :max="5" disabled />
         </o-table-column>
         <o-table-column field="date" label="Date" v-slot="props" sortable>
           <span class="tag is-success">
@@ -79,38 +79,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onActivated, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { storeToRefs } from 'pinia'
-import { useMainStore } from '@/store/store'
-import UserService from '@/services/UserService'
-import LinelogService from '@/services/LinelogService'
-import LinelogRatingService from '@/services/LinelogRatingService'
+import { usePuzzleList } from '@/puzzles/usePuzzleList'
 
 const route = useRoute()
-const store = useMainStore()
-const { isUserLoggedIn, user } = storeToRefs(store)
+const { puzzles: linelogs, isSolved } = usePuzzleList('linelog')
 
 const state = ref({
   title: "Linelog Auswahl",
-  solved: [],
-  rateMax: 5,
   defaultSearch: "",
-  searchString: "",
-  linelogs: [],
-  linelogRatings: {}
+  searchString: ""
 })
 
 const linelogNames = computed(() => {
-  return state.value.linelogs.map(linelog => linelog.name)
+  return linelogs.value.map(linelog => linelog.name)
 })
 
 const filteredLinelogs = computed(() => {
   if (!state.value.searchString) {
-    return state.value.linelogs
+    return linelogs.value
   }
-  console.log(state.value.linelogs)
-  return state.value.linelogs.filter(linelog => 
+  return linelogs.value.filter(linelog => 
     linelog.name.toLowerCase().startsWith(state.value.searchString.toLowerCase())
   )
 })
@@ -130,66 +120,11 @@ const handleSubmit = (result) => {
   state.value.searchString = result
 }
 
-const isSolved = (id) => {
-  if (!id) return false
-  return state.value.solved.includes(id)
-}
-
-const getRating = (id) => {
-  if (!id) return 0
-  return state.value.linelogRatings[id] || 0
-}
-
-const loadRatings = async () => {
-  const ratings = (await LinelogRatingService.index()).data
-    
-  const ratingDict = {}
-  for (const rating of ratings) {
-    ratingDict[rating.LinelogId] = parseFloat(rating.avgRating)
-  }
-  state.value.linelogRatings = ratingDict
-}
-
-const loadSolvedLinelogs = async () => {
-  if (isUserLoggedIn.value && user.value) {
-    const userData = (await UserService.show(user.value.id)).data
-    state.value.solved = userData.solvedLinelogs || []
-  } else {
-    state.value.solved = []
-  }
-}
-
-const loadLinelogData = async () => {
-  try {
-    state.value.linelogs = (await LinelogService.index()).data
-    loadRatings()
-    loadSolvedLinelogs()
-  } catch (error) {
-    console.error('Error loading linelog data:', error)
-  }
-}
-
 watch(() => route.query.search, (value) => {
   state.value.searchString = value
   state.value.defaultSearch = value
 }, { immediate: true })
 
-watch(() => isUserLoggedIn.value, async (newValue) => {
-  if (newValue && user.value) {
-    const userData = (await UserService.show(user.value.id)).data
-    state.value.solved = userData.solvedLinelogs || []
-  } else {
-    state.value.solved = []
-  }
-})
-
-onMounted(async () => {
-  await loadLinelogData()
-})
-
-onActivated(async () => {
-  await loadLinelogData()
-})
 </script>
 
 <style lang="scss">

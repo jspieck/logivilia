@@ -1,11 +1,11 @@
 import Api from '@/services/Api';
 
 export default {
-  show (riddleType, riddleId) {
-    return Api().get(`comments/${riddleType}/${riddleId}`);
+  show (puzzleId) {
+    return Api().get(`puzzles/${puzzleId}/comments`);
   },
-  post (riddleType, riddleId, commentContent) {
-    return Api().post(`comments/${riddleType}/${riddleId}`, commentContent);
+  post (puzzleId, commentContent) {
+    return Api().post(`puzzles/${puzzleId}/comments`, commentContent);
   },
   delete (commentId) {
     return Api().delete(`comments/${commentId}`);

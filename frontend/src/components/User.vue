@@ -42,15 +42,15 @@
           <h3>Gelöste Rätsel</h3>
           <div class="stats-numbers">
             <div class="stat-group">
-              <div class="stat-value">{{ user.solvedLogicals.length }}</div>
+              <div class="stat-value">{{ user.stats.solved.logical }}</div>
               <div class="stat-label">Logikrätsel</div>
             </div>
             <div class="stat-group">
-              <div class="stat-value">{{ user.solvedNonograms.length }}</div>
+              <div class="stat-value">{{ user.stats.solved.nonogram }}</div>
               <div class="stat-label">Nonogramme</div>
             </div>
             <div class="stat-group">
-              <div class="stat-value">{{ user.solvedLinelogs.length }}</div>
+              <div class="stat-value">{{ user.stats.solved.linelog }}</div>
               <div class="stat-label">Linelogs</div>
             </div>
           </div>
@@ -60,15 +60,15 @@
           <h3>Erstellte Rätsel</h3>
           <div class="stats-numbers">
             <div class="stat-group">
-              <div class="stat-value">{{ user.createdLogicals.length }}</div>
+              <div class="stat-value">{{ user.stats.created.logical }}</div>
               <div class="stat-label">Logikrätsel</div>
             </div>
             <div class="stat-group">
-              <div class="stat-value">{{ user.createdNonograms.length }}</div>
+              <div class="stat-value">{{ user.stats.created.nonogram }}</div>
               <div class="stat-label">Nonogramme</div>
             </div>
             <div class="stat-group">
-              <div class="stat-value">{{ user.createdLinelogs.length }}</div>
+              <div class="stat-value">{{ user.stats.created.linelog }}</div>
               <div class="stat-label">Linelogs</div>
             </div>
           </div>
@@ -125,14 +125,10 @@ import MySelect from '@/components/MySelect.vue';
 const store = useMainStore();
 const route = useRoute();
 const oruga = useOruga();
+const emptyCounts = () => ({ logical: 0, nonogram: 0, linelog: 0 });
 const user = ref({
   username: "",
-  solvedLogicals: [],
-  solvedNonograms: [],
-  solvedLinelogs: [],
-  createdLogicals: [],
-  createdNonograms: [],
-  createdLinelogs: []
+  stats: { solved: emptyCounts(), created: emptyCounts() }
 });
 const genderOptions = ["Männlich", "Weiblich", "Divers", ""];
 const editedCity = ref("");

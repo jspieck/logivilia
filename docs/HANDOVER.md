@@ -1,6 +1,6 @@
 # Logivilia – Handover
 
-_Last updated: 2026-11-08_
+_Last updated: 2026-11-14_
 
 Logivilia is a German-language puzzle site with three puzzle types, user accounts, ratings, comments and leaderboards. This document is what a new developer needs to run, understand and safely change the project. For the prioritised list of what to improve next, see [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md).
 
@@ -15,6 +15,7 @@ Logivilia is a German-language puzzle site with three puzzle types, user account
 | ~~Commit and deploy the security fixes~~ | Done 2026-11-14 (`37f881e`, live on logivilia.de). | – |
 | Confirm password-reset e-mails arrive | The server logs `E-mail "..." accepted by <host>` or `E-mail could not be sent: ...` for every attempt (Plesk → Logs). | Owner |
 | If the live DB was ever seeded: change the seed Admin's password | The old seed file contained known plain-text passwords (still in git history). | Owner |
+| **Migrate the live DB before deploying the generic puzzle model** | Since 2026-11-14 the app reads puzzles, ratings and solves from `Puzzles`, `PuzzleRatings` and `PuzzleSolves`, and comments by `Comments.PuzzleId`. Without the migration every puzzle page is empty. See §7. | Owner |
 
 **Hosting:** netcup webhosting with Plesk. Node.js app: Anwendungsstamm `/logivilia.de/httpdocs`, Startdatei `app.js`, Dokumentenstamm `/logivilia.de/httpdocs/frontend/dist`. Deploy: push → Plesk Git "Pull updates" → NPM install (if dependencies changed) → run script `build` (if `frontend/` changed) → App neu starten.
 
@@ -39,17 +40,25 @@ logivilia/
 │   ├── routes.js          # Every API route and its middleware
 │   ├── config/config.js   # Env-based config (DB, JWT, mail)
 │   ├── controllers/       # Request handlers
-│   │   └── puzzleController.js   # Shared CRUD for Logical / Nonogram / Linelog
+│   │   └── PuzzleController.js   # Puzzles, checks, solves and ratings for every type
 │   ├── models/            # Sequelize models (loaded automatically by models/index.js)
+│   ├── puzzles.js         # Loads the shared puzzle-type plugins (dynamic import)
 │   ├── policies/          # Middleware: isAuthenticated, Joi validation, rateLimit
 │   ├── utils/
 │   │   ├── userView.js        # Which user fields may be sent (own vs. public)
-│   │   └── verifySolution.js  # Server-side check of solved puzzles
+│   │   ├── puzzleView.js      # Puzzle as sent to players (plugin computeClues, no solution)
+│   │   └── legacyPuzzles.js   # Old per-type rows -> generic tables (seed + migration)
+│   ├── scripts/           # migrateToPuzzles.js, fixNonogramSizes.js
 │   ├── migrations/        # Sequelize migration files (currently NOT used by the app)
 │   └── seed/              # JSON seed data + seed script (drops and recreates all tables!)
+├── shared/                # Used by backend and frontend
+│   ├── errorCodes.json    # API error codes
+│   ├── index.d.ts         # Types, incl. the PuzzleTypePlugin interface
+│   └── puzzles/           # One plugin per puzzle type: data fields, checks, clues, validation
 └── frontend/              # Vue 3 + Vite + Pinia, Oruga UI (Bulma CSS), vue-i18n
     └── src/
-        ├── components/    # Pages and widgets (*Solve.vue, *Overview.vue, *Create.vue, ...)
+        ├── components/    # Pages and widgets (*Overview.vue, LogicalCreate.vue, ...)
+        ├── puzzles/       # PuzzlePage.vue, type registry, one board per type, engine/ (input, zoom, undo)
         ├── services/      # One axios wrapper per API resource
         ├── store/store.js # Pinia store (token + user), persisted in sessionStorage
         └── router/index.js
@@ -124,17 +133,33 @@ All variables are documented in [`.env.example`](../.env.example). The important
 
 ### Puzzle types
 
-| Type | Internal name | Data | Checked how |
+| Type | Internal name | `data` | Checked how |
 |---|---|---|---|
-| Nonogram (picture logic, multi-colour) | `nonogram` | `width`, `height`, `colors`, `solution` (2D, 0 = empty, k = colour k) | Every row and column must match the clues of the solution |
+| Nonogram (picture logic, multi-colour) | `nonogram` | `width`, `height`, `numColor`, `colors`, `solution` (2D, 0 = empty, k = colour k) | Every row and column must match the clues of the solution |
 | Linelog (number paths, Link-a-Pix style) | `linelog` | same, plus `information` (the numbers shown) | Coloured grid must equal `solution` |
-| Logical (logic grid / zebra puzzle) | `logical` | `description`, `question`, `clues`, `attributes`, `solution` (table, first column = row label) | Table must equal `solution` |
+| Logical (logic grid / zebra puzzle) | `logical` | `description`, `question`, `clues`, `attributes`, `solution` (table, first column = row label), `image` | Table must equal `solution` |
 
 Seed data: 181 nonograms, 85 linelogs, 54 logicals.
 
+**One model for all types.** Every puzzle is a row of `Puzzles`: common columns (`type`, `name`, `difficulty`, `date`, `author`, `UserId`, `legacyId`) plus a `data` JSON with the fields above. `PuzzleRatings` (one per user and puzzle), `PuzzleSolves` (verified solves, one per user and puzzle) and `Comments.PuzzleId` refer to it. `legacyId` is the puzzle's ID in the old per-type table, so old links such as `/nonogramSolve/12` still redirect to `/puzzle/<id>`.
+
+**Puzzle-type plugins.** What differs between types lives in one module per type, `shared/puzzles/<type>.js`, which backend and frontend both import:
+
+| Member | Used for |
+|---|---|
+| `dataFields` | which request fields are stored in `data` |
+| `checkData(data)` | rejecting incomplete or broken puzzles on create/edit (`400 PUZZLE_INVALID`) |
+| `computeClues(data)` | what players get instead of the solution (e.g. nonogram `rowClues`/`columnClues`) |
+| `validate(data, answer)` | whether an answer is correct (check and solve endpoints) |
+| `solve`, `hint` | planned for the solver (audit B6/B8); declared in `shared/index.d.ts`, not implemented yet |
+
+The frontend registry (`frontend/src/puzzles/index.js`) adds each type's board component. `PuzzlePage.vue` loads a puzzle, renders its board, and handles what every type shares (recording the solve, rating, "already solved", comments). Boards get the puzzle and a `submit(answer)` function and emit `solved`; the grid boards share pointer input (Pointer Events, so mouse and touch use one path), zoom and undo/redo from `frontend/src/puzzles/engine/`.
+
+The backend is CommonJS and the plugins are ES modules, so `backend/puzzles.js` loads them with a dynamic `import()`; `createApp` holds `/api` requests until they are loaded (only right after start). Scripts and tests `await require('./puzzles').ready`.
+
 ### Grid encoding (important when touching solve code)
 
-The **stored** encoding is `0 = empty, k = colour k`. The solve components use a different **UI** encoding: colour index `k - 1`, plus a background index and, for nonograms, a "marked empty" dot index. Each solve component has a `submittedGrid()` helper that converts the UI grid back to the stored encoding before sending it. If you change how a component stores its grid, update that helper as well.
+The **stored** encoding is `0 = empty, k = colour k`, drawn with `colors[k - 1]`; the last entry of `colors` is the background. The boards use a different **UI** encoding: colour index `k - 1`, plus a background index and, for nonograms, a "marked empty" dot index. Each board has an `answer()` helper that converts the UI grid back to the stored encoding before it is submitted. If you change how a board stores its grid, update that helper as well.
 
 ### Authentication
 
@@ -146,10 +171,10 @@ The **stored** encoding is `0 = empty, k = colour k`. The solve components use a
 
 ### Solving flow
 
-1. The solve page loads the puzzle **without its solution**. `utils/puzzleView.js` removes `solution` from every puzzle `GET` and adds what the player needs instead: `rowClues` and `columnClues` for nonograms (`[[colour, length], ...]` per line), and `informationColors` for linelogs (the colour of each numbered cell). Logicals need nothing extra.
-2. The page decides when the player is done: nonograms when every line matches its clues, linelogs when every number is connected by a path of the right length, logicals when the player clicks "Überprüfen" with every field filled.
-3. Logged-in players then call `PATCH /api/users/:userId/<type>/:id` with `{ grid }` (or `{ solution }` for logicals). The server checks that `:userId` is the logged-in user, verifies the submission with `utils/verifySolution.js`, and adds the puzzle ID to the user's `solved*` JSON array. A wrong submission gets `400 SOLUTION_INCORRECT`.
-4. Guests, and players who solved the puzzle before, call `POST /api/<type>/:id/check` with the same body instead. It answers `{ solved: true | false }`, records nothing, needs no login, and is limited to 30 requests per minute per IP.
+1. `/puzzle/:id` loads the puzzle **without its solution** (`GET /api/puzzles/:id`). `utils/puzzleView.js` sends the common columns plus the plugin's `computeClues(data)`.
+2. The board decides when the player is done: nonograms when every line matches its clues (with the same shared `lineMatches` the server uses), linelogs when every number is connected by a path of the right length, logicals when the player clicks "Überprüfen" with every field filled.
+3. Logged-in players who have not solved it yet then call `POST /api/puzzles/:id/solve` with `{ answer }`. The server checks it with the plugin's `validate` and adds a `PuzzleSolves` row. A wrong answer gets `400 SOLUTION_INCORRECT`.
+4. Guests, and players who solved the puzzle before, call `POST /api/puzzles/:id/check` with the same body instead. It answers `{ solved: true | false }`, records nothing, needs no login, and is limited to 30 requests per minute per IP.
 
 ### API overview
 
@@ -158,13 +183,13 @@ All routes are in [`backend/routes.js`](../backend/routes.js), under the `/api` 
 | Area | Routes | Auth |
 |---|---|---|
 | Auth | `POST /register`, `/login`, `/forgot`, `/reset/:token` | none; rate-limited |
-| Users | `GET /users/:id` (public), `PATCH /users/:id` (own profile) | PATCH: login |
-| Solves | `PATCH /users/:id/{nonogram,linelog,logical}/:pid` | login, own user only, verified |
-| Puzzles | `GET /{type}`, `GET /{type}/:id`, `POST /{type}`, `PUT /{type}/:id` | POST/PUT: login, PUT: owner or Admin |
-| Ratings | `GET /{type}ratings`, `GET /{type}ratings/:pid`, `POST /{type}ratings`, `DELETE /{type}ratings/:ratingId` | all but index: login; rating 1–5 |
-| Comments | `GET /comments/:type/:pid`, `POST /comments/:type/:pid`, `DELETE /comments/:commentId` | POST/DELETE: login, delete own only |
+| Users | `GET /users/:id` (public, with solve/create counts), `PATCH /users/:id` (own profile), `GET /users/:id/solved?type=` | PATCH: login, own user only |
+| Puzzles | `GET /puzzles?type=`, `GET /puzzles/:id`, `GET /puzzles/legacy/:type/:legacyId`, `POST /puzzles`, `PUT /puzzles/:id` | POST/PUT: login, PUT: owner or Admin |
+| Answers | `POST /puzzles/:id/check` (anyone, rate-limited), `POST /puzzles/:id/solve` (login, verified) | see left |
+| Ratings | `GET` / `PUT` / `DELETE /puzzles/:id/rating` | login; rating 1–5 |
+| Comments | `GET /puzzles/:id/comments`, `POST /puzzles/:id/comments`, `DELETE /comments/:commentId` | POST/DELETE: login, delete own only |
 | Upvotes | `GET /commentupvote`, `POST` / `DELETE /commentupvote/:commentId` | login |
-| Rankings | `GET /rankings` (top 10 per type) | none |
+| Rankings | `GET /rankings` (top 10 per type, counted in SQL from `PuzzleSolves`) | none |
 
 Rate limits (in memory, per IP, 15-minute window): login 10, register / forgot / reset 5 each. They reset when the server restarts and are not shared between multiple server instances.
 
@@ -201,16 +226,36 @@ Rate limits (in memory, per IP, 15-minute window): login 10, register / forgot /
 - **Nonograms with stale cells:** 9 nonograms stored cells outside their declared `width × height` (left over from resizing in the editor). The seed file is fixed. The live database may still contain them; it makes no difference to players (the server ignores those cells when it computes clues and checks solves), but cropping keeps the data clean: `npm run fix:nonograms -w backend` (dry run), then with `-- --apply`. It needs the production DB settings in its environment.
 - **`npm run seed` wipes the database.** In production it refuses unless `SEED_CONFIRM=wipe-all-data` is set. Seed users get random passwords, printed once.
 - **Plesk's "Node.js-Befehle ausführen" tab does not get the Umgebungsvariablen:** commands run there see `NODE_ENV` unset and no DB settings. Don't judge the live configuration from that tab, and don't run `seed` or `fix:nonograms` there.
-- **Two sources of truth for solves:** the `solved*` JSON arrays on `User` (used) and the `UserSolved*` join tables (defined, unused).
+- **Old tables after the migration:** `Nonograms`, `Linelogs`, `Logicals`, the three `*Ratings` tables, the unused `UserSolved*` join tables, the `solved*`/`created*` columns on `Users` and `riddleType`/`riddleId` on `Comments` are no longer read. The migration leaves them in place; drop them by hand once the new version has run for a while.
+- **Linelogs and logicals with two valid solutions** are rejected when a player finds the other one: their `validate` compares with the one stored solution. The solver (audit B6) should rule such puzzles out.
 - **The migrations folder is unused;** the schema comes from Sequelize models via `sync`.
 - **Production dialect** is hardcoded to `mysql` in `config.js`.
 - **No Content-Security-Policy yet:** `helmet` sets the other security headers; CSP needs an allowlist for the icon/font CDNs and puzzle image hosts.
-- **`LinelogCreate.vue` exists but has no route;** there is no nonogram creator.
+- **There is no nonogram or linelog creator.** `POST /api/puzzles` accepts every type, so a creator only needs a page.
 - **Logical puzzle images** are hotlinked from `logiklab.de`.
 - **Tests cover the backend only** (`npm test`: verifiers over all seed puzzles plus API tests on in-memory SQLite). No frontend or browser tests yet.
 
 ---
 
-## 7. Where to go next
+## 7. Migrating to the generic puzzle model
+
+The 2026-11-14 version stores puzzles in `Puzzles` instead of `Nonograms` / `Linelogs` / `Logicals`. A live database needs a one-time migration **before** the new version starts serving. `scripts/migrateToPuzzles.js` creates the new tables, adds `Comments.PuzzleId`, and copies puzzles (keeping the old ID as `legacyId`), ratings (one per user and puzzle; invalid ones skipped), solves (from the `solved*` arrays) and comment links. It leaves the old tables untouched, runs the data copy in one transaction, and refuses to run twice.
+
+1. Back up the database.
+2. With the production DB settings in the environment (not Plesk's "Node.js-Befehle" tab, see §6), run the dry run. It lists counts and any puzzles whose data looks broken (they are copied anyway):
+   ```bash
+   npm run migrate:puzzles -w backend
+   ```
+3. Apply it:
+   ```bash
+   npm run migrate:puzzles -w backend -- --apply
+   ```
+4. Deploy the new version (pull, build, restart).
+
+Rolling back means deploying the previous version: it still reads the old tables, but solves, ratings and comments made after the migration are not in them.
+
+`npm run seed` builds the new schema directly from the seed files, using the same conversion (`utils/legacyPuzzles.js`). `test/migrateToPuzzles.test.js` runs the migration against an old-schema SQLite database; it has not been run against MySQL.
+
+## 8. Where to go next
 
 See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). In short: clean up the database layer, then build the generic puzzle model together with the planned **automatic solver**, which can then power uniqueness checks, difficulty rating and hints.

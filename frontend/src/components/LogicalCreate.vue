@@ -104,7 +104,7 @@ import { ref, computed, watch } from 'vue';
 import { useOruga } from '@oruga-ui/oruga-next';
 import Toggle from './Toggle.vue';
 import MySelect from './MySelect.vue';
-import LogicalService from '@/services/LogicalService';
+import PuzzleService from '@/services/PuzzleService';
 import draggable from 'vuedraggable';
 import LogicalDisplay from './LogicalDisplay.vue';
 
@@ -265,6 +265,7 @@ const createLogical = async () => {
       }
   
       const logicalData = {
+        type: 'logical',
         name: logical.value.name,
         solution: solution.value,
         difficulty: logical.value.difficulty,
@@ -277,7 +278,7 @@ const createLogical = async () => {
         author: logical.value.author
       }
       
-      await LogicalService.post(logicalData)
+      await PuzzleService.post(logicalData)
       oruga.notification.open({
         message: 'Logikrätsel erfolgreich erstellt!',
         duration: 2000,

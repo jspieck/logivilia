@@ -6,7 +6,14 @@
     "resolveJsonModule": true,
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": false
+    "skipLibCheck": false,
+    "allowJs": true,
+    "checkJs": true,
+    "noImplicitAny": false
   },
-  "include": ["index.d.ts", "errorCodes.json"]
+  "include": [
+    "index.d.ts",
+    "errorCodes.json",
+    "puzzles/**/*.js"
+  ]
 }

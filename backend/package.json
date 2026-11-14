@@ -8,7 +8,8 @@
     "start": "node ../app.js",
     "seed": "node ./seed",
     "test": "node --test test/*.test.js",
-    "fix:nonograms": "node scripts/fixNonogramSizes.js"
+    "fix:nonograms": "node scripts/fixNonogramSizes.js",
+    "migrate:puzzles": "node scripts/migrateToPuzzles.js"
   },
   "license": "ISC",
   "dependencies": {

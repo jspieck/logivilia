@@ -105,13 +105,7 @@ module.exports = {
         gender,
         city,
         role: 'Mitglied',
-        joined: new Date().toISOString().slice(0, 10),
-        solvedLogicals: [],
-        solvedNonograms: [],
-        solvedLinelogs: [],
-        createdLogicals: [],
-        createdNonograms: [],
-        createdLinelogs: []
+        joined: new Date().toISOString().slice(0, 10)
       });
       res.send({
         user: ownUser(user),

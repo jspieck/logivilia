@@ -1,6 +1,22 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/components/Home.vue'
 
+// Old links used per-type IDs (/nonogramSolve/12). Puzzles now share one ID
+// space, so look up the new ID and redirect; unknown IDs go to the overview.
+const legacyRedirect = (type, overviewPath) => ({
+  path: `/${type}Solve/:id`,
+  component: { render: () => null },
+  beforeEnter: async (to) => {
+    try {
+      const { default: PuzzleService } = await import('@/services/PuzzleService')
+      const { data } = await PuzzleService.legacy(type, to.params.id)
+      return { path: `/puzzle/${data.id}`, replace: true }
+    } catch {
+      return { path: overviewPath, replace: true }
+    }
+  }
+})
+
 // Home is part of the main bundle (first paint); every other page is its own
 // chunk, loaded when the route is first visited.
 const routes = [
@@ -60,21 +76,14 @@ const routes = [
     component: () => import('@/components/LinelogOverview.vue'),
   },
   {
-    path: '/linelogSolve/:id',
-    component: () => import('@/components/LinelogSolve.vue'),
-    props: true
+    // Every puzzle type; the page picks the board from the puzzle's type.
+    path: '/puzzle/:id',
+    name: 'Puzzle',
+    component: () => import('@/puzzles/PuzzlePage.vue')
   },
-  {
-    path: '/logicalSolve/:id',
-    component: () => import('@/components/LogicalSolve.vue'),
-    props: true
-  },
-  {
-    path: '/nonogramSolve/:id',
-    name: 'Nonogram',
-    component: () => import('@/components/NonogramSolve.vue'),
-    props: true
-  },
+  legacyRedirect('nonogram', '/nonogram-overview'),
+  legacyRedirect('linelog', '/linelog-overview'),
+  legacyRedirect('logical', '/logical-overview'),
   {
     path: '/leaderboard',
     name: 'leaderboard',

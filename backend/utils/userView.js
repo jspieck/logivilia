@@ -2,9 +2,7 @@
 // Never include password, resetPasswordToken or resetPasswordExpires.
 const PRIVATE_FIELDS = [
   'id', 'email', 'username', 'role', 'gender', 'bio', 'birthyear',
-  'userImageId', 'city', 'joined',
-  'solvedLogicals', 'solvedNonograms', 'solvedLinelogs',
-  'createdLogicals', 'createdNonograms', 'createdLinelogs'
+  'userImageId', 'city', 'joined'
 ];
 
 // Fields of a user that anyone may see on a public profile.

@@ -39,12 +39,8 @@ export default {
     Comments
   },
   props: {
-    riddleType: {
-      type: String,
-      required: true
-    },
-    riddleId: {
-      type: String,
+    puzzleId: {
+      type: [Number, String],
       required: true
     }
   },
@@ -57,19 +53,19 @@ export default {
     const userComment = ref('')
     const commentSend = ref(false)
 
-    const computedRiddleId = computed(() => props.riddleId)
+    const computedPuzzleId = computed(() => props.puzzleId)
 
     const loadUserUpvotes = async () => {
       userVotes.value = (await CommentUpvoteService.get()).data.map(m => m.CommentId)
     }
 
     const updateComments = async () => {
-      comments.value = (await CommentService.show(props.riddleType, props.riddleId)).data
+      comments.value = (await CommentService.show(props.puzzleId)).data
     }
 
     const sendCommentToDb = async (comment, replyId) => {
       const encodedComment = encodeURIComponent(comment)
-      await CommentService.post(props.riddleType, props.riddleId, {
+      await CommentService.post(props.puzzleId, {
         text: encodedComment,
         replyId: replyId
       })
@@ -86,7 +82,7 @@ export default {
       console.log(a)
     }
 
-    watch(computedRiddleId, async () => {
+    watch(computedPuzzleId, async () => {
       await updateComments()
       if (isUserLoggedIn.value) {
         await loadUserUpvotes()

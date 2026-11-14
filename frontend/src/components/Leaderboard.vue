@@ -6,9 +6,9 @@ import UserService from '@/services/UserService'
 const router = useRouter()
 
 const rankings = ref({
-  logicals: [],
-  nonograms: [],
-  linelogs: []
+  logical: [],
+  nonogram: [],
+  linelog: []
 })
 
 const loading = ref(true)
@@ -54,7 +54,7 @@ const formatNumber = (num) => {
         </div>
         <div class="ranking-list" v-if="!loading">
           <div 
-            v-for="(user, index) in rankings.logicals" 
+            v-for="(user, index) in rankings.logical" 
             :key="user.id"
             class="ranking-item"
             :class="{ 
@@ -93,7 +93,7 @@ const formatNumber = (num) => {
         </div>
         <div class="ranking-list" v-if="!loading">
           <div 
-            v-for="(user, index) in rankings.nonograms" 
+            v-for="(user, index) in rankings.nonogram" 
             :key="user.id"
             class="ranking-item"
             :class="{ 
@@ -132,7 +132,7 @@ const formatNumber = (num) => {
         </div>
         <div class="ranking-list" v-if="!loading">
           <div 
-            v-for="(user, index) in rankings.linelogs" 
+            v-for="(user, index) in rankings.linelog" 
             :key="user.id"
             class="ranking-item"
             :class="{ 

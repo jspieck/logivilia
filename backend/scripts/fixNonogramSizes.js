@@ -39,14 +39,17 @@ function fixSeedFile () {
 }
 
 async function fixDatabase (apply) {
-  const { Nonogram, sequelize } = require('../models');
-  const nonograms = await Nonogram.findAll();
-  const broken = nonograms.filter(n => needsCrop(n.get({ plain: true })));
+  const { Puzzle, sequelize } = require('../models');
+  const { puzzleData } = require('../utils/puzzleView');
+  await require('../puzzles').ready;
+  const nonograms = await Puzzle.findAll({ where: { type: 'nonogram' } });
+  const broken = nonograms.filter(n => needsCrop(puzzleData(n)));
   for (const nonogram of broken) {
     console.log(`${apply ? 'Cropping' : 'Would crop'} #${nonogram.id} "${nonogram.name}"`);
     if (apply) {
-      nonogram.solution = cropSolution(nonogram.get({ plain: true }));
-      nonogram.changed('solution', true);
+      const data = puzzleData(nonogram);
+      nonogram.data = { ...data, solution: cropSolution(data) };
+      nonogram.changed('data', true);
       await nonogram.save();
     }
   }

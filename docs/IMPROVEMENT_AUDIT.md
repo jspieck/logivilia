@@ -6,7 +6,7 @@ This audit covers security, correctness, architecture, UX and engineering practi
 
 **Status key:** ✅ fixed · ⚠️ partly fixed · ❌ open. Fixes from 2026-11-08 are deployed (2026-11-14).
 
-**Progress on Part B (2026-11-14):** B5 mostly done (workspaces, shared types, error codes + `vue-i18n`, Oruga only, lazy routes; legacy folders outside the repo remain). B3 done: the API sends clues instead of solutions, and a public `check` endpoint answers whether a finished grid is correct. B15 started: `npm test` runs 44 backend tests (verifiers over all seed puzzles, API security tests on in-memory SQLite) and GitHub Actions runs tests + build. Still open in B15: frontend/browser tests, Dependabot, GDPR items.
+**Progress on Part B (2026-11-14):** B5 mostly done (workspaces, shared types, error codes + `vue-i18n`, Oruga only, lazy routes; legacy folders outside the repo remain). B3 done: the API sends clues instead of solutions, and a public `check` endpoint answers whether a finished grid is correct. B15 started: `npm test` runs 44 backend tests (verifiers over all seed puzzles, API security tests on in-memory SQLite) and GitHub Actions runs tests + build. Still open in B15: frontend/browser tests, Dependabot, GDPR items. B1 and B2 done (2026-11-14, not yet deployed): one `Puzzles` table with `PuzzleRatings` and `PuzzleSolves`, puzzle-type plugins in `shared/puzzles` used by backend and frontend, one `/puzzle/:id` page with a board per type on a shared grid engine. The live database needs `npm run migrate:puzzles -w backend -- --apply` before the deploy (see HANDOVER §7). `npm test` now runs 63 tests.
 
 ---
 
@@ -52,9 +52,9 @@ This audit covers security, correctness, architecture, UX and engineering practi
 
 ### A4. Architecture and code quality observations
 
-- **Triplication:** every puzzle type has its own model, controller, rating model, rating controller, frontend service and solved array. The puzzle controllers are now merged into one factory (`puzzleController.js`); ratings and services are still triplicated.
-- **Very large components:** `NonogramSolve.vue` (≈1,100 lines), `LinelogSolve.vue` (≈1,070), `LogicalDisplay.vue` (≈810). They mix input handling, rendering, rule checking and API calls. Options API and Composition API are mixed.
-- **Two sources of truth for solves:** `solved*` JSON arrays on `User` and the unused `UserSolved*` join tables.
+- **Triplication:** every puzzle type had its own model, controller, rating model, rating controller, frontend service and solved array. ✅ Replaced by one generic model and plugins (B1, B2, 2026-11-14).
+- **Very large components:** `NonogramSolve.vue` (≈1,100 lines), `LinelogSolve.vue` (≈1,070), `LogicalDisplay.vue` (≈810). They mix input handling, rendering, rule checking and API calls. Options API and Composition API are mixed. ⚠️ The solve pages are now `PuzzlePage.vue` plus one board per type (B2); `LogicalDisplay.vue` is unchanged.
+- **Two sources of truth for solves:** `solved*` JSON arrays on `User` and the unused `UserSolved*` join tables. ✅ Solves are rows of `PuzzleSolves` (B1); the old columns and tables are no longer read.
 - **Schema management:** `seed` uses `sync({force: true})`; the `migrations/` folder exists but is never run. Production dialect is hardcoded to `mysql`, while recent commits mention Postgres. SQLite, MySQL and Postgres drivers are all installed.
 - **Two UI libraries** (Buefy and Oruga) loaded together; a single 500 kB+ JS chunk with no code splitting.
 - **Dead code and files:** unused JSON copies in `frontend/src/assets` (≈160 kB `nonograms.json`), `LinelogCreate.vue` with no route, legacy sibling folders `logivilia-backend/`, `logivilia-frontend/`, `logiviliaBackend/` plus installers in the parent folder.
@@ -71,15 +71,19 @@ Ranked by value and by what unblocks what. **Type:** 🏗 architecture · ✨ fe
 
 ### Architecture
 
-#### 1. 🏗 One generic Riddle model
+#### 1. 🏗 One generic Riddle model ✅ (2026-11-14)
 Replace the three model/controller/rating/service sets with one `Puzzle` table (`type`, `name`, `difficulty`, `data` JSON, `UserId`) and one `Solve`, `Rating` and `Comment` model keyed by puzzle ID. A new puzzle type then needs a plugin, not ten new files.
 - **Effort:** M–L, including a data migration.
 - **Unlocks:** 2, 6, 7, 12.
+- **Done:** models `Puzzle` (`type`, common columns, `data` JSON, `legacyId`), `PuzzleRating`, `PuzzleSolve`; `Comment` keyed by `PuzzleId`. One API under `/api/puzzles` (list, show, create, edit, check, solve, rating, comments). Rankings and profile counts are computed in SQL from `PuzzleSolves` (part of B12). `backend/scripts/migrateToPuzzles.js` moves a live database (dry run first, old tables kept); the seed goes through the same conversion. Old links (`/nonogramSolve/12`) redirect via `legacyId`.
+- **Still open:** run the migration on the live DB, then drop the old tables and columns after a while (B4). The migration is tested on SQLite only.
 
-#### 2. 🏗 Puzzle-type plugin interface, shared by frontend and backend ⚙
+#### 2. 🏗 Puzzle-type plugin interface, shared by frontend and backend ⚙ ✅ (2026-11-14)
 Each type is one module: `render`, `computeClues(solution)`, `validate(grid)`, `solve(clues)` ⚙ and `hint(state)` ⚙. A shared grid engine handles pointer input, drag-fill, zoom and undo/redo. This splits the 1,000-line solve components and gives the solver a defined place to live.
 - **Effort:** L.
 - **Tip:** design this together with the solver; it is the solver's API.
+- **Done:** `shared/puzzles/<type>.js` implements `PuzzleTypePlugin` (`shared/index.d.ts`): `dataFields`, `checkData` (new: rejects broken puzzles on create/edit), `computeClues`, `validate`. The backend loads the ES modules with a dynamic `import()`; the frontend imports them via the `@shared` alias and adds the board component (`render`) in `frontend/src/puzzles/index.js`. The nonogram board checks lines with the same shared code as the server. The grid engine (`frontend/src/puzzles/engine/`) gives both grid boards Pointer Events input (mouse and touch in one path, drag continues outside the grid), zoom and undo/redo; the linelog board has no undo yet.
+- **Still open:** `solve` and `hint` are declared in the interface but not implemented (B6, B8). Pinch-zoom and tap-to-cycle (B13) can now go into the engine once.
 
 #### 3. 🏗 Stop sending solutions to the browser ✅ (2026-11-14)
 Compute clues on the server (nonogram row/column clues, linelog numbers already exist as `information`) and send only those. Verification already happens on the server (done 2026-11-08). For nonograms, keep accepting any grid that satisfies all clues.

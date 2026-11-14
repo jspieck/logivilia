@@ -19,6 +19,8 @@
     "PUZZLE_FETCH_FAILED": "The puzzle could not be loaded.",
     "PUZZLE_CREATE_FAILED": "The puzzle could not be created.",
     "PUZZLE_UPDATE_FAILED": "The puzzle could not be changed.",
+    "PUZZLE_INVALID": "The puzzle is incomplete or invalid.",
+    "PUZZLE_TYPE_INVALID": "Unknown puzzle type.",
     "SOLUTION_INCORRECT": "The solution is not correct.",
     "SOLUTION_SAVE_FAILED": "The solution could not be saved.",
     "USER_NOT_FOUND": "User not found.",

@@ -19,7 +19,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // Code shared with the backend (puzzle-type plugins). An alias rather
+      // than the workspace package, because some hosts' "npm install" does
+      // not create the node_modules/@logivilia/shared link.
+      '@shared': fileURLToPath(new URL('../shared', import.meta.url))
     }
   },
   server: {

@@ -50,6 +50,10 @@ module.exports = function createApp () {
   const passport = require('./passport');
   app.use(passport.initialize());
 
+  // The puzzle-type plugins are an ES module loaded asynchronously; hold
+  // API requests until they are available (only matters right after start).
+  const puzzles = require('./puzzles');
+  app.use('/api', (req, res, next) => puzzles.ready.then(() => next(), next));
   app.use('/api', require('./routes')());
 
   if (env === 'production') {

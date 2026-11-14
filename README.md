@@ -72,59 +72,45 @@ Error responses look like `{ "code": "AUTH_INVALID_CREDENTIALS" }`; the backend 
 - `POST /reset/:token` - Reset password with token
 
 ### User Endpoints
-- `GET /users/:userId` - Get user profile
-- `PATCH /users/:userId` - Update user profile (protected)
-- `PATCH /users/:userId/linelog/:linelogId` - Mark linelog as solved (protected)
-- `PATCH /users/:userId/nonogram/:nonogramId` - Mark nonogram as solved (protected)
-- `PATCH /users/:userId/logical/:logicalId` - Mark logical as solved (protected)
+- `GET /users/:userId` - Public profile, with `stats.solved` and `stats.created` counts per puzzle type
+- `PATCH /users/:userId` - Update own profile (protected)
+- `GET /users/:userId/solved?type=nonogram` - IDs of the puzzles the user solved (`type` optional)
+
+### Puzzle Endpoints (all puzzle types)
+Every puzzle type uses the same routes. A puzzle arrives as one flat object: the common fields (`id`, `type`, `name`, `difficulty`, `date`, `author`, `UserId`) plus the type's public data (for example `rowClues` for a nonogram). The solution never leaves the server.
+- `GET /puzzles?type=nonogram` - All puzzles of a type (or of all types), each with `avgRating` and `ratingCount`
+- `GET /puzzles/:puzzleId` - One puzzle
+- `GET /puzzles/legacy/:type/:legacyId` - New ID of a puzzle from the old per-type tables (`{ id }`)
+- `POST /puzzles` - Create a puzzle: `{ type, name, difficulty, ...data fields }` (protected; data is checked by the type's plugin)
+- `PUT /puzzles/:puzzleId` - Edit a puzzle (protected; owner or Admin)
+- `POST /puzzles/:puzzleId/check` - `{ answer }` → `{ solved }`; records nothing, no login needed, rate-limited
+- `POST /puzzles/:puzzleId/solve` - `{ answer }`; records a verified solve (protected; `400 SOLUTION_INCORRECT` if wrong)
+- `GET` / `PUT` / `DELETE /puzzles/:puzzleId/rating` - Own rating, `{ rating: 1..5 }` (protected)
 
 ### Comments Endpoints
-- `GET /comments/:riddleType/:riddleId` - Get comments for a riddle
-- `POST /comments/:riddleType/:riddleId` - Post a comment (protected)
-- `DELETE /comments` - Delete a comment (protected)
+- `GET /puzzles/:puzzleId/comments` - Comments on a puzzle
+- `POST /puzzles/:puzzleId/comments` - Post a comment (protected)
+- `DELETE /comments/:commentId` - Delete own comment (protected)
 
 ### Comment Upvote Endpoints
 - `GET /commentupvote` - Get user's upvoted comments (protected)
 - `POST /commentupvote/:commentId` - Upvote a comment (protected)
 - `DELETE /commentupvote/:commentId` - Remove upvote (protected)
 
-### Puzzle Endpoints
-#### Logical Puzzles
-- `GET /logical` - Get all logical puzzles
-- `GET /logical/:logicalId` - Get specific logical puzzle
-- `POST /logical` - Create new logical puzzle
-- `PUT /logical/:logicalId` - Update logical puzzle
+### Rankings
+- `GET /rankings` - Top 10 per puzzle type: `{ nonogram: [...], linelog: [...], logical: [...] }`
 
-#### Nonogram Puzzles
-- `GET /nonogram` - Get all nonogram puzzles
-- `GET /nonogram/:nonogramId` - Get specific nonogram puzzle
-- `POST /nonogram` - Create new nonogram puzzle
-- `PUT /nonogram/:nonogramId` - Update nonogram puzzle
+## 🧩 Puzzle types
 
-#### Linelog Puzzles
-- `GET /linelog` - Get all linelog puzzles
-- `GET /linelog/:linelogId` - Get specific linelog puzzle
-- `POST /linelog` - Create new linelog puzzle
-- `PUT /linelog/:linelogId` - Update linelog puzzle
+Each puzzle type is a plugin in `shared/puzzles/<type>.js`, used by both backend and frontend:
+`dataFields`, `checkData(data)`, `computeClues(data)` (what players see) and `validate(data, answer)`;
+the planned solver adds `solve` and `hint`. The frontend registry (`frontend/src/puzzles/index.js`)
+adds the board component that renders the type; boards share pointer input, zoom and undo/redo
+(`frontend/src/puzzles/engine/`). All puzzles live in one `Puzzles` table (`type` + `data` JSON), with
+`PuzzleRatings`, `PuzzleSolves` and `Comments` keyed by puzzle ID.
 
-### Rating Endpoints
-#### Nonogram Ratings
-- `GET /nonogramratings` - Get all ratings
-- `GET /nonogramratings/:nonogramId` - Get ratings for specific puzzle (protected)
-- `POST /nonogramratings` - Rate a puzzle (protected)
-- `DELETE /nonogramratings` - Remove rating (protected)
-
-#### Linelog Ratings
-- `GET /linelogratings` - Get all ratings
-- `GET /linelogratings/:linelogId` - Get ratings for specific puzzle (protected)
-- `POST /linelogratings` - Rate a puzzle (protected)
-- `DELETE /linelogratings` - Remove rating (protected)
-
-#### Logical Ratings
-- `GET /logicalratings` - Get all ratings
-- `GET /logicalratings/:logicalId` - Get ratings for specific puzzle (protected)
-- `POST /logicalratings` - Rate a puzzle (protected)
-- `DELETE /logicalratings` - Remove rating (protected)
+To add a puzzle type: write `shared/puzzles/<type>.js`, register it in `shared/puzzles/index.js` and in
+`PUZZLE_TYPES` in `backend/puzzles.js`, and add its board to `frontend/src/puzzles/index.js`.
 
 ## 🤝 Contributing
 

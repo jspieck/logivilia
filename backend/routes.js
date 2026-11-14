@@ -1,12 +1,7 @@
 const express = require('express');
 const AuthenticationController = require('./controllers/AuthenticationController');
 const AuthenticationControllerPolicy = require('./policies/AuthenticationControllerPolicy');
-const LogicalController = require('./controllers/LogicalController');
-const LogicalRatingController = require('./controllers/LogicalRatingController');
-const NonogramRatingController = require('./controllers/NonogramRatingController');
-const LinelogRatingController = require('./controllers/LinelogRatingController');
-const NonogramController = require('./controllers/NonogramController');
-const LinelogController = require('./controllers/LinelogController');
+const PuzzleController = require('./controllers/PuzzleController');
 const UserController = require('./controllers/UserController');
 const CommentController = require('./controllers/CommentController');
 const CommentUpvoteController = require('./controllers/CommentUpvoteController');
@@ -57,22 +52,14 @@ module.exports = () => {
   router.patch('/users/:userId',
     isAuthenticated,
     UserController.update);
-  // A puzzle was solved. The body must contain the solved grid, which is
-  // verified on the server before the puzzle is counted.
-  router.patch('/users/:userId/linelog/:linelogId',
-    isAuthenticated,
-    UserController.linelogSolved);
-  router.patch('/users/:userId/nonogram/:nonogramId',
-    isAuthenticated,
-    UserController.nonogramSolved);
-  router.patch('/users/:userId/logical/:logicalId',
-    isAuthenticated,
-    UserController.logicalSolved);
+  // IDs of the puzzles a user solved (?type=nonogram for one type).
+  router.get('/users/:userId/solved',
+    UserController.solved);
 
-  // Comments Routes
-  router.get('/comments/:riddleType/:riddleId',
+  // Comments
+  router.get('/puzzles/:puzzleId/comments',
     CommentController.index);
-  router.post('/comments/:riddleType/:riddleId',
+  router.post('/puzzles/:puzzleId/comments',
     isAuthenticated,
     CommentController.post);
   router.delete('/comments/:commentId',
@@ -90,89 +77,39 @@ module.exports = () => {
     isAuthenticated,
     CommentUpvoteController.delete);
 
-  // Logical Routes
-  router.get('/logical',
-    LogicalController.index);
-  router.put('/logical/:logicalId',
+  // Puzzles, all types. The type's plugin (shared/puzzles) decides what is
+  // stored, what players see and which answers are correct.
+  router.get('/puzzles',
+    PuzzleController.index);
+  router.post('/puzzles',
     isAuthenticated,
-    LogicalController.put);
-  router.get('/logical/:logicalId',
-    LogicalController.show);
-  router.post('/logical',
+    PuzzleController.post);
+  router.get('/puzzles/legacy/:type/:legacyId',
+    PuzzleController.legacy);
+  router.get('/puzzles/:puzzleId',
+    PuzzleController.show);
+  router.put('/puzzles/:puzzleId',
     isAuthenticated,
-    LogicalController.post);
-  router.post('/logical/:logicalId/check',
+    PuzzleController.put);
+  router.post('/puzzles/:puzzleId/check',
     checkLimiter,
-    LogicalController.check);
+    PuzzleController.check);
+  // The body must contain the answer, which is verified before the solve
+  // is recorded.
+  router.post('/puzzles/:puzzleId/solve',
+    isAuthenticated,
+    PuzzleController.solve);
 
-  // Nonogram Routes
-  router.get('/nonogram',
-    NonogramController.index);
-  router.put('/nonogram/:nonogramId',
+  // The logged-in user's rating of a puzzle (1-5)
+  router.get('/puzzles/:puzzleId/rating',
     isAuthenticated,
-    NonogramController.put);
-  router.get('/nonogram/:nonogramId',
-    NonogramController.show);
-  router.post('/nonogram',
+    PuzzleController.myRating);
+  router.put('/puzzles/:puzzleId/rating',
     isAuthenticated,
-    NonogramController.post);
-  router.post('/nonogram/:nonogramId/check',
-    checkLimiter,
-    NonogramController.check);
-
-  // Linelog Routes
-  router.get('/linelog',
-    LinelogController.index);
-  router.put('/linelog/:linelogId',
+    PuzzleController.rate);
+  router.delete('/puzzles/:puzzleId/rating',
     isAuthenticated,
-    LinelogController.put);
-  router.get('/linelog/:linelogId',
-    LinelogController.show);
-  router.post('/linelog',
-    isAuthenticated,
-    LinelogController.post);
-  router.post('/linelog/:linelogId/check',
-    checkLimiter,
-    LinelogController.check);
-
-  // Nonogram Rating Routes
-  router.get('/nonogramratings',
-    NonogramRatingController.index);
-  router.post('/nonogramratings',
-    isAuthenticated,
-    NonogramRatingController.post);
-  router.delete('/nonogramratings/:nonogramRatingId',
-    isAuthenticated,
-    NonogramRatingController.delete);
-  router.get('/nonogramratings/:nonogramId',
-    isAuthenticated,
-    NonogramRatingController.show);
-
-  // Linelog Rating Routes
-  router.get('/linelogratings',
-    LinelogRatingController.index);
-  router.post('/linelogratings',
-    isAuthenticated,
-    LinelogRatingController.post);
-  router.delete('/linelogratings/:linelogRatingId',
-    isAuthenticated,
-    LinelogRatingController.delete);
-  router.get('/linelogratings/:linelogId',
-    isAuthenticated,
-    LinelogRatingController.show);
-
-  // Logical Rating Routes
-  router.get('/logicalratings',
-    LogicalRatingController.index);
-  router.post('/logicalratings',
-    isAuthenticated,
-    LogicalRatingController.post);
-  router.delete('/logicalratings/:logicalRatingId',
-    isAuthenticated,
-    LogicalRatingController.delete);
-  router.get('/logicalratings/:logicalId',
-    isAuthenticated,
-    LogicalRatingController.show);
+    PuzzleController.unrate);
 
   // Rankings Route
   router.get('/rankings',

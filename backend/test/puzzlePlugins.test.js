@@ -1,17 +1,35 @@
-// Unit tests for the server-side solution checks, run against every seed
-// puzzle. If a puzzle's own solution stops passing, either the verifier or
-// the data broke.
+// Unit tests for the puzzle-type plugins (shared/puzzles), run against every
+// seed puzzle. If a puzzle's own solution stops passing, either the plugin or
+// the data broke. The seed rows have the plugins' data fields at top level,
+// so they can be passed to the plugins as `data` directly.
 
-const { test, describe } = require('node:test');
+const { test, describe, before } = require('node:test');
 const assert = require('node:assert/strict');
 
-const {
-  verifyNonogram, verifyLinelog, verifyLogical, nonogramClues, linelogInformationColors
-} = require('../utils/verifySolution');
+const puzzles = require('../puzzles');
 const { cropSolution, needsCrop } = require('../scripts/fixNonogramSizes');
 const nonograms = require('../seed/nonograms.json');
 const linelogs = require('../seed/linelogs.json');
 const logicals = require('../seed/logicals.json');
+
+let plugins;
+before(async () => {
+  await puzzles.ready;
+  plugins = {
+    nonogram: puzzles.getPlugin('nonogram'),
+    linelog: puzzles.getPlugin('linelog'),
+    logical: puzzles.getPlugin('logical')
+  };
+});
+
+const verifyNonogram = (data, answer) => plugins.nonogram.validate(data, answer);
+const verifyLinelog = (data, answer) => plugins.linelog.validate(data, answer);
+const verifyLogical = (data, answer) => plugins.logical.validate(data, answer);
+const nonogramClues = data => {
+  const { rowClues, columnClues } = plugins.nonogram.computeClues(data);
+  return { rowClues, columnClues };
+};
+const linelogInformationColors = data => plugins.linelog.computeClues(data).informationColors;
 
 const blank = (height, width) => Array.from({ length: height }, () => Array(width).fill(0));
 const clone = grid => grid.map(row => [...row]);
@@ -154,5 +172,44 @@ describe('clues sent to players', () => {
     const l = logicals[0];
     const table = l.solution.map(row => ['label', ...row.slice(1)]);
     assert.equal(verifyLogical(l, table), true);
+  });
+});
+
+describe('plugin contract', () => {
+  const seeds = () => ({ nonogram: nonograms, linelog: linelogs, logical: logicals });
+
+  test('every seed puzzle passes checkData', () => {
+    for (const [type, rows] of Object.entries(seeds())) {
+      const failing = rows.filter(row => plugins[type].checkData(row)).map(row => row.name);
+      assert.deepEqual(failing, [], type);
+    }
+  });
+
+  test('computeClues never contains the solution', () => {
+    for (const [type, rows] of Object.entries(seeds())) {
+      for (const row of rows) {
+        assert.equal('solution' in plugins[type].computeClues(row), false, `${type} ${row.name}`);
+      }
+    }
+  });
+
+  test('checkData rejects incomplete puzzles', () => {
+    assert.ok(plugins.nonogram.checkData({}));
+    assert.ok(plugins.nonogram.checkData({ width: 2, height: 2, colors: ['#fff', '#000'], solution: [[0, 0], [0, 0]] }));
+    assert.ok(plugins.nonogram.checkData({ width: 2, height: 2, colors: ['#fff', '#000'], solution: [[1, 5], [0, 0]] }));
+    assert.equal(plugins.nonogram.checkData({ width: 2, height: 1, colors: ['#fff', '#000'], solution: [[1, 0]] }), null);
+    assert.ok(plugins.linelog.checkData({ width: 2, height: 1, colors: ['#fff', '#000'], information: [[1]], solution: [[1, 0]] }));
+    assert.ok(plugins.logical.checkData({ attributes: [{ name: 'a', values: ['x', 'y'] }], clues: [], solution: [] }));
+  });
+
+  test('every plugin declares the shared interface', () => {
+    for (const type of puzzles.PUZZLE_TYPES) {
+      const plugin = plugins[type];
+      assert.equal(plugin.type, type);
+      assert.ok(Array.isArray(plugin.dataFields) && plugin.dataFields.includes('solution'), type);
+      for (const fn of ['checkData', 'computeClues', 'validate']) {
+        assert.equal(typeof plugin[fn], 'function', `${type}.${fn}`);
+      }
+    }
   });
 });

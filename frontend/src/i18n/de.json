@@ -19,6 +19,8 @@
     "PUZZLE_FETCH_FAILED": "Das Rätsel konnte nicht geladen werden.",
     "PUZZLE_CREATE_FAILED": "Fehler beim Erstellen des Rätsels.",
     "PUZZLE_UPDATE_FAILED": "Fehler beim Ändern des Rätsels.",
+    "PUZZLE_INVALID": "Das Rätsel ist unvollständig oder fehlerhaft.",
+    "PUZZLE_TYPE_INVALID": "Unbekannter Rätseltyp.",
     "SOLUTION_INCORRECT": "Die Lösung ist nicht korrekt.",
     "SOLUTION_SAVE_FAILED": "Die Lösung konnte nicht gespeichert werden.",
     "USER_NOT_FOUND": "Benutzer nicht gefunden.",

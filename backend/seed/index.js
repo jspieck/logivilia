@@ -14,19 +14,13 @@ if (isProduction && process.env.SEED_CONFIRM !== 'wipe-all-data') {
   process.exit(1);
 }
 
-const {
-  sequelize,
-  Logical,
-  Nonogram,
-  Linelog,
-  User,
-  LogicalRating,
-  NonogramRating,
-  LinelogRating,
-  Comment,
-  CommentUpvote
-} = require('../models');
+const db = require('../models');
+const { sequelize, User, Comment, CommentUpvote } = db;
+const puzzles = require('../puzzles');
+const { importLegacy } = require('../utils/legacyPuzzles');
 
+// The seed files keep the old per-type shape; importLegacy converts them the
+// same way scripts/migrateToPuzzles.js converts a live database.
 const logicals = require('./logicals.json');
 const nonograms = require('./nonograms.json');
 const linelogs = require('./linelogs.json');
@@ -37,36 +31,41 @@ const linelogRatings = require('./linelogRatings.json');
 const comments = require('./comments.json');
 const commentUpvotes = require('./commentsUpvotes.json');
 
+// Seed rows without an `id` got 1, 2, 3, ... in file order in the old tables.
+const withIds = rows => rows.map((row, i) => ({ ...row, id: row.id ?? i + 1 }));
+
 function seedPassword () {
   // Letters and digits only, so it satisfies the password rule.
   return process.env.SEED_PASSWORD || crypto.randomBytes(9).toString('base64url').replace(/[-_]/g, 'x') + '7a';
 }
 
 async function seed () {
+  await puzzles.ready;
   await sequelize.sync({ force: true });
 
+  // Created one by one so IDs follow file order (comments and solves refer to them).
   const credentials = [];
+  const createdUsers = [];
   for (const user of users) {
     const password = seedPassword();
-    await User.create({ ...user, password });
+    createdUsers.push({ ...user, id: (await User.create({ ...user, password })).id });
     credentials.push({ email: user.email, role: user.role, password });
   }
 
-  const tables = [
-    [Comment, comments],
-    [CommentUpvote, commentUpvotes],
-    [Logical, logicals],
-    [Nonogram, nonograms],
-    [Linelog, linelogs],
-    [LogicalRating, logicalRatings],
-    [NonogramRating, nonogramRatings],
-    [LinelogRating, linelogRatings]
-  ];
-  for (const [model, rows] of tables) {
-    await Promise.all(rows.map(row => model.create(row)));
+  const { idFor, report } = await importLegacy(db, {
+    puzzles: { nonogram: withIds(nonograms), linelog: withIds(linelogs), logical: withIds(logicals) },
+    ratings: { nonogram: nonogramRatings, linelog: linelogRatings, logical: logicalRatings },
+    users: createdUsers
+  });
+
+  for (const { riddleType, riddleId, ...comment } of comments) {
+    await Comment.create({ ...comment, PuzzleId: idFor(riddleType, riddleId) });
+  }
+  for (const upvote of commentUpvotes) {
+    await CommentUpvote.create(upvote);
   }
 
-  console.log('Seed complete.');
+  console.log('Seed complete:', JSON.stringify(report));
   if (!process.env.SEED_PASSWORD) {
     console.log('Seed user passwords (shown only now):');
     console.table(credentials);

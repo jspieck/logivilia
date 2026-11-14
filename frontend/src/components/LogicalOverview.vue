@@ -42,13 +42,13 @@
     aria-page-label="Seite"
     aria-current-label="Gegenwärtige Seite">
         <o-table-column field="id" label="Name" v-slot="props" sortable>
-          <router-link :to="`/logicalSolve/${ props.row.id }`" class="navLink">{{ props.row.name }}</router-link>
+          <router-link :to="`/puzzle/${ props.row.id }`" class="navLink">{{ props.row.name }}</router-link>
         </o-table-column>
         <o-table-column field="difficulty" label="Schwierigkeit" v-slot="props" sortable>
             {{ props.row.difficulty }}
         </o-table-column>
-        <o-table-column field="score" label="Bewertung" v-slot="props" sortable>
-            <StarRating :model-value="state.logicalRatings[props.row.id]" :max="state.rateMax" disabled />
+        <o-table-column field="avgRating" label="Bewertung" v-slot="props" sortable>
+            <StarRating :model-value="props.row.avgRating || 0" :max="5" disabled />
         </o-table-column>
         <o-table-column field="date" label="Erstelldatum" v-slot="props" sortable>
           <span class="tag is-success">
@@ -88,70 +88,40 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onActivated, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { storeToRefs } from 'pinia'
-import { useMainStore } from '@/store/store'
-import LogicalService from '@/services/LogicalService'
-import LogicalRatingService from '@/services/LogicalRatingService'
-import UserService from '@/services/UserService'
+import { usePuzzleList } from '@/puzzles/usePuzzleList'
 
 export default {
   name: 'LogicalOverview',
   setup() {
     const route = useRoute()
-    const store = useMainStore()
-    const { isUserLoggedIn, user } = storeToRefs(store)
+    const { puzzles: logicals, isSolved } = usePuzzleList('logical')
     const tableRef = ref(null)
 
     const state = ref({
       extractLength: 100,
       title: "Logikrätsel Auswahl",
       imgName: 'biene.jpg',
-      rateMax: 5,
       defaultSearch: "",
-      searchString: "",
-      logicals: [],
-      logicalRatings: {},
-      solved: []
+      searchString: ""
     })
 
     const logicalNames = computed(() => {
-      return state.value.logicals.map(logical => logical.name)
+      return logicals.value.map(logical => logical.name)
     })
 
     const filteredLogicals = computed(() => {
       if (!state.value.searchString) {
-        return state.value.logicals
+        return logicals.value
       }
-      return state.value.logicals.filter(logical => 
+      return logicals.value.filter(logical => 
         logical.name.toLowerCase().startsWith(state.value.searchString.toLowerCase())
       )
     })
 
-    const loadLogicalData = async () => {
-      state.value.logicals = (await LogicalService.index()).data
-      const ratings = (await LogicalRatingService.index()).data
-      console.log(ratings)
-      const ratingDict = {}
-      for (const rating of ratings) {
-        ratingDict[rating.LogicalId] = parseFloat(rating.avgRating)
-      }
-      state.value.logicalRatings = ratingDict
-      console.log(state.value.logicalRatings)
-
-      if (isUserLoggedIn.value) {
-        const userData = (await UserService.show(user.value.id)).data
-        state.value.solved = userData.solvedLogicals
-      }
-    }
-
     const getExtract = (text) => {
       return text.substr(0, state.value.extractLength) + "\u2026"
-    }
-
-    const isSolved = (id) => {
-      return state.value.solved.includes(id)
     }
 
     const toggle = (row) => {
@@ -186,21 +156,6 @@ export default {
       state.value.searchString = value
       state.value.defaultSearch = value
     }, { immediate: true })
-
-    watch(isUserLoggedIn, async (newValue) => {
-      if (newValue) {
-        const userData = (await UserService.show(user.value.id)).data
-        state.value.solved = userData.solvedLogicals
-      }
-    })
-
-    onMounted(async () => {
-      await loadLogicalData()
-    })
-
-    onActivated(async () => {
-      await loadLogicalData()
-    })
 
     return {
       tableRef,

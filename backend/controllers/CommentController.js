@@ -1,10 +1,9 @@
-const {Comment, CommentUpvote, User} = require('../models');
+const {Comment, CommentUpvote, User, Puzzle} = require('../models');
 const { sendError } = require('../utils/apiError');
 
 module.exports = {
   async index (req, res) {
     try {
-      const { riddleType, riddleId } = req.params
       const comments = await Comment.findAll({
         include: [{
           model: User,
@@ -14,11 +13,11 @@ module.exports = {
           attributes: ['id', 'UserId']
         }],
         where: {
-          riddleType: riddleType,
-          riddleId: riddleId
+          PuzzleId: parseInt(req.params.puzzleId, 10) || 0
         },
+        order: [['id', 'ASC']],
         attributes: [
-          'id', 'riddleType', 'riddleId', 'replyId', 'text', 'date',
+          'id', 'PuzzleId', 'replyId', 'text', 'date',
           'createdAt', 'updatedAt', 'UserId'
         ]
       })
@@ -37,8 +36,10 @@ module.exports = {
   async post (req, res) {
     try {
       const UserId = req.user.id;
-      const riddleType = req.params.riddleType;
-      const riddleId = parseInt(req.params.riddleId, 10);
+      const puzzle = await Puzzle.findByPk(parseInt(req.params.puzzleId, 10), { attributes: ['id'] });
+      if (!puzzle) {
+        return sendError(res, 404, 'PUZZLE_NOT_FOUND');
+      }
       const date = new Date().toISOString();
       const { text, replyId } = req.body;
       // text arrives URI-encoded from the frontend, hence the generous limit
@@ -49,8 +50,7 @@ module.exports = {
       const commentObj = {
         text,
         replyId: Number.isInteger(replyId) ? replyId : -1,
-        riddleType,
-        riddleId,
+        PuzzleId: puzzle.id,
         UserId,
         date
       };
