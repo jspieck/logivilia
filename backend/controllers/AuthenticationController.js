@@ -8,7 +8,15 @@ const { ownUser } = require('../utils/userView');
 const { sendError } = require('../utils/apiError');
 
 const ONE_WEEK = 60 * 60 * 24 * 7;
-const ONE_HOUR_MS = 60 * 60 * 1000;
+const ONE_HOUR_S = 60 * 60;
+
+// resetPasswordExpires is a 32-bit INTEGER column, so it holds Unix
+// *seconds*. Milliseconds (Date.now()) overflow it, and MySQL then rejects
+// the save, which silently broke "forgot password". Seconds fit until 2038;
+// switch the column to BIGINT/DATE when migrations are introduced (audit B4).
+function nowSeconds () {
+  return Math.floor(Date.now() / 1000);
+}
 
 // Only the user id goes into the token. Everything else is loaded from the
 // database by the passport strategy on each request.
@@ -127,7 +135,7 @@ module.exports = {
       if (user) {
         const token = crypto.randomBytes(32).toString('hex');
         user.resetPasswordToken = hashToken(token);
-        user.resetPasswordExpires = Date.now() + ONE_HOUR_MS;
+        user.resetPasswordExpires = nowSeconds() + ONE_HOUR_S;
         await user.save();
         sendForgotPasswordEmail(user.email, token);
       }
@@ -143,7 +151,7 @@ module.exports = {
         where: {
           resetPasswordToken: hashToken(String(req.params.token)),
           resetPasswordExpires: {
-            [Op.gte]: Date.now()
+            [Op.gte]: nowSeconds()
           }
         }
       });
