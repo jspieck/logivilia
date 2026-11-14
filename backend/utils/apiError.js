@@ -1,7 +1,9 @@
 // All API errors are sent as `{ code, params? }`. The frontend translates the
 // code (see shared/errorCodes.json and frontend/src/i18n), so the backend
 // carries no user-facing text.
-const ErrorCodes = require('@logivilia/shared/errorCodes.json');
+// Relative path on purpose: some hosts (e.g. Plesk's "NPM install") don't
+// create the workspace link node_modules/@logivilia/shared.
+const ErrorCodes = require('../../shared/errorCodes.json');
 
 /**
  * @param {import('express').Response} res
