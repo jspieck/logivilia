@@ -213,10 +213,17 @@ const validateSolution = () => {
   }
 }
 
+// The player's table in the same shape as logical.solution, so the server
+// can verify it: the first column is the fixed row label, the rest are inputs.
+const submittedTable = () =>
+  props.logical.solution.map((row, i) =>
+    row.map((cell, j) => (j === 0 ? cell : attrInputs.value[`${i}_${j - 1}`]))
+  )
+
 // Add solution checking logic
 const checkSolution = () => {
   const isCorrect = validateSolution()
-  emit('solution-check', isCorrect)
+  emit('solution-check', isCorrect, isCorrect ? submittedTable() : null)
 }
 
 const toXY = (i, j, k) => {

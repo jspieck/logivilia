@@ -1,129 +1,85 @@
-const {User} = require('../models');
-// const {sequelize} = require('../models');
+const {User, Logical, Nonogram, Linelog} = require('../models');
+const { publicUser } = require('../utils/userView');
+const { verifyNonogram, verifyLinelog, verifyLogical } = require('../utils/verifySolution');
+const { sendError } = require('../utils/apiError');
+
+// Builds a handler that marks a puzzle as solved for the logged-in user,
+// after checking the submitted state on the server.
+function solvedHandler ({ model, idParam, listField, verify, bodyField }) {
+  return async function (req, res) {
+    try {
+      // Users can only record solves for themselves.
+      if (String(req.params.userId) !== String(req.user.id)) {
+        return sendError(res, 403, 'FORBIDDEN');
+      }
+      const puzzleId = parseInt(req.params[idParam], 10);
+      const puzzle = await model.findByPk(puzzleId);
+      if (!puzzle) {
+        return sendError(res, 404, 'PUZZLE_NOT_FOUND');
+      }
+      if (!verify(puzzle, req.body && req.body[bodyField])) {
+        return sendError(res, 400, 'SOLUTION_INCORRECT');
+      }
+      const user = req.user;
+      const solvedList = Array.isArray(user[listField]) ? user[listField] : [];
+      if (!solvedList.includes(puzzleId)) {
+        user[listField] = [...solvedList, puzzleId];
+        await user.save();
+      }
+      res.send({ success: true });
+    } catch (err) {
+      console.error(err);
+      sendError(res, 500, 'SOLUTION_SAVE_FAILED');
+    }
+  };
+}
 
 module.exports = {
   async show (req, res) {
     try {
-      const userId = req.params.userId;
-      const user = await User.findOne({
-        where: {
-          id: userId
-        }
-      });
-      // only show non confident information
-      const saveUser = {
-        "username": user.username,
-        "role": user.role,
-        "gender": user.gender,
-        "bio": user.bio,
-        "birthyear": user.birthyear,
-        "city": user.city,
-        "solvedLogicals": user.solvedLogicals,
-        "solvedNonograms": user.solvedNonograms,
-        "solvedLinelogs": user.solvedLinelogs,
-        "createdLogicals": user.createdLogicals,
-        "createdNonograms": user.createdNonograms,
-        "createdLinelogs": user.createdLinelogs,
-        "joined": user.joined,
-      };
-      res.send(saveUser);
+      const user = await User.findByPk(req.params.userId);
+      if (!user) {
+        return sendError(res, 404, 'USER_NOT_FOUND');
+      }
+      res.send(publicUser(user));
     } catch (err) {
-      console.log(err);
-      res.status(500).send({
-        error: 'Benutzer nicht existent.'
-      });
+      console.error(err);
+      sendError(res, 500, 'USER_NOT_FOUND');
     }
   },
-  async update(req, res) {
+  async update (req, res) {
     try {
-      const userId = req.user.id;
-      const user = await User.findOne({
-        where: {
-          id: userId
-        }
-      });
+      const user = req.user;
       user.gender = req.body.gender;
       user.city = req.body.city;
       user.birthyear = req.body.birthyear;
       user.bio = req.body.bio;
       await user.save();
-      res.send({"success": "true"});
+      res.send({ success: true });
     } catch (err) {
-      console.log(err);
-      res.status(500).send({
-        error: 'Benutzer nicht existent.'
-      });
+      console.error(err);
+      sendError(res, 500, 'USER_NOT_FOUND');
     }
   },
-  async linelogSolved(req, res) {
-    try {
-      const userId = req.params.userId;
-      const linelogId = parseInt(req.params.linelogId, 10);
-      const user = await User.findOne({
-        where: {
-          id: userId
-        }
-      });
-      if (!user.solvedLinelogs.includes(linelogId)) {
-        const solvedLinelogs = [...user.solvedLinelogs]
-        solvedLinelogs.push(linelogId);
-        user.solvedLinelogs = solvedLinelogs;
-        await user.save();
-      }
-      res.send({"success": "true"});
-    } catch (err) {
-      console.log(err);
-      res.status(500).send({
-        error: 'Benutzer nicht existent.'
-      });
-    }
-  },
-  async nonogramSolved(req, res) {
-    try {
-      const userId = req.params.userId;
-      const nonogramId = parseInt(req.params.nonogramId, 10);
-      const user = await User.findOne({
-        where: {
-          id: userId
-        }
-      });
-      console.log(user.solvedNonograms, nonogramId);
-      if (!user.solvedNonograms.includes(nonogramId)) {
-        const solvedNonograms = [...user.solvedNonograms]
-        solvedNonograms.push(nonogramId);
-        user.solvedNonograms = solvedNonograms;
-        await user.save();
-      }
-      res.send({"success": "true"});
-    } catch (err) {
-      console.log(err);
-      res.status(500).send({
-        error: 'Benutzer nicht existent.'
-      });
-    }
-  },
-  async logicalSolved(req, res) {
-    try {
-      const userId = req.params.userId;
-      const logicalId = parseInt(req.params.logicalId, 10);
-      const user = await User.findOne({
-        where: {
-          id: userId
-        }
-      });
-      console.log(user.solvedLogicals, logicalId);
-      if (!user.solvedLogicals.includes(logicalId)) {
-        const solvedLogicals = [...user.solvedLogicals]
-        solvedLogicals.push(logicalId);
-        user.solvedLogicals = solvedLogicals;
-        await user.save();
-      }
-      res.send({"success": "true"});
-    } catch (err) {
-      console.log(err);
-      res.status(500).send({
-        error: 'Benutzer nicht existent.'
-      });
-    }
-  }
-}
+  linelogSolved: solvedHandler({
+    model: Linelog,
+    idParam: 'linelogId',
+    listField: 'solvedLinelogs',
+    verify: verifyLinelog,
+    bodyField: 'grid'
+  }),
+  nonogramSolved: solvedHandler({
+    model: Nonogram,
+    idParam: 'nonogramId',
+    listField: 'solvedNonograms',
+    verify: verifyNonogram,
+    bodyField: 'grid'
+  }),
+  logicalSolved: solvedHandler({
+    model: Logical,
+    idParam: 'logicalId',
+    listField: 'solvedLogicals',
+    verify: verifyLogical,
+    bodyField: 'solution'
+  })
+};

@@ -152,7 +152,7 @@
       </div>
       <div v-else class="rating-section">
         <h3>Bewertung</h3>
-        <b-rate v-model="rating" :max="rateMax" />
+        <StarRating v-model="rating" :max="rateMax" />
       </div>
 
       <!-- Success Message -->
@@ -539,6 +539,22 @@ export default {
       }
     };
 
+    // Converts the UI grid back to the stored encoding (0 = empty,
+    // k = colour k) so the server can verify the solution.
+    const submittedGrid = () => {
+      const grid = [];
+      for (let y = 0; y < height.value; y++) {
+        const row = [];
+        for (let x = 0; x < width.value; x++) {
+          const value = gridState.value[y * width.value + x];
+          // background and the "marked empty" dot both count as empty
+          row.push(value >= backgroundNumber.value ? 0 : value + 1);
+        }
+        grid.push(row);
+      }
+      return grid;
+    };
+
     const saveSolvedState = async () => {
       try {
         if (!store.isUserLoggedIn) {
@@ -555,7 +571,7 @@ export default {
         const nonogramId = parseInt(route.params.id, 10)
         console.log('Saving solved state for user:', userId, 'nonogram:', nonogramId)
         
-        await UserService.nonogramSolved(userId, nonogramId)
+        await UserService.nonogramSolved(userId, nonogramId, submittedGrid())
         
         alreadySolved.value = true
         oruga.notification.open({

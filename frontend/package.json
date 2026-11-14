@@ -1,37 +1,36 @@
 {
-  "name": "logiviliafrontend",
+  "name": "@logivilia/frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview",
+    "preview": "vite preview",
     "start": "vite preview",
-    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
-    "preview": "vite preview --port $PORT"
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore src",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@logivilia/shared": "*",
     "@oruga-ui/oruga-next": "^0.9.3",
     "@oruga-ui/theme-oruga": "^0.5.1",
     "@trevoreyre/autocomplete-vue": "^3.0.0",
+    "@vitejs/plugin-vue": "^5.2.0",
     "axios": "^1.6.2",
-    "buefy": "npm:@ntohq/buefy-next",
+    "bulma": "^0.9.4",
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^3.1.0",
     "sass": "^1.75.0",
+    "vite": "^6.0.6",
     "vue": "^3.3.8",
-    "vue-cookies": "^1.8.3",
-    "vue-number-picker": "0.0.1",
+    "vue-i18n": "^10.0.5",
     "vue-router": "^4.3.0",
-    "vuedraggable": "^4.1.0",
-    "@vitejs/plugin-vue": "^5.2.0",
-    "vite": "^6.0.6"
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
-    "@vue/compiler-sfc": "^3.3.8",
-    "autoprefixer": "^10.4.20",
     "eslint": "^8.55.0",
-    "eslint-plugin-vue": "^9.17.0"
+    "eslint-plugin-vue": "^9.17.0",
+    "typescript": "^5.6.3"
   },
   "eslintConfig": {
     "root": true,
@@ -47,8 +46,8 @@
       "vue/multi-word-component-names": "off"
     },
     "parserOptions": {
-      "parser": "@babel/eslint-parser",
-      "requireConfigFile": false
+      "ecmaVersion": "latest",
+      "sourceType": "module"
     }
   },
   "browserslist": [

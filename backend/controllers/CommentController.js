@@ -1,5 +1,5 @@
-const {sequelize, Comment, CommentUpvote, User} = require('../models');
-// const {sequelize} = require('../models');
+const {Comment, CommentUpvote, User} = require('../models');
+const { sendError } = require('../utils/apiError');
 
 module.exports = {
   async index (req, res) {
@@ -18,24 +18,20 @@ module.exports = {
           riddleId: riddleId
         },
         attributes: [
-          'id', 'riddleType', 'riddleId', 'replyId', 'text', 'date', 
-          'createdAt', 'updatedAt', 'UserId',
-          [sequelize.fn('COUNT', sequelize.col('CommentUpvotes.id')), 'upvotes']
-        ],
-        group: [
-          'Comment.id', 'Comment.riddleType', 'Comment.riddleId', 
-          'Comment.replyId', 'Comment.text', 'Comment.date', 
-          'Comment.createdAt', 'Comment.updatedAt', 'Comment.UserId',
-          'User.id', 'User.username', 'User.role', 'User.userImageId',
-          'CommentUpvotes.id', 'CommentUpvotes.UserId'
+          'id', 'riddleType', 'riddleId', 'replyId', 'text', 'date',
+          'createdAt', 'updatedAt', 'UserId'
         ]
       })
-      res.send(comments)
+      // Count upvotes in JS: grouping by the upvote id (as before) produced
+      // one row per upvote and a count of at most 1.
+      res.send(comments.map(comment => {
+        const json = comment.toJSON()
+        json.upvotes = json.CommentUpvotes ? json.CommentUpvotes.length : 0
+        return json
+      }))
     } catch (err) {
       console.error(err)
-      res.status(500).send({
-        error: 'An error occurred trying to fetch comments'
-      })
+      sendError(res, 500, 'COMMENT_LIST_FAILED')
     }
   },
   async post (req, res) {
@@ -44,14 +40,25 @@ module.exports = {
       const riddleType = req.params.riddleType;
       const riddleId = parseInt(req.params.riddleId, 10);
       const date = new Date().toISOString();
-      const commentObj = {...req.body, riddleType, riddleId, UserId, date};
+      const { text, replyId } = req.body;
+      // text arrives URI-encoded from the frontend, hence the generous limit
+      if (typeof text !== 'string' || text.trim() === '' || text.length > 20000) {
+        return sendError(res, 400, 'COMMENT_INVALID');
+      }
+      // -1 marks a top-level comment
+      const commentObj = {
+        text,
+        replyId: Number.isInteger(replyId) ? replyId : -1,
+        riddleType,
+        riddleId,
+        UserId,
+        date
+      };
       const comment = await Comment.create(commentObj);
       res.send(comment);
     } catch (err) {
       console.log(err);
-      res.status(500).send({
-        error: 'Kommentar konnte nicht abgegeben werden.'
-      });
+      sendError(res, 500, 'COMMENT_CREATE_FAILED');
     }
   },
   async delete (req, res) {
@@ -65,17 +72,13 @@ module.exports = {
         }
       });
       if (!comment) {
-        return res.status(403).send({
-          error: 'Du hast keinen Zugang zu diesem Kommentar'
-        })
+        return sendError(res, 403, 'FORBIDDEN')
       }
       await comment.destroy();
       res.send(comment);
     } catch (err) {
       console.log(err);
-      res.status(500).send({
-        error: 'Kommentar konnte nicht gelöscht werden.'
-      });
+      sendError(res, 500, 'COMMENT_DELETE_FAILED');
     }
   },
 }

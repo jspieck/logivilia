@@ -1,6 +1,22 @@
 const path = require('path');
+const crypto = require('crypto');
 
 require('dotenv').config();
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+function resolveJwtSecret () {
+  const secret = process.env.JWT_SECRET;
+  if (secret && secret.length >= 32) {
+    return secret;
+  }
+  if (isProduction) {
+    throw new Error('JWT_SECRET must be set (at least 32 characters) in production.');
+  }
+  console.warn('[config] JWT_SECRET missing or too short - using a random secret for this process. ' +
+    'Logins will not survive a restart. Set JWT_SECRET in .env.');
+  return crypto.randomBytes(48).toString('hex');
+}
 
 module.exports = {
   port: process.env.PORT || 8081,
@@ -15,7 +31,16 @@ module.exports = {
     }
   },
   authentication: {
-    jwtSecret: process.env.JWT_SECRET || 'secret'
+    jwtSecret: resolveJwtSecret()
+  },
+  mail: {
+    host: process.env.SMTP_HOST || 'mail.logivilia.com',
+    port: parseInt(process.env.SMTP_PORT || '465', 10),
+    secure: (process.env.SMTP_SECURE || 'true') === 'true',
+    user: process.env.SMTP_USER || 'passwortreset@logivilia.com',
+    password: process.env.SMTP_PASSWORD,
+    from: process.env.SMTP_FROM || 'passwortreset@logivilia.com',
+    appUrl: process.env.APP_URL || 'https://logivilia.com'
   },
   development: {
     username: process.env.DB_USER || 'root',

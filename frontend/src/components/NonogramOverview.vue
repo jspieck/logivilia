@@ -1,58 +1,49 @@
 <template>
   <div class="overviewPage">
     <h2 class="tableTitle">{{title}}</h2>
-    <b-table
+    <o-table
       :data="nonograms"
       ref="table"
       paginated
-      per-page="10"
+      :per-page="10"
       aria-next-label="Nächste Seite"
       aria-previous-label="Vorherige Seite"
       aria-page-label="Seite"
       aria-current-label="Gegenwärtige Seite">
-        <b-table-column field="name" label="Name" v-slot="props" sortable>
+        <o-table-column field="name" label="Name" v-slot="props" sortable>
           <router-link :to="`/nonogramSolve/${ props.row.id }`" class="navLink">
             {{ props.row.name }}
           </router-link>
-        </b-table-column>
-        <b-table-column field="difficulty" label="Schwierigkeit" v-slot="props" sortable>
+        </o-table-column>
+        <o-table-column field="difficulty" label="Schwierigkeit" v-slot="props" sortable>
           {{ props.row.difficulty }}
-        </b-table-column>
-        <b-table-column field="width" label="Breite" v-slot="props" sortable>
+        </o-table-column>
+        <o-table-column field="width" label="Breite" v-slot="props" sortable>
           {{ props.row.width }}
-        </b-table-column>
-        <b-table-column field="height" label="Höhe" v-slot="props" sortable>
+        </o-table-column>
+        <o-table-column field="height" label="Höhe" v-slot="props" sortable>
           {{ props.row.height }}
-        </b-table-column>
-        <b-table-column field="numColor" label="Farben" v-slot="props" sortable>
+        </o-table-column>
+        <o-table-column field="numColor" label="Farben" v-slot="props" sortable>
           {{ props.row.numColor }}
-        </b-table-column>
-        <b-table-column field="score" label="Bewertung" v-slot="props" sortable>
-          <b-rate
-            v-model="nonogramRatings[props.row.id]"
-            icon-pack="mdi"
-            icon="star"
-            :max="rateMax"
-            :show-text="false"
-            :rtl="false"
-            :spaced="false"
-            :disabled="true">
-          </b-rate>
-        </b-table-column>
-        <b-table-column field="date" label="Date" v-slot="props" sortable>
+        </o-table-column>
+        <o-table-column field="score" label="Bewertung" v-slot="props" sortable>
+          <StarRating :model-value="nonogramRatings[props.row.id]" :max="rateMax" disabled />
+        </o-table-column>
+        <o-table-column field="date" label="Date" v-slot="props" sortable>
           <span class="tag is-success">
             {{ new Date(props.row.date).toLocaleDateString() }}
           </span>
-        </b-table-column>
-        <b-table-column field="date" label="Gelöst" v-slot="props" sortable>
+        </o-table-column>
+        <o-table-column field="date" label="Gelöst" v-slot="props" sortable>
           <span v-if="isSolved(props.row.id)" class="tag is-success">
             Gelöst
           </span>
           <span v-else class="tag is-danger">
             Ungelöst
           </span>
-        </b-table-column>
-    </b-table>
+        </o-table-column>
+    </o-table>
   </div>
 </template>
 

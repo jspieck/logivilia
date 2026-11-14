@@ -32,46 +32,37 @@
     </template>
   </Autocomplete>
 
-  <b-table
+  <o-table
     :data="filteredLogicals"
     ref="tableRef"
     paginated
-    per-page="10"
+    :per-page="10"
     aria-next-label="Nächste Seite"
     aria-previous-label="Vorherige Seite"
     aria-page-label="Seite"
     aria-current-label="Gegenwärtige Seite">
-        <b-table-column field="id" label="Name" v-slot="props" sortable>
+        <o-table-column field="id" label="Name" v-slot="props" sortable>
           <router-link :to="`/logicalSolve/${ props.row.id }`" class="navLink">{{ props.row.name }}</router-link>
-        </b-table-column>
-        <b-table-column field="difficulty" label="Schwierigkeit" v-slot="props" sortable>
+        </o-table-column>
+        <o-table-column field="difficulty" label="Schwierigkeit" v-slot="props" sortable>
             {{ props.row.difficulty }}
-        </b-table-column>
-        <b-table-column field="score" label="Bewertung" v-slot="props" sortable>
-            <b-rate
-              v-model="state.logicalRatings[props.row.id]"
-              icon-pack="mdi"
-              icon="star"
-              :max="state.rateMax"
-              :show-text="false"
-              :rtl="false"
-              :spaced="false"
-              :disabled="true">
-            </b-rate>
-        </b-table-column>
-        <b-table-column field="date" label="Erstelldatum" v-slot="props" sortable>
+        </o-table-column>
+        <o-table-column field="score" label="Bewertung" v-slot="props" sortable>
+            <StarRating :model-value="state.logicalRatings[props.row.id]" :max="state.rateMax" disabled />
+        </o-table-column>
+        <o-table-column field="date" label="Erstelldatum" v-slot="props" sortable>
           <span class="tag is-success">
               {{ new Date(props.row.date).toLocaleDateString() }}
           </span>
-        </b-table-column>
-        <b-table-column field="date" label="Gelöst" v-slot="props" sortable>
+        </o-table-column>
+        <o-table-column field="date" label="Gelöst" v-slot="props" sortable>
           <span v-if="isSolved(props.row.id)" class="tag is-success">
             Gelöst
           </span>
           <span v-if="!isSolved(props.row.id)" class="tag is-danger">
             Ungelöst
           </span>
-        </b-table-column>
+        </o-table-column>
 
       <!--<template #detail="props">
         <article class="media">
@@ -92,7 +83,7 @@
           </div>
         </article>
       </template> -->
-  </b-table>
+  </o-table>
 </div>
 </template>
 

@@ -7,14 +7,17 @@ export default {
   update (userId, updatedProfile) {
     return Api().patch(`users/${userId}`, updatedProfile);
   },
-  linelogSolved (userId, linelogId) {
-    return Api().patch(`users/${userId}/linelog/${linelogId}`);
+  // grid: 2D array in the stored encoding (0 = empty, k = colour k)
+  linelogSolved (userId, linelogId, grid) {
+    return Api().patch(`users/${userId}/linelog/${linelogId}`, { grid });
   },
-  nonogramSolved (userId, nonogramId) {
-    return Api().patch(`users/${userId}/nonogram/${nonogramId}`);
+  // grid: 2D array in the stored encoding (0 = empty, k = colour k)
+  nonogramSolved (userId, nonogramId, grid) {
+    return Api().patch(`users/${userId}/nonogram/${nonogramId}`, { grid });
   },
-  logicalSolved (userId, logicalId) {
-    return Api().patch(`users/${userId}/logical/${logicalId}`);
+  // solution: table with the same shape as the logical's solution
+  logicalSolved (userId, logicalId, solution) {
+    return Api().patch(`users/${userId}/logical/${logicalId}`, { solution });
   },
   getRankings () {
     return Api().get('rankings');

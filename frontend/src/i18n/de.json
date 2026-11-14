@@ -1,0 +1,49 @@
+{
+  "errors": {
+    "INTERNAL_ERROR": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.",
+    "FORBIDDEN": "Sie haben keinen Zugang zu dieser Ressource.",
+    "RATE_LIMITED": "Zu viele Anfragen. Bitte versuchen Sie es später erneut.",
+    "AUTH_INVALID_CREDENTIALS": "Fehlerhafte Login-Informationen.",
+    "AUTH_LOGIN_FAILED": "Beim Login ist ein Fehler aufgetreten.",
+    "AUTH_ACCOUNT_EXISTS": "Die E-Mail oder der Benutzername wird schon benutzt.",
+    "AUTH_RESET_EXPIRED": "Der Link zum Zurücksetzen des Passworts ist abgelaufen.",
+    "AUTH_RESET_FAILED": "Problem beim Zurücksetzen des Passworts.",
+    "VALIDATION_INVALID": "Die Angaben sind nicht gültig.",
+    "VALIDATION_USERNAME": "Der Benutzername muss zwischen 3 und 30 Zeichen lang sein und darf nur Buchstaben und Zahlen enthalten.",
+    "VALIDATION_EMAIL": "Die E-Mail-Adresse ist nicht gültig.",
+    "VALIDATION_PASSWORD": "Das Passwort muss 8 bis 32 Zeichen lang sein und mindestens einen Buchstaben und eine Zahl enthalten. Sonderzeichen sind erlaubt.",
+    "VALIDATION_GENDER": "Das Geschlecht ist ungültig.",
+    "VALIDATION_CITY": "Die Stadt ist ungültig.",
+    "PUZZLE_NOT_FOUND": "Rätsel nicht gefunden.",
+    "PUZZLE_LIST_FAILED": "Die Rätsel konnten nicht geladen werden.",
+    "PUZZLE_FETCH_FAILED": "Das Rätsel konnte nicht geladen werden.",
+    "PUZZLE_CREATE_FAILED": "Fehler beim Erstellen des Rätsels.",
+    "PUZZLE_UPDATE_FAILED": "Fehler beim Ändern des Rätsels.",
+    "SOLUTION_INCORRECT": "Die Lösung ist nicht korrekt.",
+    "SOLUTION_SAVE_FAILED": "Die Lösung konnte nicht gespeichert werden.",
+    "USER_NOT_FOUND": "Benutzer nicht gefunden.",
+    "RANKING_FETCH_FAILED": "Die Bestenliste konnte nicht geladen werden.",
+    "RATING_INVALID": "Die Bewertung muss zwischen 1 und 5 liegen.",
+    "RATING_LIST_FAILED": "Die Bewertungen konnten nicht geladen werden.",
+    "RATING_FETCH_FAILED": "Die Bewertung konnte nicht geladen werden.",
+    "RATING_SAVE_FAILED": "Die Bewertung konnte nicht abgegeben werden.",
+    "RATING_DELETE_FAILED": "Die Bewertung konnte nicht gelöscht werden.",
+    "COMMENT_INVALID": "Der Kommentar ist leer oder zu lang.",
+    "COMMENT_LIST_FAILED": "Die Kommentare konnten nicht geladen werden.",
+    "COMMENT_CREATE_FAILED": "Der Kommentar konnte nicht abgegeben werden.",
+    "COMMENT_DELETE_FAILED": "Der Kommentar konnte nicht gelöscht werden.",
+    "UPVOTE_LIST_FAILED": "Die Upvotes konnten nicht geladen werden.",
+    "UPVOTE_CREATE_FAILED": "Der Upvote konnte nicht abgegeben werden.",
+    "UPVOTE_DELETE_FAILED": "Der Upvote konnte nicht gelöscht werden."
+  },
+  "clientErrors": {
+    "NETWORK": "Der Server ist nicht erreichbar. Bitte prüfen Sie Ihre Internetverbindung.",
+    "UNKNOWN": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.",
+    "PASSWORD_MISMATCH": "Die eingegebenen Passwörter stimmen nicht überein.",
+    "FORM_INVALID": "Bitte korrigieren Sie die markierten Felder."
+  },
+  "messages": {
+    "FORGOT_EMAIL_SENT": "Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine E-Mail versendet.",
+    "PASSWORD_CHANGED": "Das Passwort wurde erfolgreich geändert und eine Bestätigungs-E-Mail versendet."
+  }
+}

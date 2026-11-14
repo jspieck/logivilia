@@ -14,15 +14,15 @@
           zusenden können, welche einen Link zum Zurücksetzen Ihres Passworts enthält.
         </p>
 
-        <b-field label="E-Mail">
-          <b-input
+        <o-field label="E-Mail">
+          <o-input
             class="email-input"
             v-model="forgottenEmail"
             type="email"
             placeholder="ihre@email.de"
             :class="{ 'has-error': error }"
           />
-        </b-field>
+        </o-field>
 
         <div class="action-buttons">
           <button class="submit-button" @click="forgot" :disabled="!forgottenEmail">
@@ -33,7 +33,7 @@
 
         <div v-if="error" class="error-message">
           <ion-icon name="alert-circle-outline"></ion-icon>
-          <span v-html="error"></span>
+          <span>{{ error }}</span>
         </div>
 
         <p class="register-link">
@@ -207,6 +207,7 @@
 import { ref } from 'vue'
 import AuthenticationService from '@/services/AuthenticationService'
 import { useOruga } from '@oruga-ui/oruga-next'
+import { apiErrorMessage } from '@/i18n'
 
 export default {
   name: 'Forgot',
@@ -222,7 +223,7 @@ export default {
         
         oruga.notification.open({
           duration: 3000,
-          message: `Eine Email wurde erfolgreich an ${forgottenEmail.value} versendet`,
+          message: `Falls ein Konto mit ${forgottenEmail.value} existiert, wurde eine E-Mail versendet`,
           position: 'top-right',
           variant: 'success',
           closable: true
@@ -230,7 +231,7 @@ export default {
         
         console.log(response.data)
       } catch (err) {
-        error.value = err.response.data.error
+        error.value = apiErrorMessage(err)
       }
     }
 

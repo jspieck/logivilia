@@ -23,7 +23,7 @@
     </div>
     <div v-else class="rating-section">
       <h3>Bewertung</h3>
-      <b-rate v-model="rating" :max="rateMax" />
+      <StarRating v-model="rating" :max="rateMax" />
     </div>
 
     <!-- Add solved status message -->
@@ -135,7 +135,7 @@ const checkIfAlreadySolved = async () => {
   }
 };
 
-const handleSolutionCheck = async (isCorrect) => {
+const handleSolutionCheck = async (isCorrect, submittedTable) => {
   try {
     if (isCorrect) {
       solved.value = true;
@@ -143,7 +143,7 @@ const handleSolutionCheck = async (isCorrect) => {
       
       // Only save if user is logged in and puzzle wasn't already solved
       if (store.isUserLoggedIn && !alreadySolved.value) {
-        await saveSolvedState();
+        await saveSolvedState(submittedTable);
       }
     } else {
       solved.value = false;
@@ -159,13 +159,13 @@ const handleSolutionCheck = async (isCorrect) => {
   }
 };
 
-const saveSolvedState = async () => {
+const saveSolvedState = async (submittedTable) => {
   try {
     if (!store.isUserLoggedIn || alreadySolved.value) return;
 
     const userId = store.user.id;
     const logicalId = parseInt(route.params.id, 10);
-    await UserService.logicalSolved(userId, logicalId);
+    await UserService.logicalSolved(userId, logicalId, submittedTable);
     
     alreadySolved.value = true;
     oruga.notification.open({

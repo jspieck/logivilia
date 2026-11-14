@@ -1,4 +1,5 @@
 const {CommentUpvote} = require('../models');
+const { sendError } = require('../utils/apiError');
 
 module.exports = {
   async show (req, res) {
@@ -12,9 +13,7 @@ module.exports = {
       res.send(commentUpvotes);
     } catch (err) {
       console.log(err);
-      res.status(500).send({
-        error: 'Upvotes konnten nicht geladen werden.'
-      });
+      sendError(res, 500, 'UPVOTE_LIST_FAILED');
     }
   },
   async post (req, res) {
@@ -27,9 +26,7 @@ module.exports = {
       res.send(upvote);
     } catch (err) {
       console.log(err);
-      res.status(500).send({
-        error: 'Upvote konnte nicht abgegeben werden.'
-      });
+      sendError(res, 500, 'UPVOTE_CREATE_FAILED');
     }
   },
   async delete (req, res) {
@@ -41,17 +38,13 @@ module.exports = {
         }
       });
       if (!upvote) {
-        return res.status(403).send({
-          error: 'Du hast keinen Zugang zu diesem Upvote'
-        })
+        return sendError(res, 403, 'FORBIDDEN')
       }
       await upvote.destroy();
       res.send(upvote);
     } catch (err) {
       console.log(err);
-      res.status(500).send({
-        error: 'Upvote konnte nicht gelöscht werden.'
-      });
+      sendError(res, 500, 'UPVOTE_DELETE_FAILED');
     }
   },
 };

@@ -10,12 +10,23 @@ require('./backend/passport');
 
 require('dotenv').config();
 
+// Behind a hosting proxy (e.g. Railway) req.ip must come from X-Forwarded-For,
+// otherwise the rate limiter sees every client as the same IP.
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
 // Middleware setup
 app.use(morgan('combined'));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '1mb' }));
+
+// The frontend is served from this same server, so cross-origin access is
+// only needed for origins listed explicitly in ALLOWED_ORIGINS.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 app.use(cors({
-  origin: true, // Allow all origins since we're serving frontend from same server
-  credentials: true,
+  origin: allowedOrigins.length ? allowedOrigins : false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));

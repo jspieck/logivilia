@@ -1,5 +1,6 @@
 const {LinelogRating} = require('../models');
 const {sequelize} = require('../models');
+const { sendError } = require('../utils/apiError');
 
 module.exports = {
   async index (req, res) {
@@ -14,9 +15,7 @@ module.exports = {
       res.send(ratings);
     } catch (err) {
       console.log(err);
-      res.status(500).send({
-        error: 'Bwertungen konnten nicht geladen werden.'
-      });
+      sendError(res, 500, 'RATING_LIST_FAILED');
     }
   },
   async show (req, res) {
@@ -32,9 +31,7 @@ module.exports = {
       res.send(rating);
     } catch (err) {
       console.log(err);
-      res.status(500).send({
-        error: 'Bewertung konnte nicht geladen werden.'
-      });
+      sendError(res, 500, 'RATING_FETCH_FAILED');
     }
   },
   async post (req, res) {
@@ -42,6 +39,9 @@ module.exports = {
       // check if rating is already existing
       const { LinelogId, rating } = req.body;
       const UserId = req.user.id;
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return sendError(res, 400, 'RATING_INVALID');
+      }
       const ratingEntry = await LinelogRating.findOne({
         where: {
           UserId: UserId,
@@ -63,9 +63,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      res.status(500).send({
-        error: 'Bewertung konnte nicht abgegeben werden.'
-      });
+      sendError(res, 500, 'RATING_SAVE_FAILED');
     }
   },
   async delete (req, res) {
@@ -79,17 +77,13 @@ module.exports = {
         }
       });
       if (!linelogRating) {
-        return res.status(403).send({
-          error: 'Du hast keinen Zugang zu dieser Bewertung'
-        })
+        return sendError(res, 403, 'FORBIDDEN')
       }
       await linelogRating.destroy();
       res.send(linelogRating);
     } catch (err) {
       console.log(err);
-      res.status(500).send({
-        error: 'Bewertung konnte nicht gelöscht werden.'
-      });
+      sendError(res, 500, 'RATING_DELETE_FAILED');
     }
   },
 }

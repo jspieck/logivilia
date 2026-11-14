@@ -1,30 +1,30 @@
 <template>
   <div>
     <h2>Anmeldung</h2>
-    <b-field label="Email">
-      <b-input
+    <o-field label="Email">
+      <o-input
         type="email"
         v-model="email"
         required>
-      </b-input>
-    </b-field>
+      </o-input>
+    </o-field>
 
-    <b-field label="Passwort">
-      <b-input
+    <o-field label="Passwort">
+      <o-input
         type="password"
         v-model="password"
         required>
-      </b-input>
-    </b-field>
+      </o-input>
+    </o-field>
 
-    <b-button
+    <o-button
       @click="login"
-      type="is-primary"
-      :loading="isLoading">
+      variant="primary"
+      :disabled="isLoading">
       Anmelden
-    </b-button>
+    </o-button>
 
-    <div v-if="error" class="error-message" v-html="error"/>
+    <div v-if="error" class="error-message">{{ error }}</div>
   </div>
 </template>
 
@@ -33,6 +33,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMainStore } from '@/store/store'
 import AuthenticationService from '@/services/AuthenticationService'
+import { apiErrorMessage } from '@/i18n'
 
 export default {
   name: 'LoginComponent',
@@ -59,7 +60,7 @@ export default {
         
         router.push('/')
       } catch (err) {
-        error.value = err.response.data.error
+        error.value = apiErrorMessage(err)
       } finally {
         isLoading.value = false
       }

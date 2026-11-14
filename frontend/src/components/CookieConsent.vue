@@ -1,7 +1,7 @@
 <template>
   <div v-if="!accepted" class="cookie-consent">
     <span>{{ consentText }}</span>
-    <b-button @click="accept">{{ buttonText }}</b-button>
+    <o-button @click="accept">{{ buttonText }}</o-button>
   </div>
 </template>
 

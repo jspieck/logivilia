@@ -7,7 +7,7 @@ export default {
   post (riddleType, riddleId, commentContent) {
     return Api().post(`comments/${riddleType}/${riddleId}`, commentContent);
   },
-  delete (params) {
-    return Api().delete('comments', params);
+  delete (commentId) {
+    return Api().delete(`comments/${commentId}`);
   }
 };

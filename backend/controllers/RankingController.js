@@ -1,20 +1,19 @@
 const {User} = require('../models')
+const { sendError } = require('../utils/apiError');
 
 module.exports = {
   async index (req, res) {
     try {
       const users = await User.findAll({
-        attributes: ['id', 'username', 'solvedLogicals', 'solvedNonograms', 'solvedLinelogs'],
-        raw: true
+        attributes: ['id', 'username', 'solvedLogicals', 'solvedNonograms', 'solvedLinelogs']
       })
 
-      console.log(users[0].solvedLogicals.length)
       // Process users for each category
       const logicals = [...users]
         .map(user => ({
           id: user.id,
           username: user.username,
-          solvedCount: user.solvedLogicals ? user.solvedLogicals.length : 0
+          solvedCount: Array.isArray(user.solvedLogicals) ? user.solvedLogicals.length : 0
         }))
         .sort((a, b) => b.solvedCount - a.solvedCount)
         .slice(0, 10)
@@ -23,7 +22,7 @@ module.exports = {
         .map(user => ({
           id: user.id,
           username: user.username,
-          solvedCount: user.solvedNonograms ? user.solvedNonograms.length : 0
+          solvedCount: Array.isArray(user.solvedNonograms) ? user.solvedNonograms.length : 0
         }))
         .sort((a, b) => b.solvedCount - a.solvedCount)
         .slice(0, 10)
@@ -32,7 +31,7 @@ module.exports = {
         .map(user => ({
           id: user.id,
           username: user.username,
-          solvedCount: user.solvedLinelogs ? user.solvedLinelogs.length : 0
+          solvedCount: Array.isArray(user.solvedLinelogs) ? user.solvedLinelogs.length : 0
         }))
         .sort((a, b) => b.solvedCount - a.solvedCount)
         .slice(0, 10)
@@ -44,9 +43,7 @@ module.exports = {
       })
     } catch (error) {
       console.error('Error fetching rankings:', error)
-      res.status(500).send({
-        error: 'An error occurred while fetching the rankings.'
-      })
+      sendError(res, 500, 'RANKING_FETCH_FAILED')
     }
   }
 } 

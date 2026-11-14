@@ -108,7 +108,7 @@
           <span class="button-glow"></span>
         </button>
         
-        <p class="global-error" v-if="error" v-html="error"></p>
+        <p class="global-error" v-if="error">{{ error }}</p>
         
         <transition name="fade">
           <div class="success-message" v-if="registerSuccess">
@@ -148,6 +148,7 @@ import { ref, computed, watch } from 'vue'
 import { useMainStore } from '@/store/store'
 import { useRouter } from 'vue-router'
 import AuthenticationService from '@/services/AuthenticationService'
+import i18n, { apiErrorMessage } from '@/i18n'
 
 const store = useMainStore()
 const router = useRouter()
@@ -218,7 +219,7 @@ const register = async () => {
   registerTry.value = true
   
   if (!username.value || !isValidEmail.value || !isValidPassword.value || !passwordsMatch.value) {
-    error.value = "Bitte korrigieren Sie die markierten Felder."
+    error.value = i18n.global.t('clientErrors.FORM_INVALID')
     return
   }
   
@@ -244,7 +245,7 @@ const register = async () => {
     }, 2000)
     
   } catch (err) {
-    error.value = err.response?.data?.error || "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut."
+    error.value = apiErrorMessage(err)
   } finally {
     isRegistering.value = false
   }

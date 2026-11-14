@@ -8,22 +8,22 @@
   <div class="columns">
     <div :class="preview ? ['column', 'is-one-third'] : 'column'">
       <div class="puzzleSet">
-        <b-field label="Name des Rätsels">
+        <o-field label="Name des Rätsels">
           <input v-model="logical.name"/>
-        </b-field>
+        </o-field>
         <p class="error" v-if="!nameFinished">Bitte einen Namen für das Rätsel festlegen.</p>
-        <b-field label="Schwierigkeit">
+        <o-field label="Schwierigkeit">
           <MySelect :options="difficulties" v-model="logical.difficulty"/>
-        </b-field>
-        <b-field label="Beschreibung">
+        </o-field>
+        <o-field label="Beschreibung">
           <textarea v-model="logical.description" placeholder="Leiten Sie zum Thema des Rätsels hin."/>
-        </b-field>
+        </o-field>
         <p class="error" v-if="!descriptionFinished">Bitte das Rätselthema mit mindestens 20 Zeichen beschreiben.</p>
-        <b-field label="Frage">
+        <o-field label="Frage">
           <textarea v-model="logical.question" placeholder="Beispiel: Wer (Vorname und Nachname) mag welche Obstsorte?"/>
-        </b-field>
+        </o-field>
         <p class="error" v-if="!questionFinished">Bitte eine Rätselfrage mit mindestens 20 Zeichen stellen.</p>
-        <b-field label="Hinweise" :addons="false">
+        <o-field label="Hinweise" :addons="false">
           <draggable v-model="logical.clues" group="clues" @start="drag=true" @end="drag=false" handle=".handle" item-key="id">
             <template #item="{element, index}">
               <div class="clue">
@@ -34,9 +34,9 @@
             </template>
           </draggable>
           <button @click="addClue">Neuer Hinweis</button>
-        </b-field>
+        </o-field>
         <p class="error" v-if="!cluesFinished">Bitte mindestens einen Hinweis geben. Jeder Hinweis muss mindestens 10 Zeichen lang sein.</p>
-        <b-field label="Lösung" :addons="false">
+        <o-field label="Lösung" :addons="false">
           <p>Anzahl an Attributwerten:</p>
           <!--<input type="number" @input="setAttributeValNumber"/>-->
           <MySelect :options='attrValNumberOptions' v-model="numAttributeValues"/>
@@ -78,17 +78,17 @@
             </div>
           </o-modal>
           <button @click="addAttribute">Neues Attribut</button>
-        </b-field>
+        </o-field>
         <p class="error" v-if="!solutionFinished">Bitte alle Attributgruppen ausfüllen und unterscheidbar benennen.</p>
-        <!-- <b-field label="Lösung">
+        <!-- <o-field label="Lösung">
           <input v-model="logical.solution"/>
-        </b-field> -->
-        <!--<b-field label="Bildpfad">
+        </o-field> -->
+        <!--<o-field label="Bildpfad">
           <input v-model="logical.image"/>
-        </b-field>-->
-        <b-field label="Autor">
+        </o-field>-->
+        <o-field label="Autor">
           <input v-model="logical.author"/>
-        </b-field>
+        </o-field>
         <button @click="createLogical">Rätsel erstellen</button>
       </div>
     </div>

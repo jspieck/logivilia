@@ -1,22 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import Login from '@/components/Login';
-// import Dashboard from '@/components/Dashboard';
-import Home from '@/components/Home.vue';
-import LogicalSolve from '@/components/LogicalSolve.vue';
-import NonogramSolve from '@/components/NonogramSolve.vue';
-import LinelogSolve from '@/components/LinelogSolve.vue';
-import LogicalOverview from '@/components/LogicalOverview.vue';
-import LogicalCreate from '@/components/LogicalCreate.vue';
-import NonogramOverview from '@/components/NonogramOverview.vue';
-import LinelogOverview from '@/components/LinelogOverview.vue';
-import Register from '@/components/Register.vue';
-import Login from '@/components/Login.vue';
-import Forgot from '@/components/Forgot.vue';
-import User from '@/components/User.vue';
-import Impressum from '@/components/Impressum.vue';
-import PasswordReset from '@/components/PasswordReset.vue';
-import Leaderboard from '@/components/Leaderboard.vue'
+import Home from '@/components/Home.vue'
 
+// Home is part of the main bundle (first paint); every other page is its own
+// chunk, loaded when the route is first visited.
 const routes = [
   {
     path: '/',
@@ -26,75 +12,75 @@ const routes = [
   {
     path: '/register',
     name: 'Register',
-    component: Register,
+    component: () => import('@/components/Register.vue'),
   },
   {
     path: '/user/:id',
     name: 'Benutzer',
-    component: User,
+    component: () => import('@/components/User.vue'),
   },
   {
     path: '/login',
     name: 'Login',
-    component: Login,
+    component: () => import('@/components/Login.vue'),
   },
   {
     path: '/impressum',
     name: 'Impressum',
-    component: Impressum,
+    component: () => import('@/components/Impressum.vue'),
   },
   {
     path: '/forgot',
     name: 'PasswordForgotten',
-    component: Forgot,
+    component: () => import('@/components/Forgot.vue'),
   },
   {
     path: '/reset/:token',
-    component: PasswordReset,
+    component: () => import('@/components/PasswordReset.vue'),
     props: true
   },
   {
     path: '/logical-overview',
     name: 'Logical Overview',
-    component: LogicalOverview,
+    component: () => import('@/components/LogicalOverview.vue'),
   },
   {
     path: '/logical-create',
     name: 'Logical Create',
-    component: LogicalCreate,
+    component: () => import('@/components/LogicalCreate.vue'),
   },
   {
     path: '/nonogram-overview',
     name: 'Nonogram Overview',
-    component: NonogramOverview,
+    component: () => import('@/components/NonogramOverview.vue'),
   },
   {
     path: '/linelog-overview',
     name: 'Linelog Overview',
-    component: LinelogOverview,
+    component: () => import('@/components/LinelogOverview.vue'),
   },
   {
     path: '/linelogSolve/:id',
-    component: LinelogSolve,
+    component: () => import('@/components/LinelogSolve.vue'),
     props: true
   },
   {
     path: '/logicalSolve/:id',
-    component: LogicalSolve,
+    component: () => import('@/components/LogicalSolve.vue'),
     props: true
   },
   {
     path: '/nonogramSolve/:id',
     name: 'Nonogram',
-    component: NonogramSolve,
+    component: () => import('@/components/NonogramSolve.vue'),
     props: true
   },
   {
     path: '/leaderboard',
     name: 'leaderboard',
-    component: Leaderboard
+    component: () => import('@/components/Leaderboard.vue')
   },
-];
+]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

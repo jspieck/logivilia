@@ -18,62 +18,50 @@ A modern full-stack puzzle application with Vue.js frontend and Node.js backend.
 ### Backend
 - Node.js
 - Express.js
-- SQLite3 with Sequelize ORM
+- Sequelize ORM (MySQL, Postgres or SQLite)
 - JWT & Passport for authentication
 - Bcrypt for password hashing
 - Nodemailer for email services
 
 ### Frontend
-- Vue.js
-- Vue Router
+- Vue 3, Vite, Pinia, Vue Router
+- Oruga UI on a Bulma CSS base
+- vue-i18n (German, English)
 - Axios for API calls
 
 ## 📦 Installation & Setup
 
-### Backend Setup
-1. Install backend dependencies
-```bash
-cd backend
-yarn install
-```
+The repo is an **npm workspace** with three packages and one lockfile (`package-lock.json` at the root):
 
-2. Set up environment variables
-```bash
-# Create .env file in backend directory
-touch .env
-```
+| Workspace | What it is |
+|---|---|
+| `backend/` | Express + Sequelize API (served by the root `app.js`) |
+| `frontend/` | Vue 3 + Vite + Pinia, Oruga components on a Bulma CSS base, vue-i18n |
+| `shared/` | API error codes and TypeScript puzzle types used by both |
 
-3. Configure your .env file
-```bash
-PORT=3000
-DB_PATH=./database.sqlite
-JWT_SECRET=your_jwt_secret
-NODE_ENV=development
-```
+Always install from the root with npm (no yarn, no per-folder installs):
 
-4. Seed the database (optional)
 ```bash
-yarn run seed
-```
-
-5. Start the backend server
-```bash
-yarn start
-```
-
-### Frontend Setup
-1. Install frontend dependencies
-```bash
-cd frontend
 npm install
 ```
 
-2. Start the frontend development server
+Copy `.env.example` to `.env` and fill it in. For local work SQLite is easiest: set `DB_DIALECT=sqlite`, then seed:
+
 ```bash
-npm run serve
+npm run seed
 ```
 
-3. Open your browser and visit `http://localhost:8080`
+Start the API (port 3000) and Vite (port 8081) together, then open http://localhost:3000:
+
+```bash
+npm run dev
+```
+
+Other root scripts: `npm run build` (frontend production build), `npm start` (serve API + built frontend), `npm run typecheck` (shared types, plus a check that every API error code has a message in every locale), `npm run lint`.
+
+### API errors and translations
+
+Error responses look like `{ "code": "AUTH_INVALID_CREDENTIALS" }`; the backend sends no user-facing text. Codes are listed in `shared/errorCodes.json` and sent with `sendError()` from `backend/utils/apiError.js`. The frontend translates them with `apiErrorMessage(err)` from `frontend/src/i18n`, using `de.json` and `en.json`. German is the default; the locale is read from `localStorage.locale` (`setLocale('en')` switches it).
 
 ## 📝 API Documentation
 
@@ -137,23 +125,6 @@ npm run serve
 - `GET /logicalratings/:logicalId` - Get ratings for specific puzzle (protected)
 - `POST /logicalratings` - Rate a puzzle (protected)
 - `DELETE /logicalratings` - Remove rating (protected)
-
-## 📦 Dependencies
-
-### Backend Dependencies
-- `sequelize`: ^5.21.11 - ORM for database operations
-- `sqlite3`: ^4.2.0 - SQLite database engine
-- `express`: ^4.17.1 - Web framework
-- `jsonwebtoken`: ^8.5.1 - JWT authentication
-- `passport`: ^0.4.1 - Authentication middleware
-- `bcryptjs`: ^2.4.3 - Password hashing
-- `nodemailer`: ^6.4.8 - Email functionality
-- `joi`: ^14.3.1 - Input validation
-
-### Frontend Dependencies
-- `vue`: Frontend framework
-- `vue-router`: Router for Vue.js
-- `axios`: HTTP client for API calls
 
 ## 🤝 Contributing
 

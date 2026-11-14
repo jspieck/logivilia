@@ -3,80 +3,96 @@
     <div id="mainContainer">
       <div class="header">
         <div class="headerContainer">
-          <b-navbar>
-            <template #brand>
-              <b-navbar-item tag="router-link" :to="{ path: '/' }" class="pageLogo">
-                <img
-                    src="@/assets/logo.svg"
-                    alt="Logivilia"
-                >
-              </b-navbar-item>
-            </template>
-            <template #start>
-              <b-navbar-item tag="router-link" :to="{ path: '/' }">
-                Startseite
-              </b-navbar-item>
-              <b-navbar-item tag="router-link" :to="{ path: '/nonogram-overview' }">
-                Nonogramm
-              </b-navbar-item>
-              <!--<b-navbar-item tag="router-link" :to="{ path: '/logical-overview' }">
-                Logikrätsel
-              </b-navbar-item>-->
-              <b-navbar-dropdown label="Logikrätsel">
-                <b-navbar-item tag="router-link" :to="{ path: '/logical-overview' }">
-                  Lösen
-                </b-navbar-item>
-                <b-navbar-item tag="router-link" :to="{ path: '/logical-create' }">
-                  Erstellen
-                </b-navbar-item>
-              </b-navbar-dropdown>
-              <b-navbar-item tag="router-link" :to="{ path: '/linelog-overview' }">
-                Linelog
-              </b-navbar-item>           
-              <b-navbar-item tag="router-link" :to="{ path: '/leaderboard' }">
-                Bestenliste
-              </b-navbar-item>
-            </template>
+          <!-- Bulma navbar markup (same structure Buefy's b-navbar rendered). -->
+          <nav class="navbar" role="navigation" aria-label="Hauptnavigation">
+            <div class="navbar-brand">
+              <router-link :to="{ path: '/' }" class="navbar-item pageLogo">
+                <img src="@/assets/logo.svg" alt="Logivilia">
+              </router-link>
+              <a
+                role="button"
+                class="navbar-burger"
+                :class="{ 'is-active': menuOpen }"
+                aria-label="Menü"
+                :aria-expanded="menuOpen ? 'true' : 'false'"
+                @click="menuOpen = !menuOpen"
+              >
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+              </a>
+            </div>
 
-            <template #end>
-              <div class="login-dropdown-container">
-                <LoginDropdown v-if="!isLoggedIn" />
+            <div class="navbar-menu" :class="{ 'is-active': menuOpen }">
+              <div class="navbar-start">
+                <router-link class="navbar-item" :to="{ path: '/' }">
+                  Startseite
+                </router-link>
+                <router-link class="navbar-item" :to="{ path: '/nonogram-overview' }">
+                  Nonogramm
+                </router-link>
+                <div
+                  class="navbar-item has-dropdown is-hoverable"
+                  :class="{ 'is-active': logicalDropdownOpen }"
+                >
+                  <a class="navbar-link" @click="logicalDropdownOpen = !logicalDropdownOpen">
+                    Logikrätsel
+                  </a>
+                  <div class="navbar-dropdown">
+                    <router-link class="navbar-item" :to="{ path: '/logical-overview' }">
+                      Lösen
+                    </router-link>
+                    <router-link class="navbar-item" :to="{ path: '/logical-create' }">
+                      Erstellen
+                    </router-link>
+                  </div>
+                </div>
+                <router-link class="navbar-item" :to="{ path: '/linelog-overview' }">
+                  Linelog
+                </router-link>
+                <router-link class="navbar-item" :to="{ path: '/leaderboard' }">
+                  Bestenliste
+                </router-link>
               </div>
 
-              <b-navbar-item 
-                v-if="!isLoggedIn" 
-                tag="router-link" 
-                :to="{ path: '/register' }"
-                class="register-nav-button"
-              >
-                Registrieren
-              </b-navbar-item>
+              <div class="navbar-end">
+                <div class="login-dropdown-container">
+                  <LoginDropdown v-if="!isLoggedIn" />
+                </div>
 
-              <b-navbar-item 
-                v-if="isLoggedIn" 
-                tag="router-link" 
-                :to="{ path: `/user/${currentUser?.id}` }"
-                class="user-profile-link"
-              >
-                <img 
-                  class="avatarImg" 
-                  src="@/assets/bear.svg"
+                <router-link
+                  v-if="!isLoggedIn"
+                  :to="{ path: '/register' }"
+                  class="navbar-item register-nav-button"
                 >
-                <p>
-                  Willkommen, {{ currentUser?.username }}
-                </p>
-              </b-navbar-item>
+                  Registrieren
+                </router-link>
 
-              <a 
-                v-if="isLoggedIn"
-                @click="handleLogout"
-                class="navbar-item logout-button"
-                role="button"
-              >
-                <span>Logout</span>
-              </a>
-            </template>
-          </b-navbar>
+                <router-link
+                  v-if="isLoggedIn"
+                  :to="{ path: `/user/${currentUser?.id}` }"
+                  class="navbar-item user-profile-link"
+                >
+                  <img
+                    class="avatarImg"
+                    src="@/assets/bear.svg"
+                  >
+                  <p>
+                    Willkommen, {{ currentUser?.username }}
+                  </p>
+                </router-link>
+
+                <a
+                  v-if="isLoggedIn"
+                  @click="handleLogout"
+                  class="navbar-item logout-button"
+                  role="button"
+                >
+                  <span>Logout</span>
+                </a>
+              </div>
+            </div>
+          </nav>
         </div>
       </div>
       <div class="body">
@@ -101,8 +117,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useMainStore } from '@/store/store'
 import { useNotification } from '@/composables/useNotification'
 import CookieConsent from './components/CookieConsent.vue'
@@ -110,6 +126,15 @@ import LoginDropdown from './components/LoginDropdown.vue'
 
 // Router and store setup
 const router = useRouter()
+const route = useRoute()
+
+// Mobile menu state; both close when the user navigates.
+const menuOpen = ref(false)
+const logicalDropdownOpen = ref(false)
+watch(() => route.fullPath, () => {
+  menuOpen.value = false
+  logicalDropdownOpen.value = false
+})
 const mainStore = useMainStore()
 const { showNotification } = useNotification()
 

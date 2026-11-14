@@ -13,9 +13,9 @@
     <div class="puzzle-body">
       <div id="nonoArea">
         <!-- Warning Banner -->
-        <b-notification type="is-warning" role="alert">
+        <div class="notification is-warning" role="alert">
           Dieser Rätseltyp befindet sich noch in der Testphase. Es kann zu Fehlern kommen.
-        </b-notification>
+        </div>
 
         <!-- Controls -->
         <div class="control-panels">
@@ -78,17 +78,7 @@
       <!-- Rating Section -->
       <div class="rating-section">
         <h2>Rätsel bewerten</h2>
-        <b-rate
-          v-if="loggedIn"
-          v-model="rating"
-          icon-pack="mdi"
-          icon="star"
-          :max="rateMax"
-          :show-text="false"
-          :rtl="false"
-          :spaced="false"
-          :disabled="false">
-        </b-rate>
+        <StarRating v-if="loggedIn" v-model="rating" :max="rateMax" />
         <p v-if="!loggedIn" class="login-message">Um das Rätsel zu bewerten, müssen Sie sich einloggen.</p>
       </div>
 
@@ -680,7 +670,6 @@ const checkIfSolved = () => {
       }
     }
   }
-  solved = solved.value;
   if (solved) {
     scaleToScreenSize();
   }
@@ -688,16 +677,35 @@ const checkIfSolved = () => {
     saveSolvedLinelog();
   }
 };
-const saveSolvedLinelog = async () => {
-  if (store.isUserLoggedIn) {
-    try {
-      const userId = store.user.id;
-      const linelogId = parseInt(route.params.id, 10);
-      const isSuccess = await UserService.linelogSolved(userId, linelogId);
-      console.log("Puzzle saved as solved:", isSuccess);
-    } catch (error) {
-      console.error("Error saving solved status:", error);
+// Converts the UI grid back to the stored encoding (0 = empty,
+// k = colour k) so the server can verify the solution.
+const submittedGrid = () => {
+  const grid = [];
+  for (let y = 0; y < height.value; y++) {
+    const row = [];
+    for (let x = 0; x < width.value; x++) {
+      const value = gridState.value[y * width.value + x];
+      row.push(value === backgroundNumber.value ? 0 : value + 1);
     }
+    grid.push(row);
+  }
+  return grid;
+};
+let solvedSaveInFlight = false;
+const saveSolvedLinelog = async () => {
+  if (!store.isUserLoggedIn || alreadySolved.value || solvedSaveInFlight) {
+    return;
+  }
+  solvedSaveInFlight = true;
+  try {
+    const userId = store.user.id;
+    const linelogId = parseInt(route.params.id, 10);
+    await UserService.linelogSolved(userId, linelogId, submittedGrid());
+    alreadySolved.value = true;
+  } catch (error) {
+    console.error("Error saving solved status:", error);
+  } finally {
+    solvedSaveInFlight = false;
   }
 };
 const setPathIndices = (cells, pathIndex) => {
@@ -783,13 +791,7 @@ const checkSolution = (state) => {
 
   if (isCorrect) {
     solved.value = true;
-    if (store.isUserLoggedIn) {
-      try {
-        UserService.linelogSolved(store.user.id, parseInt(route.params.id, 10));
-      } catch (err) {
-        console.error("Error updating solved puzzles:", err);
-      }
-    }
+    saveSolvedLinelog();
   }
 };
 

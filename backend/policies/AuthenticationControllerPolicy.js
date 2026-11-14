@@ -1,29 +1,24 @@
 const Joi = require('joi');
+const { sendError } = require('../utils/apiError');
+
+// One password rule for registration and reset (matches the checks shown in
+// Register.vue): 8-32 characters, at least one letter and one digit, any
+// other characters allowed.
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,32}$/;
 
 module.exports = {
   reset (req, res, next) {
     const schema = {
-      password: Joi.string().regex(
-        new RegExp('^[a-zA-Z0-9]{8,32}$')
-      )
+      password: Joi.string().regex(PASSWORD_REGEX).required()
     };
-    const { error, value } = Joi.validate(req.body, schema);
+    const { error } = Joi.validate(req.body, schema);
     if (error) {
       switch (error.details[0].context.key) {
         case 'password':
-          res.status(400).send({
-            error: `Das Passwort erfüllt nicht die folgenden Regeln:
-            <br>
-            1. Das Passwort darf nur die Buchstaben a bis z und A bis Z enthalten.
-            <br>
-            2: Das Passwort muss zwischen 8 und 32 Zeichen lang sein.
-            `
-          });
+          sendError(res, 400, 'VALIDATION_PASSWORD');
           break;
         default:
-          res.status(400).send({
-            error: `Informationen nicht valide!`
-          });
+          sendError(res, 400, 'VALIDATION_INVALID');
       }
     } else {
       next();
@@ -31,55 +26,32 @@ module.exports = {
   },
   register (req, res, next) {
     const schema = {
-      username: Joi.string().alphanum().min(3).max(30),
-      email: Joi.string().email({ minDomainSegments: 2 }),
-      password: Joi.string().regex(
-        new RegExp('^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d^a-zA-Z0-9].{8,32}$')
-      ),
-      gender: Joi.string().min(0),
-      city: Joi.string().min(0)
+      username: Joi.string().alphanum().min(3).max(30).required(),
+      email: Joi.string().email({ minDomainSegments: 2 }).required(),
+      password: Joi.string().regex(PASSWORD_REGEX).required(),
+      gender: Joi.string().allow('').max(50),
+      city: Joi.string().allow('').max(100)
     };
-    const { error, value } = Joi.validate(req.body, schema);
+    const { error } = Joi.validate(req.body, schema);
     if (error) {
       switch (error.details[0].context.key) {
         case 'username':
-          res.status(400).send({
-            error: 'Der Benutzername muss zwischen 3 und 30 Zeichen lang sein und darf Buchstaben und Zahlen enthalten.'
-          });
+          sendError(res, 400, 'VALIDATION_USERNAME');
           break;
         case 'email':
-          res.status(400).send({
-            error: 'E-Mail Adresse nicht valide!'
-          });
+          sendError(res, 400, 'VALIDATION_EMAIL');
           break;
         case 'password':
-          res.status(400).send({
-            error: `Das Passwort erfüllt nicht die folgenden Regeln:
-            <br>
-            1. Das Passwort muss mindestens einen Buchstaben enthalten.
-            <br>
-            2. Das Passwort muss mindestens eine Zahl enthalten.
-            <br>
-            4. Das Passwort darf spezielle Charakter enthalten.
-            <br>
-            4: Das Passwort muss zwischen 8 und 32 Zeichen lang sein.
-            `
-          });
+          sendError(res, 400, 'VALIDATION_PASSWORD');
           break;
         case 'gender':
-          res.status(400).send({
-            error: 'Geschlecht keine Zeichenkette!'
-          });
+          sendError(res, 400, 'VALIDATION_GENDER');
           break;
         case 'city':
-          res.status(400).send({
-            error: 'Stadt keine Zeichenkette!'
-          });
+          sendError(res, 400, 'VALIDATION_CITY');
           break;
         default:
-          res.status(400).send({
-            error: `Informationen nicht valide!`
-          });
+          sendError(res, 400, 'VALIDATION_INVALID');
       }
     } else {
       next();

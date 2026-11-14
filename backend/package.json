@@ -1,36 +1,33 @@
 {
-  "name": "backend",
+  "name": "@logivilia/backend",
   "version": "1.0.0",
-  "description": "My App",
+  "private": true,
+  "description": "Logivilia REST API (Express + Sequelize)",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "seed": "node ./seed",
-    "build": "npm install"
+    "start": "node ../app.js",
+    "seed": "node ./seed"
   },
-  "author": "",
   "license": "ISC",
   "dependencies": {
+    "@logivilia/shared": "*",
     "bcryptjs": "^2.4.3",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.0",
-    "concurrently": "^5.2.0",
     "cors": "^2.8.5",
-    "crypto": "^1.0.1",
-    "dotenv": "^8.2.0",
+    "dotenv": "^16.4.7",
     "express": "^4.17.1",
+    "http-proxy-middleware": "^3.0.3",
     "joi": "^14.3.1",
     "jsonwebtoken": "^8.5.1",
     "morgan": "^1.10.0",
     "mysql2": "^3.12.0",
     "nodemailer": "^6.4.8",
-    "nodemon": "^2.0.4",
     "passport": "^0.4.1",
     "passport-jwt": "^4.0.0",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
-    "sequelize": "6",
+    "sequelize": "^6.6.2",
     "sqlite3": "^5.1.7"
   }
 }

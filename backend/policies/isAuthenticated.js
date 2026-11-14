@@ -1,11 +1,10 @@
 const passport = require('passport');
+const { sendError } = require('../utils/apiError');
 
 module.exports = function(req, res, next) {
   passport.authenticate('jwt', function(err, user) {
     if (err || !user) {
-      res.status(403).send({
-        error: 'Sie haben keinen Zugang zu dieser Resource'
-      })
+      sendError(res, 403, 'FORBIDDEN')
     } else {
       req.user = user;
       next();

@@ -3,200 +3,181 @@ const jwt = require('jsonwebtoken');
 const config = require('../config/config');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-const { Op } = require('sequelize')
+const { Op } = require('sequelize');
+const { ownUser } = require('../utils/userView');
+const { sendError } = require('../utils/apiError');
 
+const ONE_WEEK = 60 * 60 * 24 * 7;
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+// Only the user id goes into the token. Everything else is loaded from the
+// database by the passport strategy on each request.
 function jwtSignUser (user) {
-  const ONE_WEEK = 60 * 60 * 24 * 7;
-  return jwt.sign(user, config.authentication.jwtSecret, {
+  return jwt.sign({ id: user.id }, config.authentication.jwtSecret, {
     expiresIn: ONE_WEEK
   });
 }
 
-function getTransporter() {
+// Reset tokens are stored hashed, so a leaked database does not leak
+// usable reset links.
+function hashToken (token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function getTransporter () {
+  if (!config.mail.password) {
+    throw new Error('SMTP_PASSWORD is not set - cannot send e-mail.');
+  }
   return nodemailer.createTransport({
-    host: "mail.logivilia.com",
-    port: 465,
-    secure: true,
+    host: config.mail.host,
+    port: config.mail.port,
+    secure: config.mail.secure,
     auth: {
-      user: 'passwortreset@logivilia.com',
-      pass: 'qa^XB}oT}[8D'
+      user: config.mail.user,
+      pass: config.mail.password
     }
   });
+}
+
+function sendMail (mailOptions) {
+  try {
+    const transporter = getTransporter();
+    transporter.sendMail({ from: config.mail.from, ...mailOptions }, function (error) {
+      if (error) {
+        console.error('E-mail could not be sent:', error.message);
+      }
+    });
+  } catch (err) {
+    console.error(err.message);
+  }
 }
 
 function sendForgotPasswordEmail (userEmail, token) {
-  const transporter = getTransporter();
-  const mailOptions = {
-    from: 'passwortreset@logivilia.com',
+  sendMail({
     to: userEmail,
     subject: '[Logivilia] Informationen zum Zurücksetzen des Passworts',
-    text: 'Sie erhalten diese E-Mail, da Sie (oder jemand anderes) das Zurücksetzen des Passworts Ihres Accounts bei https://logivilia.com beantragt hat.\n' +
+    text: `Sie erhalten diese E-Mail, da Sie (oder jemand anderes) das Zurücksetzen des Passworts Ihres Accounts bei ${config.mail.appUrl} beantragt hat.\n` +
     'Bitte klicken Sie auf folgenden Link oder kopieren Sie diesen in ihren Browser, um diesen Prozess fertigzustellen.\n\n' +
-    'https://logivilia.com/reset/' + token + ' \n\n' +
+    `${config.mail.appUrl}/reset/${token} \n\n` +
     'Wenn Sie das Zurücksetzen Ihres Passworts nicht beantragt haben, ignorieren Sie bitte diese E-Mail und Ihr Passwort bleibt unverändert.\n\n' +
     'Mit freundlichen Grüßen\n' +
     'Ihr Logivilia Team'
-  };  
-  transporter.sendMail(mailOptions, function(error, info){
-    if (error) {
-      console.log(error);
-    } else {
-      console.log('Email sent: ' + info.response);
-    }
   });
 }
 
-function sendPasswordResetConfirmation(userEmail) {
-  const transporter = getTransporter();
-  const mailOptions = {
-    from: 'passwortreset@logivilia.com',
+function sendPasswordResetConfirmation (userEmail) {
+  sendMail({
     to: userEmail,
     subject: '[Logivilia] Passwort erfolgreich geändert',
     text: 'Sie erhalten diese E-Mail, da Sie das Passwort erfolgreich geändert haben.\n' +
     'Sie können sich nun mit Ihrem neuen Passwort anmelden.\n\n' +
     'Mit freundlichen Grüßen\n' +
     'Ihr Logivilia Team'
-  };  
-  transporter.sendMail(mailOptions, function(error, info){
-    if (error) {
-      console.log(error);
-    } else {
-      console.log('Email sent: ' + info.response);
-    }
   });
 }
 
 module.exports = {
   async register (req, res) {
     try {
-      const userToBeCreated = req.body;
-      userToBeCreated.role = "Mitglied";
-      userToBeCreated.joined = new Date().toISOString().slice(0, 10);
-      userToBeCreated.solvedLogicals = [];
-      userToBeCreated.solvedNonograms = [];
-      userToBeCreated.solvedLinelogs = [];
-      userToBeCreated.createdLogicals =  [];
-      userToBeCreated.createdNonograms = [];
-      userToBeCreated.createdLinelogs = [];
-
-      const user = await User.create(userToBeCreated);
-      
-      console.log(user.toJSON());
-      res.send(user.toJSON());
-    } catch (err) {
-      console.log(err);
-      res.status(400).send({
-        error: 'Die E-Mail oder der Benutzername wird schon benutzt'
+      const { username, email, password, gender, city } = req.body;
+      const user = await User.create({
+        username,
+        email,
+        password,
+        gender,
+        city,
+        role: 'Mitglied',
+        joined: new Date().toISOString().slice(0, 10),
+        solvedLogicals: [],
+        solvedNonograms: [],
+        solvedLinelogs: [],
+        createdLogicals: [],
+        createdNonograms: [],
+        createdLinelogs: []
       });
+      res.send({
+        user: ownUser(user),
+        token: jwtSignUser(user)
+      });
+    } catch (err) {
+      console.error('Registration failed:', err.name);
+      sendError(res, 400, 'AUTH_ACCOUNT_EXISTS');
     }
   },
   async forgot (req, res) {
-    const token = await new Promise((resolve, reject) => {
-      crypto.randomBytes(20, (err, buf) => {
-        const token = buf.toString('hex');
-        if (err) {
-          reject("Error generating token");
-        }
-        resolve(token);
-      });
-    });
-
-    try {  
-      const user = await User.findOne({
-        where: {
-          email: req.body.email
-        }
-      });
-      if (!user) {
-        return res.status(403).send({
-          error: 'E-Mail Adresse nicht gefunden',
-        });
+    // Always answer the same way, so this endpoint cannot be used to find
+    // out which e-mail addresses have an account.
+    const genericResponse = {
+      // Translated by the frontend (messages.FORGOT_EMAIL_SENT).
+      message: 'FORGOT_EMAIL_SENT'
+    };
+    try {
+      const email = typeof req.body.email === 'string' ? req.body.email : '';
+      const user = email ? await User.findOne({ where: { email } }) : null;
+      if (user) {
+        const token = crypto.randomBytes(32).toString('hex');
+        user.resetPasswordToken = hashToken(token);
+        user.resetPasswordExpires = Date.now() + ONE_HOUR_MS;
+        await user.save();
+        sendForgotPasswordEmail(user.email, token);
       }
-      let updatedUser = {
-        ...user.toJSON()
-      }
-      updatedUser.resetPasswordToken = token;
-      updatedUser.resetPasswordExpires = Date.now() + 3600000;
-      const updateRes = await User.update(updatedUser, {
-        where: {
-          id: user.id,
-        }
-      });
-      sendForgotPasswordEmail(req.body.email, token);
-      res.send({'message': 'Success'});
+      res.send(genericResponse);
     } catch (err) {
-      console.log(err);
-      res.status(400).send({
-        error: 'E-Mail Adresse wurde nicht gefunden'
-      });
+      console.error('Forgot password failed:', err.message);
+      res.send(genericResponse);
     }
   },
   async reset (req, res) {
-    try {  
+    try {
       const user = await User.findOne({
         where: {
-          resetPasswordToken: req.params.token,
+          resetPasswordToken: hashToken(String(req.params.token)),
           resetPasswordExpires: {
             [Op.gte]: Date.now()
           }
         }
       });
       if (!user) {
-        return res.status(400).send({
-          error: 'Das Rücksetzen des Passworts ist abgelaufen'
-        });
+        return sendError(res, 400, 'AUTH_RESET_EXPIRED');
       }
-      let updatedUser = {
-        ...user.toJSON()
-      };
-      updatedUser.resetPasswordExpires = 0;
-      updatedUser.password = req.body.password;
-      console.log('Before update');
-      await User.update(updatedUser, {
-        where: {
-          id: updatedUser.id
-        },
-        individualHooks: true
-      });
-      console.log(updatedUser);
-      res.send(updatedUser);
+      user.password = req.body.password;
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = 0;
+      await user.save();
       sendPasswordResetConfirmation(user.email);
-    } catch (err) {
-      console.log(err);
-      res.status(400).send({
-        error: 'Problem beim Rücksetzen des Passworts'
+      res.send({
+        user: ownUser(user),
+        token: jwtSignUser(user)
       });
+    } catch (err) {
+      console.error('Password reset failed:', err.message);
+      sendError(res, 400, 'AUTH_RESET_FAILED');
     }
   },
   async login (req, res) {
     try {
       const {email, password} = req.body;
+      if (typeof email !== 'string' || typeof password !== 'string') {
+        return sendError(res, 403, 'AUTH_INVALID_CREDENTIALS');
+      }
       const user = await User.findOne({
-        where: {
-          email: email
-        }
+        where: { email }
       });
       if (!user) {
-        return res.status(403).send({
-          error: 'Fehlerhafte Login Informationen',
-        });
+        return sendError(res, 403, 'AUTH_INVALID_CREDENTIALS');
       }
 
       const isPasswordValid = await user.comparePassword(password);
       if (!isPasswordValid) {
-        return res.status(403).send({
-          error: 'Fehlerhafte Login Informationen',
-        });
+        return sendError(res, 403, 'AUTH_INVALID_CREDENTIALS');
       }
-      const userJson = user.toJSON();
       res.send({
-        user: userJson,
-        token: jwtSignUser(userJson)
+        user: ownUser(user),
+        token: jwtSignUser(user)
       });
     } catch (err) {
-      res.status(500).send({
-        error: 'Ein Fehler ist beim Login aufgetreten!'
-      });
+      console.error('Login failed:', err.message);
+      sendError(res, 500, 'AUTH_LOGIN_FAILED');
     }
   }
-}
+};

@@ -100,6 +100,7 @@ import { useRouter } from 'vue-router'
 import { useMainStore } from '@/store/store'
 import { useNotification } from '@/composables/useNotification'
 import AuthenticationService from '@/services/AuthenticationService'
+import { apiErrorMessage } from '@/i18n'
 
 // Router and store setup
 const router = useRouter()
@@ -139,7 +140,7 @@ const handleLogin = async () => {
     // Close dropdown after successful login
     closeDropdown()
   } catch (err) {
-    error.value = err.response?.data?.error || 'Ein Fehler ist aufgetreten'
+    error.value = apiErrorMessage(err)
   } finally {
     isLoading.value = false
   }

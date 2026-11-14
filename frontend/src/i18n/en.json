@@ -1,0 +1,49 @@
+{
+  "errors": {
+    "INTERNAL_ERROR": "An unexpected error occurred. Please try again later.",
+    "FORBIDDEN": "You do not have access to this resource.",
+    "RATE_LIMITED": "Too many requests. Please try again later.",
+    "AUTH_INVALID_CREDENTIALS": "Incorrect login details.",
+    "AUTH_LOGIN_FAILED": "Something went wrong while logging in.",
+    "AUTH_ACCOUNT_EXISTS": "This e-mail address or username is already in use.",
+    "AUTH_RESET_EXPIRED": "The password reset link has expired.",
+    "AUTH_RESET_FAILED": "The password could not be reset.",
+    "VALIDATION_INVALID": "The information you entered is not valid.",
+    "VALIDATION_USERNAME": "The username must be 3 to 30 characters long and may contain only letters and digits.",
+    "VALIDATION_EMAIL": "The e-mail address is not valid.",
+    "VALIDATION_PASSWORD": "The password must be 8 to 32 characters long and contain at least one letter and one digit. Special characters are allowed.",
+    "VALIDATION_GENDER": "The gender is not valid.",
+    "VALIDATION_CITY": "The city is not valid.",
+    "PUZZLE_NOT_FOUND": "Puzzle not found.",
+    "PUZZLE_LIST_FAILED": "The puzzles could not be loaded.",
+    "PUZZLE_FETCH_FAILED": "The puzzle could not be loaded.",
+    "PUZZLE_CREATE_FAILED": "The puzzle could not be created.",
+    "PUZZLE_UPDATE_FAILED": "The puzzle could not be changed.",
+    "SOLUTION_INCORRECT": "The solution is not correct.",
+    "SOLUTION_SAVE_FAILED": "The solution could not be saved.",
+    "USER_NOT_FOUND": "User not found.",
+    "RANKING_FETCH_FAILED": "The leaderboard could not be loaded.",
+    "RATING_INVALID": "The rating must be between 1 and 5.",
+    "RATING_LIST_FAILED": "The ratings could not be loaded.",
+    "RATING_FETCH_FAILED": "The rating could not be loaded.",
+    "RATING_SAVE_FAILED": "The rating could not be saved.",
+    "RATING_DELETE_FAILED": "The rating could not be deleted.",
+    "COMMENT_INVALID": "The comment is empty or too long.",
+    "COMMENT_LIST_FAILED": "The comments could not be loaded.",
+    "COMMENT_CREATE_FAILED": "The comment could not be posted.",
+    "COMMENT_DELETE_FAILED": "The comment could not be deleted.",
+    "UPVOTE_LIST_FAILED": "The upvotes could not be loaded.",
+    "UPVOTE_CREATE_FAILED": "The upvote could not be saved.",
+    "UPVOTE_DELETE_FAILED": "The upvote could not be removed."
+  },
+  "clientErrors": {
+    "NETWORK": "The server cannot be reached. Please check your internet connection.",
+    "UNKNOWN": "Something went wrong. Please try again later.",
+    "PASSWORD_MISMATCH": "The passwords do not match.",
+    "FORM_INVALID": "Please correct the highlighted fields."
+  },
+  "messages": {
+    "FORGOT_EMAIL_SENT": "If an account with this e-mail address exists, we have sent an e-mail.",
+    "PASSWORD_CHANGED": "Your password has been changed and a confirmation e-mail has been sent."
+  }
+}
