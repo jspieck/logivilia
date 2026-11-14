@@ -1,27 +1,27 @@
-// Moves a live database from the old per-type tables to the generic model:
+// Moving a database from the old per-type tables to the generic model:
 //
 //   Nonograms, Linelogs, Logicals         -> Puzzles (type + data JSON, legacyId)
 //   NonogramRatings, LinelogRatings, ...  -> PuzzleRatings
 //   Users.solvedNonograms/... (JSON)      -> PuzzleSolves
-//   Comments.riddleType + riddleId        -> Comments.PuzzleId (new column)
+//   Comments.riddleType + riddleId        -> Comments.PuzzleId
 //
-// The old tables and columns are left untouched, so the previous app
-// version keeps working on them and nothing is lost. Drop them by hand once
-// the new version has run for a while.
+// The copy itself is migration 20261114-02-copy-legacy-puzzles, so it runs
+// with every other pending migration (`npm run migrate -w backend`, or when
+// the server starts). It does nothing on a database without old tables or
+// whose Puzzles table already has rows. The old tables and columns are left
+// untouched; scripts/dropLegacy.js removes them once they are no longer needed.
 //
-// Usage (from the backend folder, with the production DB settings in the
-// environment - not from Plesk's "Node.js-Befehle" tab, see HANDOVER.md):
-//   node scripts/migrateToPuzzles.js           dry run: report what would happen
-//   node scripts/migrateToPuzzles.js --apply   create the new tables and copy the data
-//
-// It refuses to run if the Puzzles table already has rows.
+// This script previews the copy:
+//   node scripts/migrateToPuzzles.js           dry run: report what would be copied
+//   node scripts/migrateToPuzzles.js --apply   apply all pending migrations
 
-const { QueryTypes, DataTypes } = require('sequelize');
+const { QueryTypes } = require('sequelize');
 const db = require('../models');
 const puzzles = require('../puzzles');
 const { LEGACY, importLegacy, parseJson } = require('../utils/legacyPuzzles');
+const { tableExists } = require('../migrations/helpers');
 
-const { sequelize, Puzzle, PuzzleRating, PuzzleSolve } = db;
+const { sequelize } = db;
 const qi = sequelize.getQueryInterface();
 
 async function tableNames () {
@@ -46,6 +46,16 @@ async function readLegacy (existing) {
   const comments = await selectAll('Comments', existing);
   legacy.comments = comments.filter(c => c.riddleType != null && c.riddleId != null);
   return legacy;
+}
+
+const hasLegacyTables = existing => puzzles.PUZZLE_TYPES.some(type => existing.has(LEGACY[type].table));
+
+async function puzzlesAlreadyCopied (existing) {
+  if (!existing.has('Puzzles')) {
+    return false;
+  }
+  const [{ n }] = await sequelize.query(`SELECT COUNT(*) AS n FROM ${qi.quoteIdentifier('Puzzles')}`, { type: QueryTypes.SELECT });
+  return Number(n) > 0;
 }
 
 function report (legacy) {
@@ -73,43 +83,22 @@ function report (legacy) {
   console.log(`  ${legacy.comments.length} comments to link to a puzzle`);
 }
 
-async function addCommentPuzzleId () {
-  const columns = await qi.describeTable('Comments');
-  if (!columns.PuzzleId) {
-    await qi.addColumn('Comments', 'PuzzleId', { type: DataTypes.INTEGER, allowNull: true });
-  }
-  try {
-    await qi.addIndex('Comments', ['PuzzleId']);
-  } catch (err) {
-    // Already there from an earlier attempt.
-  }
-}
-
-async function migrate (apply) {
+/**
+ * Copies the old tables into the generic ones, in one transaction. Called by
+ * the migration after the baseline has created the tables. Returns null when
+ * there is nothing to copy.
+ */
+async function copyLegacy ({ log = console.log } = {}) {
   await puzzles.ready;
   const existing = await tableNames();
-
-  if (existing.has('Puzzles') && await Puzzle.count() > 0) {
-    console.error('The Puzzles table already has rows - this database was migrated before. Nothing to do.');
-    return false;
+  if (!hasLegacyTables(existing) || await puzzlesAlreadyCopied(existing)) {
+    return null;
   }
-
+  if (!await tableExists(qi, 'Puzzles')) {
+    throw new Error('Puzzles table missing - run the baseline migration first.');
+  }
   const legacy = await readLegacy(existing);
-  report(legacy);
-  if (!apply) {
-    console.log('\nDry run - nothing changed. Run with --apply to migrate.');
-    return true;
-  }
-
-  // Schema changes first: on MySQL, DDL cannot be part of a transaction.
-  await Puzzle.sync();
-  await PuzzleRating.sync();
-  await PuzzleSolve.sync();
-  if (existing.has('Comments')) {
-    await addCommentPuzzleId();
-  }
-
-  await sequelize.transaction(async transaction => {
+  return sequelize.transaction(async transaction => {
     const { idFor, report: result } = await importLegacy(db, legacy, { transaction });
     let linked = 0;
     let orphaned = 0;
@@ -125,12 +114,35 @@ async function migrate (apply) {
       );
       linked += 1;
     }
-    console.log('\nMigrated:', JSON.stringify({ ...result, commentsLinked: linked, commentsOrphaned: orphaned }));
+    const summary = { ...result, commentsLinked: linked, commentsOrphaned: orphaned };
+    log('Copied old puzzle tables:', JSON.stringify(summary));
+    return summary;
   });
+}
+
+/** Dry run (apply = false) or apply all pending migrations (apply = true). */
+async function migrate (apply) {
+  await puzzles.ready;
+  if (apply) {
+    const { runMigrations } = require('../migrator');
+    await runMigrations();
+    return true;
+  }
+  const existing = await tableNames();
+  if (await puzzlesAlreadyCopied(existing)) {
+    console.log('The Puzzles table already has rows - nothing would be copied.');
+    return true;
+  }
+  if (!hasLegacyTables(existing)) {
+    console.log('No old puzzle tables found - nothing would be copied.');
+    return true;
+  }
+  report(await readLegacy(existing));
+  console.log('\nDry run - nothing changed. Run with --apply (or `npm run migrate -w backend`) to migrate.');
   return true;
 }
 
-module.exports = { migrate };
+module.exports = { migrate, copyLegacy };
 
 if (require.main === module) {
   migrate(process.argv.includes('--apply'))

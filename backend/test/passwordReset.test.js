@@ -10,6 +10,7 @@ const request = require('supertest');
 
 const createApp = require('../createApp');
 const { sequelize, User } = require('../models');
+const { resetDatabase } = require('../migrator');
 const { testOutbox } = require('../controllers/AuthenticationController');
 
 const app = createApp();
@@ -17,7 +18,7 @@ const MYSQL_INT_MAX = 2147483647;
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 
 before(async () => {
-  await sequelize.sync({ force: true });
+  await resetDatabase();
   const res = await request(app).post('/api/register').send({
     username: 'carol', email: 'carol@example.com', password: 'secret123'
   });

@@ -35,7 +35,17 @@ module.exports = (sequelize, DataTypes) => {
     // databases; they are unused since solves moved to PuzzleSolves.
     password: DataTypes.STRING,
     resetPasswordToken: DataTypes.STRING,
-    resetPasswordExpires: DataTypes.INTEGER
+    // Unix seconds
+    resetPasswordExpires: DataTypes.BIGINT,
+    // Set when the user opens the link from the verification e-mail.
+    // Unverified users cannot comment or publish puzzles.
+    emailVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    // SHA-256 of the token in the verification link
+    emailVerificationToken: DataTypes.STRING
   }, {
     hooks: {
       beforeSave: hashPassword,

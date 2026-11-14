@@ -11,6 +11,7 @@ const request = require('supertest');
 
 const createApp = require('../createApp');
 const { sequelize, User } = require('../models');
+const { resetDatabase } = require('../migrator');
 
 const app = createApp();
 
@@ -25,7 +26,7 @@ async function registerAndLogin (name) {
 let member, admin;
 
 before(async () => {
-  await sequelize.sync({ force: true });
+  await resetDatabase();
   member = await registerAndLogin('member');
   admin = await registerAndLogin('boss');
   await User.update({ role: 'Admin' }, { where: { id: admin.id } });

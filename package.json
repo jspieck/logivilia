@@ -16,11 +16,15 @@
     "start": "node app.js",
     "deploy": "npm ci && npm run build && npm run start",
     "seed": "npm run seed -w backend",
+    "migrate": "npm run migrate -w backend",
+    "migrate:status": "npm run migrate:status -w backend",
     "lint": "npm run lint -w frontend",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm test -w backend"
+    "test": "npm test -w backend",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "concurrently": "^9.1.2",
     "nodemon": "^3.1.9"
   },

@@ -17,6 +17,7 @@ if (isProduction && process.env.SEED_CONFIRM !== 'wipe-all-data') {
 const db = require('../models');
 const { sequelize, User, Comment, CommentUpvote } = db;
 const puzzles = require('../puzzles');
+const { resetDatabase } = require('../migrator');
 const { importLegacy } = require('../utils/legacyPuzzles');
 
 // The seed files keep the old per-type shape; importLegacy converts them the
@@ -41,14 +42,15 @@ function seedPassword () {
 
 async function seed () {
   await puzzles.ready;
-  await sequelize.sync({ force: true });
+  // Drops every table, then builds the schema from migrations/.
+  await resetDatabase();
 
   // Created one by one so IDs follow file order (comments and solves refer to them).
   const credentials = [];
   const createdUsers = [];
   for (const user of users) {
     const password = seedPassword();
-    createdUsers.push({ ...user, id: (await User.create({ ...user, password })).id });
+    createdUsers.push({ ...user, id: (await User.create({ ...user, password, emailVerified: true })).id });
     credentials.push({ email: user.email, role: user.role, password });
   }
 

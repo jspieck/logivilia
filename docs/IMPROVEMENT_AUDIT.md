@@ -6,7 +6,7 @@ This audit covers security, correctness, architecture, UX and engineering practi
 
 **Status key:** ✅ fixed · ⚠️ partly fixed · ❌ open. Fixes from 2026-11-08 are deployed (2026-11-14).
 
-**Progress on Part B (2026-11-14):** B5 mostly done (workspaces, shared types, error codes + `vue-i18n`, Oruga only, lazy routes; legacy folders outside the repo remain). B3 done: the API sends clues instead of solutions, and a public `check` endpoint answers whether a finished grid is correct. B15 started: `npm test` runs 44 backend tests (verifiers over all seed puzzles, API security tests on in-memory SQLite) and GitHub Actions runs tests + build. Still open in B15: frontend/browser tests, Dependabot, GDPR items. B1 and B2 done (2026-11-14, not yet deployed): one `Puzzles` table with `PuzzleRatings` and `PuzzleSolves`, puzzle-type plugins in `shared/puzzles` used by backend and frontend, one `/puzzle/:id` page with a board per type on a shared grid engine. The live database needs `npm run migrate:puzzles -w backend -- --apply` before the deploy (see HANDOVER §7). `npm test` now runs 63 tests.
+**Progress on Part B (2026-11-14):** B5 mostly done (workspaces, shared types, error codes + `vue-i18n`, Oruga only, lazy routes; legacy folders outside the repo remain). B3 done: the API sends clues instead of solutions, and a public `check` endpoint answers whether a finished grid is correct. B15 started: `npm test` runs 44 backend tests (verifiers over all seed puzzles, API security tests on in-memory SQLite) and GitHub Actions runs tests + build. Still open in B15: frontend/browser tests, Dependabot, GDPR items. B1 and B2 done (2026-11-14, not yet deployed): one `Puzzles` table with `PuzzleRatings` and `PuzzleSolves`, puzzle-type plugins in `shared/puzzles` used by backend and frontend, one `/puzzle/:id` page with a board per type on a shared grid engine. B4 and B15 done (2026-11-14, not yet deployed), which completes the foundation phase: migrations are the only source of the schema and run on server start, MySQL everywhere, e-mail verification, data export, account deletion and a privacy page, Playwright smoke tests, lint/typecheck/MySQL tests/audit in CI, Dependabot. Back up the live database before deploying (HANDOVER §7). `npm test` runs 78 backend tests, `npm run test:e2e` 6 browser tests. Still open from these items: self-hosted logical puzzle images.
 
 ---
 
@@ -48,18 +48,18 @@ This audit covers security, correctness, architecture, UX and engineering practi
 | 20 | No security headers (CSP, HSTS, etc.) | ⚠️ `helmet` added (2026-11-14); CSP still off, needs an allowlist |
 | 22 | Seed users had known plain-text passwords; `npm run seed` could wipe production | ✅ Random seed passwords; seed refuses in production without `SEED_CONFIRM=wipe-all-data` (2026-11-14) |
 | 23 | Register, forgot and reset shared one rate-limit budget, so a few sign-ups blocked password resets for the same IP | ✅ Separate budgets (found by the new tests, 2026-11-14) |
-| 21 | No e-mail verification, no account deletion or data export, although the site collects gender, birth year and city (GDPR) | ❌ See B15 |
+| 21 | No e-mail verification, no account deletion or data export, although the site collects gender, birth year and city (GDPR) | ✅ Verification (unverified accounts cannot comment or publish), JSON export, self-service deletion, `/datenschutz` page (2026-11-14) |
 
 ### A4. Architecture and code quality observations
 
 - **Triplication:** every puzzle type had its own model, controller, rating model, rating controller, frontend service and solved array. ✅ Replaced by one generic model and plugins (B1, B2, 2026-11-14).
 - **Very large components:** `NonogramSolve.vue` (≈1,100 lines), `LinelogSolve.vue` (≈1,070), `LogicalDisplay.vue` (≈810). They mix input handling, rendering, rule checking and API calls. Options API and Composition API are mixed. ⚠️ The solve pages are now `PuzzlePage.vue` plus one board per type (B2); `LogicalDisplay.vue` is unchanged.
 - **Two sources of truth for solves:** `solved*` JSON arrays on `User` and the unused `UserSolved*` join tables. ✅ Solves are rows of `PuzzleSolves` (B1); the old columns and tables are no longer read.
-- **Schema management:** `seed` uses `sync({force: true})`; the `migrations/` folder exists but is never run. Production dialect is hardcoded to `mysql`, while recent commits mention Postgres. SQLite, MySQL and Postgres drivers are all installed.
+- **Schema management:** `seed` uses `sync({force: true})`; the `migrations/` folder exists but is never run. Production dialect is hardcoded to `mysql`, while recent commits mention Postgres. SQLite, MySQL and Postgres drivers are all installed. ✅ Migrations only, MySQL only (B4).
 - **Two UI libraries** (Buefy and Oruga) loaded together; a single 500 kB+ JS chunk with no code splitting.
 - **Dead code and files:** unused JSON copies in `frontend/src/assets` (≈160 kB `nonograms.json`), `LinelogCreate.vue` with no route, legacy sibling folders `logivilia-backend/`, `logivilia-frontend/`, `logiviliaBackend/` plus installers in the parent folder.
 - **Puzzle verification compares against one stored answer** for linelogs and logicals. Puzzles with more than one valid solution would reject correct answers, and nothing checks uniqueness when a puzzle is created.
-- **No tests, no CI, no linting in CI;** many `console.log` calls left in components.
+- **No tests, no CI, no linting in CI;** many `console.log` calls left in components. ✅ Tests, browser tests and CI with lint (B15); some `console.log` calls remain.
 - **Backend error messages are German strings** spread across controllers, which blocks an English version.
 - **External image hotlinking** from `logiklab.de` (availability and licensing risk).
 
@@ -92,12 +92,13 @@ Compute clues on the server (nonogram row/column clues, linelog numbers already 
 - **Done:** puzzle `GET`s go through `backend/utils/puzzleView.js` (nonograms get `rowClues`/`columnClues`, linelogs get `informationColors`). `POST /api/<type>/:id/check` lets guests check a finished grid. The logical verifier now ignores the row label column, which also makes one seed logical with mislabelled rows solvable.
 - **Still open:** linelogs and logicals are compared with the one stored answer, so a puzzle with a second valid solution rejects it (the linelog page then says "all numbers connected, but the solution is wrong"). The solver (B6) should rule such puzzles out. The check endpoint is an oracle for complete guesses; the rate limit keeps it from being useful for brute force on real puzzle sizes.
 
-#### 4. 🏗 Clean up the database layer
+#### 4. 🏗 Clean up the database layer ✅ (2026-11-14)
 - Use migrations as the only source of schema; keep `sync` out of anything but tests.
 - Pick one database (Postgres) for dev and production, with a `docker-compose.yml`; remove the unused drivers.
 - Move solves to a proper table, drop the `solved*` JSON arrays, and add indexes on `(UserId, PuzzleId)`.
 - Make `npm run seed` refuse to run when `NODE_ENV=production`.
 - **Effort:** M.
+- **Done:** Umzug runs `backend/migrations/` (`npm run migrate`, `migrate:status`); the server applies pending migrations on start (`DB_MIGRATE_ON_START=false` to opt out), since Plesk has no usable shell. The baseline migration is idempotent, so databases built by the old `sync()` adopt it; the copy into the generic tables (B1) is now a migration too. `seed` and the tests drop all tables and migrate; `test/migrations.test.js` checks every model column exists and that solves and ratings are unique per `(UserId, PuzzleId)`. **MySQL instead of Postgres**, because production already runs MySQL on netcup: `docker-compose.yml` starts MySQL 8.4, `pg`/`pg-hstore` are gone, SQLite is a dev dependency for tests only, and CI runs the backend tests on MySQL as well. `scripts/dropLegacy.js` drops the old tables and the `solved*`/`created*` columns once the new version has run for a while. `resetPasswordExpires` is BIGINT. The seed already refused production (A3-22).
 
 #### 5. 🏗 Repo and tooling hygiene
 - npm workspaces (root, backend, frontend) and one lockfile manager.
@@ -166,6 +167,8 @@ Save progress per puzzle (localStorage for guests, server for logged-in users) a
 - **Security:** add `helmet`, plus dependency audits (`npm audit`, Dependabot).
 - **GDPR:** e-mail verification, account deletion, data export, a privacy page that lists what is stored, and self-hosted puzzle images.
 - **Effort:** M overall; start with the tests that protect the solver work.
+- **Done (2026-11-14):** 78 backend tests, including `account.test.js` (verification, export, deletion) and `migrations.test.js`. Playwright smoke tests (`e2e/`) solve a tiny nonogram and linelog through the UI as a guest, check the logical page, the privacy page and the profile's export and deletion; their server uses an in-memory DB and the built frontend. CI: lint, typecheck, tests on SQLite and MySQL, build + browser tests, `npm audit --omit=dev --audit-level=high`; Dependabot weekly. Dependency upgrades for the audit: `jsonwebtoken` 9, `passport` 0.7, `nodemailer` 10, `joi` 18, `vue-i18n` 11 (needs Node ≥ 22 to build). GDPR: e-mail verification (unverified accounts cannot comment or publish; existing accounts count as verified), JSON export and self-service deletion on the profile page, `/datenschutz`.
+- **Still open:** self-hosted puzzle images (needs clarity on the rights to the `logiklab.de` images first); one moderate `npm audit` advisory (`uuid` inside Sequelize, no fix without a Sequelize upgrade); the MySQL CI job and real verification e-mails have not run yet.
 
 ---
 

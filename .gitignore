@@ -13,3 +13,8 @@ node_modules/
 # Build output and logs
 frontend/dist/
 *.log
+
+# Playwright output
+test-results/
+playwright-report/
+.env.example

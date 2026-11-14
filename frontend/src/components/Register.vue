@@ -113,7 +113,7 @@
         <transition name="fade">
           <div class="success-message" v-if="registerSuccess">
             <i class="fas fa-check-circle"></i>
-            <p>Sie haben sich erfolgreich registriert. Sie können sich jetzt anmelden.</p>
+            <p>Sie haben sich erfolgreich registriert und sind angemeldet. Wir haben Ihnen eine E-Mail geschickt: Bitte bestätigen Sie Ihre Adresse über den Link darin, damit Sie kommentieren und Rätsel veröffentlichen können.</p>
           </div>
         </transition>
         
@@ -239,10 +239,10 @@ const register = async () => {
     store.setUser(response.data.user)
     registerSuccess.value = true
     
-    // Redirect after successful registration
+    // Redirect after successful registration (there is no /dashboard route)
     setTimeout(() => {
-      router.push('/dashboard')
-    }, 2000)
+      router.push('/')
+    }, 4000)
     
   } catch (err) {
     error.value = apiErrorMessage(err)

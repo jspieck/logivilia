@@ -46,6 +46,17 @@ const routes = [
     component: () => import('@/components/Impressum.vue'),
   },
   {
+    path: '/datenschutz',
+    name: 'Datenschutz',
+    component: () => import('@/components/Datenschutz.vue'),
+  },
+  {
+    // Link from the verification e-mail
+    path: '/verify/:token',
+    component: () => import('@/components/VerifyEmail.vue'),
+    props: true
+  },
+  {
     path: '/forgot',
     name: 'PasswordForgotten',
     component: () => import('@/components/Forgot.vue'),

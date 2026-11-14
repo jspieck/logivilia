@@ -96,6 +96,10 @@
         </div>
       </div>
       <div class="body">
+        <div v-if="needsVerification" class="verify-banner" role="status">
+          Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link, den wir Ihnen geschickt haben. Erst dann können Sie kommentieren und Rätsel veröffentlichen.
+          <button class="verify-resend" :disabled="resendBusy" @click="resendVerification">Link erneut senden</button>
+        </div>
         <div class="bodyContainer">
           <router-view v-slot="{ Component }">
             <keep-alive :include="['LinelogOverview', 'NonogramOverview', 'LogicalOverview']">
@@ -107,7 +111,7 @@
       <footer class="logFooter">
         <div class="content has-text-centered">
           <p>
-            <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}, <router-link :to="`/impressum`" class="navLink">Impressum</router-link>
+            <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}, <router-link :to="`/impressum`" class="navLink">Impressum</router-link>, <router-link to="/datenschutz" class="navLink">Datenschutz</router-link>
           </p>
         </div>
         <CookieConsent />
@@ -123,6 +127,11 @@ import { useMainStore } from '@/store/store'
 import { useNotification } from '@/composables/useNotification'
 import CookieConsent from './components/CookieConsent.vue'
 import LoginDropdown from './components/LoginDropdown.vue'
+import AuthenticationService from '@/services/AuthenticationService'
+import { apiErrorMessage } from '@/i18n'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // Router and store setup
 const router = useRouter()
@@ -142,12 +151,26 @@ const { showNotification } = useNotification()
 const isLoggedIn = computed(() => mainStore.isUserLoggedIn)
 const currentUser = computed(() => mainStore.user)
 
-// Methods
-const getUserAvatar = (id) => {
-  const paths = ["bear", "chicken", "cat"]
-  const index = id ? id % paths.length: 0
-  console.log(index)
-  return new URL(`@/assets/${paths[index]}.svg`, import.meta.url).href
+// Accounts created before verification existed have no flag in an old
+// session; only an explicit false shows the banner.
+const needsVerification = computed(() => isLoggedIn.value && currentUser.value?.emailVerified === false)
+const resendBusy = ref(false)
+
+const resendVerification = async () => {
+  resendBusy.value = true
+  try {
+    const { data } = await AuthenticationService.resendVerification()
+    if (data.user) {
+      // Verified in the meantime (e.g. in another tab)
+      mainStore.setUser({ ...mainStore.user, ...data.user })
+    } else {
+      showNotification({ message: t(`messages.${data.message}`), type: 'success' })
+    }
+  } catch (err) {
+    showNotification({ message: apiErrorMessage(err), type: 'danger' })
+  } finally {
+    resendBusy.value = false
+  }
 }
 
 const handleLogout = () => {
@@ -344,6 +367,33 @@ input:focus {
 
 .navLink:hover {
   color: #da1260;
+}
+
+.verify-banner {
+  max-width: 1000px;
+  width: 90%;
+  margin: 0 auto;
+  padding: 0.6rem 1rem;
+  background: #fff8e1;
+  border: 1px solid #ffe08a;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.verify-resend {
+  background: #6e8efb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
 }
 
 .error-message {

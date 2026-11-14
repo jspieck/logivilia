@@ -1,6 +1,6 @@
 <template>
   <div v-if="!accepted" class="cookie-consent">
-    <span>{{ consentText }}</span>
+    <span>{{ consentText }} <router-link to="/datenschutz" class="navLink">Mehr zum Datenschutz</router-link></span>
     <o-button @click="accept">{{ buttonText }}</o-button>
   </div>
 </template>
@@ -13,7 +13,9 @@ export default {
   setup() {
     const accepted = ref(localStorage.getItem('cookieConsent') === 'true')
     
-    const consentText = 'Diese Website benutzt Cookies, um das beste Nutzererlebnis auf der Seite zu ermöglichen.'
+    // Accurate to what the app does: login and settings live in the
+    // browser's session/local storage; there are no tracking cookies.
+    const consentText = 'Diese Website speichert Ihre Anmeldung und Einstellungen in Ihrem Browser. Tracking- oder Werbe-Cookies gibt es nicht.'
     const buttonText = 'Verstanden'
 
     const accept = () => {

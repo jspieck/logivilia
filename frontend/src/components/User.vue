@@ -110,13 +110,36 @@
           </button>
         </div>
       </div>
+
+      <div class="profile-edit my-data" v-if="loggedIn && (store.user.id == route.params.id)">
+        <h3>Meine Daten</h3>
+        <p>
+          Laden Sie alle zu Ihrem Konto gespeicherten Daten herunter oder löschen Sie Ihr Konto.
+          Mehr dazu unter <router-link to="/datenschutz" class="navLink">Datenschutz</router-link>.
+        </p>
+        <button class="save-button" :disabled="exporting" @click="downloadData">Daten herunterladen (JSON)</button>
+
+        <div class="delete-account">
+          <h4>Konto löschen</h4>
+          <p>
+            Löscht Ihr Konto mit allen gelösten Rätseln, Bewertungen, Kommentaren und Upvotes. Das kann nicht rückgängig gemacht werden.
+            Von Ihnen veröffentlichte Rätsel bleiben erhalten, aber ohne Verbindung zu Ihrem Konto.
+          </p>
+          <label for="delete-password">Passwort zur Bestätigung</label>
+          <input id="delete-password" v-model="deletePassword" type="password" autocomplete="current-password" />
+          <button class="delete-button" :disabled="!deletePassword || deleting" @click="deleteAccount">
+            Konto endgültig löschen
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { apiErrorMessage } from '@/i18n';
 import { useMainStore } from '@/store/store';
 import { useOruga } from '@oruga-ui/oruga-next';
 import UserService from '@/services/UserService';
@@ -124,6 +147,7 @@ import MySelect from '@/components/MySelect.vue';
 
 const store = useMainStore();
 const route = useRoute();
+const router = useRouter();
 const oruga = useOruga();
 const emptyCounts = () => ({ logical: 0, nonogram: 0, linelog: 0 });
 const user = ref({
@@ -202,6 +226,49 @@ const formatDate = (inputFormat) => {
   return [pad(d.getDate()), pad(d.getMonth() + 1), d.getFullYear()].join('/');
 };
 
+const exporting = ref(false);
+const deleting = ref(false);
+const deletePassword = ref("");
+
+const notify = (message, variant) => oruga.notification.open({
+  message, duration: 4000, variant, position: 'bottom-right'
+});
+
+const downloadData = async () => {
+  exporting.value = true;
+  try {
+    const { data } = await UserService.exportData(store.user.id);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `logivilia-${store.user.username}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch (err) {
+    notify(apiErrorMessage(err), 'danger');
+  } finally {
+    exporting.value = false;
+  }
+};
+
+const deleteAccount = async () => {
+  if (!window.confirm('Möchten Sie Ihr Konto wirklich endgültig löschen?')) {
+    return;
+  }
+  deleting.value = true;
+  try {
+    await UserService.deleteAccount(store.user.id, deletePassword.value);
+    store.logout();
+    notify('Ihr Konto wurde gelöscht.', 'success');
+    router.push('/');
+  } catch (err) {
+    notify(apiErrorMessage(err), 'danger');
+  } finally {
+    deleting.value = false;
+    deletePassword.value = "";
+  }
+};
+
 onMounted(async () => {
   const id = route.params.id;
   user.value = (await UserService.show(id)).data;
@@ -216,6 +283,39 @@ watch(() => route.params.id, async () => {
 </script>
 
 <style lang="scss" scoped>
+.my-data {
+  margin-top: 24px;
+
+  p {
+    margin-bottom: 12px;
+  }
+
+  .delete-account {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+  }
+
+  h4 {
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .delete-button {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  }
+}
+
 .profile-page {
   max-width: 1000px;
   margin: 0 auto;

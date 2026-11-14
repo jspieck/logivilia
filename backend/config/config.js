@@ -1,4 +1,3 @@
-const path = require('path');
 const crypto = require('crypto');
 
 require('dotenv').config();
@@ -18,18 +17,22 @@ function resolveJwtSecret () {
   return crypto.randomBytes(48).toString('hex');
 }
 
-module.exports = {
-  port: process.env.PORT || 8081,
-  db: {
+// MySQL is the only database for development and production (audit B4);
+// docker-compose.yml in the repository root starts one for development.
+// Tests use an in-memory SQLite database unless TEST_DB_DIALECT=mysql (CI
+// runs them against MySQL as well).
+function mysqlConfig () {
+  return {
+    dialect: 'mysql',
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'logivilia',
-    user: process.env.DB_USER || 'logivilia',
-    password: process.env.DB_PASS || 'logivilia',
-    options: {
-      dialect: process.env.DIALECT || 'sqlite',
-      host: process.env.HOST || 'localhost',
-      storage: path.resolve(__dirname, '../logivilia.sqlite')
-    }
-  },
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306', 10)
+  };
+}
+
+module.exports = {
   authentication: {
     jwtSecret: resolveJwtSecret()
   },
@@ -42,25 +45,11 @@ module.exports = {
     from: process.env.SMTP_FROM || 'passwortreset@logivilia.com',
     appUrl: process.env.APP_URL || 'https://logivilia.com'
   },
-  development: {
-    username: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'password',
-    database: process.env.DB_NAME || 'logivilia',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    dialect: process.env.DB_DIALECT || 'mysql'
-  },
-  // Used by `npm test`: a fresh in-memory database, never a real one.
-  test: {
-    dialect: 'sqlite',
-    storage: ':memory:'
-  },
-  production: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 3306,
-    dialect: 'mysql'
-  }
+  development: mysqlConfig(),
+  production: mysqlConfig(),
+  // `npm test` and the browser tests: a fresh in-memory database, never a
+  // real one, unless TEST_DB_DIALECT=mysql points them at a throwaway MySQL.
+  test: process.env.TEST_DB_DIALECT === 'mysql'
+    ? mysqlConfig()
+    : { dialect: 'sqlite', storage: ':memory:' }
 };

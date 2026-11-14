@@ -1,0 +1,27 @@
+# Local MySQL for development, matching production (MySQL on the host).
+#   docker compose up -d      start it
+#   npm run migrate           create the schema (the server also does this on start)
+#   npm run seed              optional: fill it with the seed data (wipes it first)
+#
+# The credentials below are for this local container only; copy them into
+# .env (see .env.example).
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: logivilia
+      MYSQL_USER: logivilia
+      MYSQL_PASSWORD: logivilia
+      MYSQL_ROOT_PASSWORD: logivilia-root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ulogivilia", "-plogivilia"]
+      interval: 5s
+      retries: 20
+
+volumes:
+  mysql-data:

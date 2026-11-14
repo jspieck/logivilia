@@ -45,11 +45,21 @@ Always install from the root with npm (no yarn, no per-folder installs):
 npm install
 ```
 
-Copy `.env.example` to `.env` and fill it in. For local work SQLite is easiest: set `DB_DIALECT=sqlite`, then seed:
+The app uses **MySQL** in development and production. Start a local one with Docker (credentials in `docker-compose.yml`), copy `.env.example` to `.env`, then create the schema and optionally fill it with the seed data (the seed wipes the database first):
+
+```bash
+docker compose up -d
+```
+
+```bash
+npm run migrate
+```
 
 ```bash
 npm run seed
 ```
+
+The schema comes only from the migrations in `backend/migrations/` (Umzug); nothing calls `sequelize.sync()`. The server also applies pending migrations when it starts (set `DB_MIGRATE_ON_START=false` to do it by hand). `npm run migrate:status` lists applied and pending ones.
 
 Start the API (port 3000) and Vite (port 8081) together, then open http://localhost:3000:
 
@@ -58,6 +68,13 @@ npm run dev
 ```
 
 Other root scripts: `npm run build` (frontend production build), `npm start` (serve API + built frontend), `npm run typecheck` (shared types, plus a check that every API error code has a message in every locale), `npm run lint`.
+
+### Tests
+
+- `npm test`: backend unit and API tests on an in-memory SQLite database (no MySQL needed).
+- `npm run test:e2e`: Playwright smoke tests in Chromium (one per puzzle type, plus the account pages), against the built frontend and an in-memory API. Run `npm run build` first, and once `npx playwright install chromium`.
+
+GitHub Actions runs lint, typecheck, the backend tests on SQLite and on MySQL 8.4, the build plus browser tests, and `npm audit` for production dependencies. Dependabot opens weekly update PRs.
 
 ### API errors and translations
 
@@ -69,12 +86,18 @@ Error responses look like `{ "code": "AUTH_INVALID_CREDENTIALS" }`; the backend 
 - `POST /register` - Register a new user
 - `POST /login` - Login user
 - `POST /forgot` - Request password reset
-- `POST /reset/:token` - Reset password with token
+- `POST /reset/:token` - Reset password with token (also confirms the e-mail address)
+- `POST /verify/:token` - Confirm the e-mail address (link from the registration e-mail)
+- `POST /verify/resend` - Send a new confirmation link (protected)
+
+Accounts with an unconfirmed e-mail address can log in, solve and rate, but not comment or publish puzzles (`403 EMAIL_NOT_VERIFIED`).
 
 ### User Endpoints
 - `GET /users/:userId` - Public profile, with `stats.solved` and `stats.created` counts per puzzle type
 - `PATCH /users/:userId` - Update own profile (protected)
 - `GET /users/:userId/solved?type=nonogram` - IDs of the puzzles the user solved (`type` optional)
+- `GET /users/:userId/export` - Everything stored about the own account, as JSON (protected)
+- `DELETE /users/:userId` - Delete the own account, body `{ password }` (protected)
 
 ### Puzzle Endpoints (all puzzle types)
 Every puzzle type uses the same routes. A puzzle arrives as one flat object: the common fields (`id`, `type`, `name`, `difficulty`, `date`, `author`, `UserId`) plus the type's public data (for example `rowClues` for a nonogram). The solution never leaves the server.

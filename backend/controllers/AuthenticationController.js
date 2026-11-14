@@ -10,10 +10,10 @@ const { sendError } = require('../utils/apiError');
 const ONE_WEEK = 60 * 60 * 24 * 7;
 const ONE_HOUR_S = 60 * 60;
 
-// resetPasswordExpires is a 32-bit INTEGER column, so it holds Unix
-// *seconds*. Milliseconds (Date.now()) overflow it, and MySQL then rejects
-// the save, which silently broke "forgot password". Seconds fit until 2038;
-// switch the column to BIGINT/DATE when migrations are introduced (audit B4).
+// resetPasswordExpires holds Unix *seconds*. It was a 32-bit INTEGER column,
+// which milliseconds (Date.now()) overflowed, so MySQL rejected the save and
+// "forgot password" silently broke; it is BIGINT since migration
+// 20261114-03, but stays in seconds.
 function nowSeconds () {
   return Math.floor(Date.now() / 1000);
 }
@@ -83,6 +83,28 @@ function sendForgotPasswordEmail (userEmail, token) {
   });
 }
 
+function sendVerificationEmail (userEmail, token) {
+  sendMail({
+    to: userEmail,
+    subject: '[Logivilia] Bitte bestätigen Sie Ihre E-Mail-Adresse',
+    text: 'Willkommen bei Logivilia!\n\n' +
+    'Bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie auf folgenden Link klicken oder ihn in Ihren Browser kopieren. ' +
+    'Erst danach können Sie Kommentare schreiben und eigene Rätsel veröffentlichen.\n\n' +
+    `${config.mail.appUrl}/verify/${token} \n\n` +
+    'Wenn Sie sich nicht bei Logivilia registriert haben, ignorieren Sie diese E-Mail bitte.\n\n' +
+    'Mit freundlichen Grüßen\n' +
+    'Ihr Logivilia Team'
+  });
+}
+
+/** Gives the user a new verification token and mails the link. */
+async function startVerification (user) {
+  const token = crypto.randomBytes(32).toString('hex');
+  user.emailVerificationToken = hashToken(token);
+  await user.save();
+  sendVerificationEmail(user.email, token);
+}
+
 function sendPasswordResetConfirmation (userEmail) {
   sendMail({
     to: userEmail,
@@ -107,6 +129,7 @@ module.exports = {
         role: 'Mitglied',
         joined: new Date().toISOString().slice(0, 10)
       });
+      await startVerification(user);
       res.send({
         user: ownUser(user),
         token: jwtSignUser(user)
@@ -155,6 +178,9 @@ module.exports = {
       user.password = req.body.password;
       user.resetPasswordToken = null;
       user.resetPasswordExpires = 0;
+      // The reset link reached this address, which proves it as well.
+      user.emailVerified = true;
+      user.emailVerificationToken = null;
       await user.save();
       sendPasswordResetConfirmation(user.email);
       res.send({
@@ -164,6 +190,37 @@ module.exports = {
     } catch (err) {
       console.error('Password reset failed:', err.message);
       sendError(res, 400, 'AUTH_RESET_FAILED');
+    }
+  },
+  // POST /verify/:token - the link from the verification e-mail.
+  async verifyEmail (req, res) {
+    try {
+      const user = await User.findOne({
+        where: { emailVerificationToken: hashToken(String(req.params.token)) }
+      });
+      if (!user) {
+        return sendError(res, 400, 'AUTH_VERIFY_INVALID');
+      }
+      user.emailVerified = true;
+      user.emailVerificationToken = null;
+      await user.save();
+      res.send({ user: ownUser(user) });
+    } catch (err) {
+      console.error('E-mail verification failed:', err.message);
+      sendError(res, 500, 'INTERNAL_ERROR');
+    }
+  },
+  // POST /verify/resend - logged in; sends a new link (the old one stops working).
+  async resendVerification (req, res) {
+    try {
+      if (req.user.emailVerified) {
+        return res.send({ user: ownUser(req.user) });
+      }
+      await startVerification(req.user);
+      res.send({ message: 'VERIFY_EMAIL_SENT' });
+    } catch (err) {
+      console.error('Resending verification failed:', err.message);
+      sendError(res, 500, 'INTERNAL_ERROR');
     }
   },
   async login (req, res) {

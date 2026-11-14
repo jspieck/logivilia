@@ -12,6 +12,7 @@ const jwt = require('jsonwebtoken');
 
 const createApp = require('../createApp');
 const { sequelize, Puzzle } = require('../models');
+const { resetDatabase } = require('../migrator');
 const puzzles = require('../puzzles');
 const { toPuzzleRow } = require('../utils/legacyPuzzles');
 const { testOutbox } = require('../controllers/AuthenticationController');
@@ -39,6 +40,11 @@ async function register (name) {
     password: PASSWORD
   });
   assert.equal(res.status, 200, JSON.stringify(res.body));
+  // Confirm the e-mail address, as unverified users cannot comment or publish
+  // (tested in account.test.js).
+  const mail = testOutbox.findLast(m => m.to === `${name}@example.com`);
+  const token = mail.text.match(/\/verify\/([a-f0-9]+)/)[1];
+  assert.equal((await api().post(`/api/verify/${token}`)).status, 200);
   return { ...res.body, auth: `Bearer ${res.body.token}` };
 }
 
@@ -56,7 +62,7 @@ let alice, bob, nonogram, linelog, logical;
 
 before(async () => {
   await puzzles.ready;
-  await sequelize.sync({ force: true });
+  await resetDatabase();
   nonogram = await createPuzzle('nonogram', seedNonograms[0]);
   linelog = await createPuzzle('linelog', seedLinelogs[0]);
   logical = await createPuzzle('logical', seedLogicals[0]);

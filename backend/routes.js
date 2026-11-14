@@ -6,6 +6,7 @@ const UserController = require('./controllers/UserController');
 const CommentController = require('./controllers/CommentController');
 const CommentUpvoteController = require('./controllers/CommentUpvoteController');
 const isAuthenticated = require('./policies/isAuthenticated');
+const isVerified = require('./policies/isVerified');
 const RankingController = require('./controllers/RankingController');
 const rateLimit = require('./policies/rateLimit');
 const AdminController = require('./controllers/AdminController');
@@ -17,6 +18,10 @@ const loginLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 10 });
 const registerLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
 const forgotLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
 const resetLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
+const verifyLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 10 });
+// Each resend is an e-mail, so it gets its own small budget.
+const resendLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 3 });
+const deleteAccountLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
 // The check endpoint answers "is this grid correct?", so it is limited to
 // keep it from being used to brute-force small puzzles.
 const checkLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
@@ -39,6 +44,15 @@ module.exports = () => {
     AuthenticationControllerPolicy.reset,
     AuthenticationController.reset);
 
+  // E-mail verification. "resend" is registered before ":token".
+  router.post('/verify/resend',
+    resendLimiter,
+    isAuthenticated,
+    AuthenticationController.resendVerification);
+  router.post('/verify/:token',
+    verifyLimiter,
+    AuthenticationController.verifyEmail);
+
   // Admin diagnostics: sends a test e-mail and returns the SMTP result.
   router.post('/admin/test-mail',
     isAuthenticated,
@@ -52,6 +66,14 @@ module.exports = () => {
   router.patch('/users/:userId',
     isAuthenticated,
     UserController.update);
+  // Own account: data export and deletion (GDPR)
+  router.get('/users/:userId/export',
+    isAuthenticated,
+    UserController.exportData);
+  router.delete('/users/:userId',
+    deleteAccountLimiter,
+    isAuthenticated,
+    UserController.destroy);
   // IDs of the puzzles a user solved (?type=nonogram for one type).
   router.get('/users/:userId/solved',
     UserController.solved);
@@ -61,6 +83,7 @@ module.exports = () => {
     CommentController.index);
   router.post('/puzzles/:puzzleId/comments',
     isAuthenticated,
+    isVerified,
     CommentController.post);
   router.delete('/comments/:commentId',
     isAuthenticated,
@@ -83,6 +106,7 @@ module.exports = () => {
     PuzzleController.index);
   router.post('/puzzles',
     isAuthenticated,
+    isVerified,
     PuzzleController.post);
   router.get('/puzzles/legacy/:type/:legacyId',
     PuzzleController.legacy);
@@ -90,6 +114,7 @@ module.exports = () => {
     PuzzleController.show);
   router.put('/puzzles/:puzzleId',
     isAuthenticated,
+    isVerified,
     PuzzleController.put);
   router.post('/puzzles/:puzzleId/check',
     checkLimiter,

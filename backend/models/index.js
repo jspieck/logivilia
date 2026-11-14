@@ -6,6 +6,9 @@ const db = {};
 
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
+if (!dbConfig) {
+  throw new Error(`No database configuration for NODE_ENV=${env} (use development, production or test).`);
+}
 
 if (env !== 'test') {
   console.log('Environment:', env);
@@ -20,11 +23,10 @@ let sequelize;
 if (dbConfig.dialect === 'sqlite') {
   sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: dbConfig.storage || './logivilia.db',
+    storage: dbConfig.storage,
     logging: false
   });
 } else {
-  // MySQL, PostgreSQL, etc.
   sequelize = new Sequelize(
     dbConfig.database,
     dbConfig.username,
@@ -40,9 +42,7 @@ if (dbConfig.dialect === 'sqlite') {
 
 fs
   .readdirSync(__dirname)
-  .filter((file) =>
-    file !== 'index.js'
-  )
+  .filter((file) => file !== 'index.js' && file.endsWith('.js'))
   .forEach((file) => {
     const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
     db[model.name] = model;

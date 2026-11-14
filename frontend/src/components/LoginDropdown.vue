@@ -96,14 +96,13 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useMainStore } from '@/store/store'
 import { useNotification } from '@/composables/useNotification'
 import AuthenticationService from '@/services/AuthenticationService'
 import { apiErrorMessage } from '@/i18n'
 
 // Router and store setup
-const router = useRouter()
+
 const mainStore = useMainStore()
 const { showNotification } = useNotification()
 

@@ -15,7 +15,8 @@ Logivilia is a German-language puzzle site with three puzzle types, user account
 | ~~Commit and deploy the security fixes~~ | Done 2026-11-14 (`37f881e`, live on logivilia.de). | – |
 | Confirm password-reset e-mails arrive | The server logs `E-mail "..." accepted by <host>` or `E-mail could not be sent: ...` for every attempt (Plesk → Logs). | Owner |
 | If the live DB was ever seeded: change the seed Admin's password | The old seed file contained known plain-text passwords (still in git history). | Owner |
-| **Migrate the live DB before deploying the generic puzzle model** | Since 2026-11-14 the app reads puzzles, ratings and solves from `Puzzles`, `PuzzleRatings` and `PuzzleSolves`, and comments by `Comments.PuzzleId`. Without the migration every puzzle page is empty. See §7. | Owner |
+| **Back up the live DB before deploying the 2026-11-14 version** | On its first start the server applies the new migrations: it adds the generic puzzle tables, copies puzzles, ratings, solves and comment links into them, and adds the e-mail verification columns (existing accounts count as verified). See §7. | Owner |
+| Check the Node.js version in Plesk | `vue-i18n` 11 (security update) declares Node ≥ 22 for the build; CI uses 22. If Plesk runs 20, switch it to 22 or newer. | Owner |
 
 **Hosting:** netcup webhosting with Plesk. Node.js app: Anwendungsstamm `/logivilia.de/httpdocs`, Startdatei `app.js`, Dokumentenstamm `/logivilia.de/httpdocs/frontend/dist`. Deploy: push → Plesk Git "Pull updates" → NPM install (if dependencies changed) → run script `build` (if `frontend/` changed) → App neu starten.
 
@@ -48,9 +49,12 @@ logivilia/
 │   │   ├── userView.js        # Which user fields may be sent (own vs. public)
 │   │   ├── puzzleView.js      # Puzzle as sent to players (plugin computeClues, no solution)
 │   │   └── legacyPuzzles.js   # Old per-type rows -> generic tables (seed + migration)
-│   ├── scripts/           # migrateToPuzzles.js, fixNonogramSizes.js
-│   ├── migrations/        # Sequelize migration files (currently NOT used by the app)
-│   └── seed/              # JSON seed data + seed script (drops and recreates all tables!)
+│   ├── migrator.js        # Runs migrations/ (Umzug); `npm run migrate`, `migrate:status`
+│   ├── migrations/        # The only source of the schema (no sequelize.sync())
+│   ├── scripts/           # migrateToPuzzles.js (dry run), dropLegacy.js, fixNonogramSizes.js
+│   └── seed/              # JSON seed data + seed script (drops all tables, migrates, fills)
+├── e2e/                   # Playwright smoke tests + their server (in-memory DB)
+├── docker-compose.yml     # Local MySQL 8.4 for development
 ├── shared/                # Used by backend and frontend
 │   ├── errorCodes.json    # API error codes
 │   ├── index.d.ts         # Types, incl. the PuzzleTypePlugin interface
@@ -70,7 +74,7 @@ Folders **outside** the repo in `F:\Logivilia` (`logivilia-backend/`, `logivilia
 
 ## 3. Running locally
 
-**Requirements:** Node.js (v23 was used), plus a database (MySQL by default; Postgres or SQLite also work).
+**Requirements:** Node.js 22 or newer, plus MySQL (production runs MySQL; `docker compose up -d` starts a local MySQL 8.4 whose credentials match `.env.example`). Postgres and SQLite drivers were removed; SQLite remains only as a dev dependency for the tests.
 
 ```bash
 npm install
@@ -80,9 +84,17 @@ npm install
 cp .env.example .env
 ```
 
-Fill in `.env`. The minimum is the DB settings and `JWT_SECRET`. For quick local work SQLite is easiest: set `DB_DIALECT=sqlite`, and the database file `logivilia.db` is created in the folder you start from.
+Fill in `.env`. The minimum is the DB settings and `JWT_SECRET`. Start MySQL and create the schema (the server also does this on start):
 
-Seed the database. **Warning: this drops every table** (`sequelize.sync({force: true})`). It prints random passwords for the seed users; set `SEED_PASSWORD` to choose one instead:
+```bash
+docker compose up -d
+```
+
+```bash
+npm run migrate
+```
+
+Optionally seed the database. **Warning: this drops every table**, then rebuilds the schema from the migrations. It prints random passwords for the seed users; set `SEED_PASSWORD` to choose one instead:
 
 ```bash
 npm run seed
@@ -94,7 +106,21 @@ Run the backend tests (in-memory SQLite, no database or mail server needed):
 npm test
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) runs the tests and the frontend build on every push to `main`.
+Run the browser smoke tests (Playwright, Chromium; one per puzzle type plus the account pages). They need a build and, once, the browser:
+
+```bash
+npm run build
+```
+
+```bash
+npx playwright install chromium
+```
+
+```bash
+npm run test:e2e
+```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests: lint, typecheck, the backend tests on SQLite and again on a MySQL 8.4 service, the build plus the browser tests, and `npm audit --omit=dev --audit-level=high`. Dependabot (`.github/dependabot.yml`) opens weekly update PRs, minor and patch updates grouped.
 
 Start the backend (port 3000), which proxies everything outside `/api` to the Vite dev server on port 8081:
 
@@ -119,7 +145,8 @@ All variables are documented in [`.env.example`](../.env.example). The important
 | Variable | Notes |
 |---|---|
 | `NODE_ENV` | `production` serves `frontend/dist` and enforces `JWT_SECRET` |
-| `DB_DIALECT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | Dev defaults to MySQL. **Production is hardcoded to `mysql`** in `config.js`, although recent commits mention Postgres. Check which one Railway really uses. |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | MySQL, in development and production |
+| `DB_MIGRATE_ON_START` | Default `true`: the server applies pending migrations when it starts. `false`: it refuses to start while any are pending (run `npm run migrate`). |
 | `JWT_SECRET` | Required in production. In dev a random one is used if missing (logins are lost on restart). |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Password-reset mail |
 | `APP_URL` | Used in reset links, default `https://logivilia.com` |
@@ -167,7 +194,9 @@ The **stored** encoding is `0 = empty, k = colour k`, drawn with `colors[k - 1]`
 - The token is a JWT containing only `{ id }` and is valid for 7 days. Passport loads the user from the DB on every request (`backend/passport.js`).
 - The frontend keeps the token in Pinia and persists it in `sessionStorage`. `services/Api.js` adds it as a `Bearer` header.
 - Roles: `Mitglied` (default) and `Admin`. An Admin may edit any puzzle.
-- User objects leave the server only through `utils/userView.js`: `ownUser` includes the e-mail, `publicUser` does not. Neither ever includes the password hash or reset fields.
+- User objects leave the server only through `utils/userView.js`: `ownUser` includes the e-mail and `emailVerified`, `publicUser` neither. Neither ever includes the password hash, reset or verification tokens.
+- **E-mail verification:** registration mails a link (`/verify/<token>`, token stored as SHA-256). Until it is opened, the account can log in, solve and rate, but `policies/isVerified.js` refuses comments and publishing or editing puzzles (`403 EMAIL_NOT_VERIFIED`). The site shows a banner with "Link erneut senden". A password reset also verifies the address. Accounts from before 2026-11-14 were marked verified by the migration.
+- **Own data (GDPR):** the profile page has "Meine Daten": download everything as JSON (`GET /users/:id/export`) and delete the account with the password (`DELETE /users/:id`). Deletion removes solves, ratings, comments (other users' replies to them are then hidden, as with a normal comment delete) and upvotes; published puzzles stay without `UserId`, and lose `author` if it was the username. `/datenschutz` describes what is stored.
 
 ### Solving flow
 
@@ -226,36 +255,38 @@ Rate limits (in memory, per IP, 15-minute window): login 10, register / forgot /
 - **Nonograms with stale cells:** 9 nonograms stored cells outside their declared `width × height` (left over from resizing in the editor). The seed file is fixed. The live database may still contain them; it makes no difference to players (the server ignores those cells when it computes clues and checks solves), but cropping keeps the data clean: `npm run fix:nonograms -w backend` (dry run), then with `-- --apply`. It needs the production DB settings in its environment.
 - **`npm run seed` wipes the database.** In production it refuses unless `SEED_CONFIRM=wipe-all-data` is set. Seed users get random passwords, printed once.
 - **Plesk's "Node.js-Befehle ausführen" tab does not get the Umgebungsvariablen:** commands run there see `NODE_ENV` unset and no DB settings. Don't judge the live configuration from that tab, and don't run `seed` or `fix:nonograms` there.
-- **Old tables after the migration:** `Nonograms`, `Linelogs`, `Logicals`, the three `*Ratings` tables, the unused `UserSolved*` join tables, the `solved*`/`created*` columns on `Users` and `riddleType`/`riddleId` on `Comments` are no longer read. The migration leaves them in place; drop them by hand once the new version has run for a while.
+- **Old tables after the migration:** `Nonograms`, `Linelogs`, `Logicals`, the three `*Ratings` tables, the unused `UserSolved*` join tables, the `solved*`/`created*` columns on `Users` and `riddleType`/`riddleId` on `Comments` are no longer read. The migration leaves them in place (they are the way back to the previous version). Once the new version has run for a while, back up and run `npm run drop:legacy -w backend` (dry run), then with `-- --apply`.
 - **Linelogs and logicals with two valid solutions** are rejected when a player finds the other one: their `validate` compares with the one stored solution. The solver (audit B6) should rule such puzzles out.
-- **The migrations folder is unused;** the schema comes from Sequelize models via `sync`.
-- **Production dialect** is hardcoded to `mysql` in `config.js`.
+- **Schema changes go into a new migration** in `backend/migrations/` (file name starts with the date, e.g. `20261201-01-add-x.js`, exporting `up(queryInterface, Sequelize)` and `down`). Changing a model alone changes nothing in the database; `test/migrations.test.js` fails if a model column has no migration.
 - **No Content-Security-Policy yet:** `helmet` sets the other security headers; CSP needs an allowlist for the icon/font CDNs and puzzle image hosts.
 - **There is no nonogram or linelog creator.** `POST /api/puzzles` accepts every type, so a creator only needs a page.
 - **Logical puzzle images** are hotlinked from `logiklab.de`.
-- **Tests cover the backend only** (`npm test`: verifiers over all seed puzzles plus API tests on in-memory SQLite). No frontend or browser tests yet.
+- **Browser tests are smoke tests:** they solve a tiny nonogram and linelog through the UI and check the logical page and account pages; they do not cover every board feature (undo, zoom, logical drag-and-drop).
+- **The MySQL CI job has not been run yet** (no local MySQL when it was written); the same tests pass on SQLite. Check its first run on GitHub.
 
 ---
 
-## 7. Migrating to the generic puzzle model
+## 7. Database migrations and the move to the generic puzzle model
 
-The 2026-11-14 version stores puzzles in `Puzzles` instead of `Nonograms` / `Linelogs` / `Logicals`. A live database needs a one-time migration **before** the new version starts serving. `scripts/migrateToPuzzles.js` creates the new tables, adds `Comments.PuzzleId`, and copies puzzles (keeping the old ID as `legacyId`), ratings (one per user and puzzle; invalid ones skipped), solves (from the `solved*` arrays) and comment links. It leaves the old tables untouched, runs the data copy in one transaction, and refuses to run twice.
+The schema comes only from `backend/migrations/`, run by Umzug (`backend/migrator.js`); applied migrations are recorded in the `SequelizeMeta` table. Nothing calls `sequelize.sync()` outside tests' legacy fixtures. The server applies pending migrations on start, because Plesk's "Node.js-Befehle" tab does not get the production environment (§6). With `DB_MIGRATE_ON_START=false` it refuses to start instead, and `npm run migrate` applies them.
+
+| Migration | What it does |
+|---|---|
+| `20261114-01-baseline` | Creates every table that is missing; on a database built by the old `sync()` it adds `Puzzles`, `PuzzleRatings`, `PuzzleSolves`, `Comments.PuzzleId` and the indexes, including unique `(UserId, PuzzleId)` on solves and ratings. |
+| `20261114-02-copy-legacy-puzzles` | Copies the old per-type tables into the generic ones (puzzles keep their old ID as `legacyId`; ratings one per user and puzzle, invalid ones skipped; solves from the `solved*` arrays; comment links), in one transaction. Does nothing on a database without old tables or when `Puzzles` already has rows. |
+| `20261114-03-email-verification` | Adds `Users.emailVerified` (existing accounts set to verified) and `emailVerificationToken`; widens `resetPasswordExpires` to BIGINT. |
+
+**Deploying the 2026-11-14 version to the live database:**
 
 1. Back up the database.
-2. With the production DB settings in the environment (not Plesk's "Node.js-Befehle" tab, see §6), run the dry run. It lists counts and any puzzles whose data looks broken (they are copied anyway):
-   ```bash
-   npm run migrate:puzzles -w backend
-   ```
-3. Apply it:
-   ```bash
-   npm run migrate:puzzles -w backend -- --apply
-   ```
-4. Deploy the new version (pull, build, restart).
+2. Optional preview of the copy, with the production DB settings in the environment: `npm run migrate:puzzles -w backend` (dry run; lists counts and puzzles whose data looks broken; they are copied anyway).
+3. Deploy (pull, install, build, restart). The server logs `Applied 3 database migration(s): ...` on its first start.
+4. Some weeks later: `npm run drop:legacy -w backend` (dry run), then `-- --apply`, to drop the old tables and columns.
 
-Rolling back means deploying the previous version: it still reads the old tables, but solves, ratings and comments made after the migration are not in them.
+Rolling back means restoring the backup and deploying the previous version; the old version cannot read the new tables, and solves, ratings and comments made after the migration are only in those.
 
-`npm run seed` builds the new schema directly from the seed files, using the same conversion (`utils/legacyPuzzles.js`). `test/migrateToPuzzles.test.js` runs the migration against an old-schema SQLite database; it has not been run against MySQL.
+`npm run seed` drops all tables and builds the schema through the same migrations. The tests reset their in-memory database the same way; `test/migrateToPuzzles.test.js` runs the migrations against an old-schema database and then `dropLegacy`.
 
 ## 8. Where to go next
 
-See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). In short: clean up the database layer, then build the generic puzzle model together with the planned **automatic solver**, which can then power uniqueness checks, difficulty rating and hints.
+See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). The foundation items (B1–B5, B15) are done apart from self-hosting the logical puzzle images; next is the planned **automatic solver** (B6–B8), which plugs into the puzzle-type plugins and can then power uniqueness checks, difficulty rating and hints.

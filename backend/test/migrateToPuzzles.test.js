@@ -1,6 +1,7 @@
-// Runs scripts/migrateToPuzzles.js against an in-memory database in the old
-// schema (per-type tables, solved* arrays on Users, riddleType/riddleId on
-// Comments) and checks that everything arrives in the generic tables.
+// Runs the migrations against an in-memory database in the old schema
+// (per-type tables, solved* arrays on Users, riddleType/riddleId on Comments,
+// all built by sync() as the app did before migrations) and checks that
+// everything arrives in the generic tables.
 
 process.env.NODE_ENV = 'test';
 
@@ -10,6 +11,7 @@ const { DataTypes } = require('sequelize');
 
 const db = require('../models');
 const { migrate } = require('../scripts/migrateToPuzzles');
+const { dropLegacy } = require('../scripts/dropLegacy');
 const seedNonograms = require('../seed/nonograms.json');
 const seedLinelogs = require('../seed/linelogs.json');
 const seedLogicals = require('../seed/logicals.json');
@@ -54,6 +56,8 @@ const strip = ({ id, userId, Multi, ...rest }) => rest;
 let legacy, oldIds;
 
 before(async () => {
+  // Start empty (matters when the tests share a MySQL database in CI).
+  await sequelize.getQueryInterface().dropAllTables();
   legacy = defineLegacy();
   const models = [legacy.users, legacy.comments, legacy.nonogram, legacy.linelog, legacy.logical,
     ...Object.values(legacy.ratings)];
@@ -131,7 +135,35 @@ test('--apply copies puzzles, ratings, solves and comment links', async () => {
   assert.equal(await User.count(), 2);
 });
 
-test('running it again refuses to touch a migrated database', async () => {
-  assert.equal(await migrate(true), false);
+test('old accounts count as verified, and the old tables are kept', async () => {
+  // Raw query: the old Users table in this test has only a few columns.
+  const [users] = await sequelize.query('SELECT emailVerified FROM Users');
+  assert.deepEqual(users.map(u => Boolean(u.emailVerified)), [true, true]);
+  const tables = (await sequelize.getQueryInterface().showAllTables()).map(String);
+  for (const table of ['Nonograms', 'Linelogs', 'Logicals', 'NonogramRatings']) {
+    assert.ok(tables.includes(table), table);
+  }
+});
+
+test('running it again changes nothing', async () => {
+  assert.equal(await migrate(true), true);
   assert.equal(await Puzzle.count(), 6);
+  assert.equal(await PuzzleSolve.count(), 5);
+});
+
+test('dropLegacy removes the old tables and columns and keeps the new data', async () => {
+  assert.equal(await dropLegacy(false), true);
+  assert.ok((await sequelize.getQueryInterface().showAllTables()).map(String).includes('Nonograms'), 'dry run dropped a table');
+
+  assert.equal(await dropLegacy(true), true);
+  const qi = sequelize.getQueryInterface();
+  const tables = (await qi.showAllTables()).map(String);
+  for (const table of ['Nonograms', 'Linelogs', 'Logicals', 'NonogramRatings', 'LogicalRatings']) {
+    assert.equal(tables.includes(table), false, table);
+  }
+  assert.equal('solvedNonograms' in await qi.describeTable('Users'), false);
+  assert.equal('riddleType' in await qi.describeTable('Comments'), false);
+  assert.equal(await Puzzle.count(), 6);
+  assert.equal(await PuzzleSolve.count(), 5);
+  assert.equal((await Comment.findAll()).length, 3);
 });

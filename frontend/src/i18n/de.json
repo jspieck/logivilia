@@ -36,7 +36,11 @@
     "COMMENT_DELETE_FAILED": "Der Kommentar konnte nicht gelöscht werden.",
     "UPVOTE_LIST_FAILED": "Die Upvotes konnten nicht geladen werden.",
     "UPVOTE_CREATE_FAILED": "Der Upvote konnte nicht abgegeben werden.",
-    "UPVOTE_DELETE_FAILED": "Der Upvote konnte nicht gelöscht werden."
+    "UPVOTE_DELETE_FAILED": "Der Upvote konnte nicht gelöscht werden.",
+    "AUTH_VERIFY_INVALID": "Der Bestätigungslink ist ungültig oder wurde schon benutzt.",
+    "EMAIL_NOT_VERIFIED": "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse (Link in der Registrierungs-E-Mail).",
+    "USER_EXPORT_FAILED": "Ihre Daten konnten nicht exportiert werden.",
+    "USER_DELETE_FAILED": "Das Konto konnte nicht gelöscht werden."
   },
   "clientErrors": {
     "NETWORK": "Der Server ist nicht erreichbar. Bitte prüfen Sie Ihre Internetverbindung.",
@@ -46,6 +50,7 @@
   },
   "messages": {
     "FORGOT_EMAIL_SENT": "Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine E-Mail versendet.",
-    "PASSWORD_CHANGED": "Das Passwort wurde erfolgreich geändert und eine Bestätigungs-E-Mail versendet."
+    "PASSWORD_CHANGED": "Das Passwort wurde erfolgreich geändert und eine Bestätigungs-E-Mail versendet.",
+    "VERIFY_EMAIL_SENT": "Wir haben Ihnen einen neuen Bestätigungslink geschickt."
   }
 }
