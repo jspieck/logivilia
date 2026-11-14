@@ -6,7 +6,7 @@ This audit covers security, correctness, architecture, UX and engineering practi
 
 **Status key:** ✅ fixed · ⚠️ partly fixed · ❌ open. Fixes from 2026-11-08 are deployed (2026-11-14).
 
-**Progress on Part B (2026-11-14):** B5 mostly done (workspaces, shared types, error codes + `vue-i18n`, Oruga only, lazy routes; legacy folders outside the repo remain). B15 started: `npm test` runs 36 backend tests (verifiers over all seed puzzles, API security tests on in-memory SQLite) and GitHub Actions runs tests + build. Still open in B15: frontend/browser tests, Dependabot, GDPR items.
+**Progress on Part B (2026-11-14):** B5 mostly done (workspaces, shared types, error codes + `vue-i18n`, Oruga only, lazy routes; legacy folders outside the repo remain). B3 done: the API sends clues instead of solutions, and a public `check` endpoint answers whether a finished grid is correct. B15 started: `npm test` runs 44 backend tests (verifiers over all seed puzzles, API security tests on in-memory SQLite) and GitHub Actions runs tests + build. Still open in B15: frontend/browser tests, Dependabot, GDPR items.
 
 ---
 
@@ -21,7 +21,7 @@ This audit covers security, correctness, architecture, UX and engineering practi
 | 3 | Login, register and reset returned the password hash and reset token; the full user record was signed into the JWT; the plain-text new password was logged on reset | `AuthenticationController.js:84-85, 161-162, 194` | ✅ |
 | 4 | Anyone could create or overwrite any puzzle without logging in | `backend/routes.js:75-99` | ✅ |
 | 5 | IDOR: any logged-in user could mark puzzles as solved for any other user | `backend/controllers/UserController.js:60` | ✅ |
-| 6 | Solutions are sent to the browser, and the browser alone decided "solved", so the leaderboard could not be trusted | `*Solve.vue`, puzzle `GET` endpoints | ⚠️ The server now verifies every solve; solutions are still sent to the client (see B3) |
+| 6 | Solutions are sent to the browser, and the browser alone decided "solved", so the leaderboard could not be trusted | `*Solve.vue`, puzzle `GET` endpoints | ✅ The server verifies every solve, and since 2026-11-14 puzzle responses no longer contain the solution (B3) |
 
 ### A2. Functional bugs
 
@@ -81,10 +81,12 @@ Each type is one module: `render`, `computeClues(solution)`, `validate(grid)`, `
 - **Effort:** L.
 - **Tip:** design this together with the solver; it is the solver's API.
 
-#### 3. 🏗 Stop sending solutions to the browser
+#### 3. 🏗 Stop sending solutions to the browser ✅ (2026-11-14)
 Compute clues on the server (nonogram row/column clues, linelog numbers already exist as `information`) and send only those. Verification already happens on the server (done 2026-11-08). For nonograms, keep accepting any grid that satisfies all clues.
 - **Effort:** M.
 - **Result:** a leaderboard that can't be faked.
+- **Done:** puzzle `GET`s go through `backend/utils/puzzleView.js` (nonograms get `rowClues`/`columnClues`, linelogs get `informationColors`). `POST /api/<type>/:id/check` lets guests check a finished grid. The logical verifier now ignores the row label column, which also makes one seed logical with mislabelled rows solvable.
+- **Still open:** linelogs and logicals are compared with the one stored answer, so a puzzle with a second valid solution rejects it (the linelog page then says "all numbers connected, but the solution is wrong"). The solver (B6) should rule such puzzles out. The check endpoint is an oracle for complete guesses; the rate limit keeps it from being useful for brute force on real puzzle sizes.
 
 #### 4. 🏗 Clean up the database layer
 - Use migrations as the only source of schema; keep `sync` out of anything but tests.
@@ -146,7 +148,7 @@ Save progress per puzzle (localStorage for guests, server for logged-in users) a
 #### 14. 🎨 Finding puzzles
 - Filters: size, number of colours, difficulty, rating, "unsolved only", author.
 - "Next unsolved puzzle" button on the success screen.
-- Server-side pagination and sorting (today the overview loads every puzzle, including solutions).
+- Server-side pagination and sorting (today the overview loads every puzzle at once).
 - **Effort:** S–M.
 
 ### Engineering and trust

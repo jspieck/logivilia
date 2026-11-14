@@ -13,6 +13,7 @@ const CommentUpvoteController = require('./controllers/CommentUpvoteController')
 const isAuthenticated = require('./policies/isAuthenticated');
 const RankingController = require('./controllers/RankingController');
 const rateLimit = require('./policies/rateLimit');
+const AdminController = require('./controllers/AdminController');
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
 const loginLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 10 });
@@ -21,6 +22,9 @@ const loginLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 10 });
 const registerLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
 const forgotLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
 const resetLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
+// The check endpoint answers "is this grid correct?", so it is limited to
+// keep it from being used to brute-force small puzzles.
+const checkLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
 
 module.exports = () => {
   const router = express.Router();
@@ -39,6 +43,11 @@ module.exports = () => {
     resetLimiter,
     AuthenticationControllerPolicy.reset,
     AuthenticationController.reset);
+
+  // Admin diagnostics: sends a test e-mail and returns the SMTP result.
+  router.post('/admin/test-mail',
+    isAuthenticated,
+    AdminController.testMail);
 
   // User Pages
   router.get('/users/:userId',
@@ -92,6 +101,9 @@ module.exports = () => {
   router.post('/logical',
     isAuthenticated,
     LogicalController.post);
+  router.post('/logical/:logicalId/check',
+    checkLimiter,
+    LogicalController.check);
 
   // Nonogram Routes
   router.get('/nonogram',
@@ -104,6 +116,9 @@ module.exports = () => {
   router.post('/nonogram',
     isAuthenticated,
     NonogramController.post);
+  router.post('/nonogram/:nonogramId/check',
+    checkLimiter,
+    NonogramController.check);
 
   // Linelog Routes
   router.get('/linelog',
@@ -116,6 +131,9 @@ module.exports = () => {
   router.post('/linelog',
     isAuthenticated,
     LinelogController.post);
+  router.post('/linelog/:linelogId/check',
+    checkLimiter,
+    LinelogController.check);
 
   // Nonogram Rating Routes
   router.get('/nonogramratings',

@@ -173,57 +173,23 @@ const restoreState = () => {
     }
 };
 
-// Validate the solution
-const validateSolution = () => {
-  if (!props.logical?.solution || !attrInputs.value) {
-    console.log("Missing data for validation:", { 
-      hasSolution: !!props.logical?.solution, 
-      hasAttrInputs: !!attrInputs.value 
-    })
-    return false
-  }
-
-  console.log("Validating solution with:", {
-    solution: props.logical.solution,
-    attrInputs: attrInputs.value
-  })
-
-  try {
-    // Check attribute inputs
-    for (let i = 0; i < props.logical.solution.length; i++) {
-      for (let j = 1; j < props.logical.solution[i].length; j++) {
-        const inputKey = `${i}_${j-1}`
-        if (attrInputs.value[inputKey] === null || attrInputs.value[inputKey] === undefined) {
-          console.log(`Missing input for ${inputKey}`)
-          return false
-        }
-        if (props.logical.solution[i][j] !== attrInputs.value[inputKey]) {
-          console.log(`Mismatch at ${inputKey}:`, {
-            expected: props.logical.solution[i][j],
-            got: attrInputs.value[inputKey]
-          })
-          return false
-        }
-      }
-    }
-    return true
-  } catch (error) {
-    console.error("Error during solution validation:", error)
-    return false
-  }
-}
-
-// The player's table in the same shape as logical.solution, so the server
-// can verify it: the first column is the fixed row label, the rest are inputs.
+// The player's table: one row per value of the first attribute (that value
+// in column 0), then the chosen value of each other attribute. The solution
+// is not sent to the browser; the server checks the table.
 const submittedTable = () =>
-  props.logical.solution.map((row, i) =>
-    row.map((cell, j) => (j === 0 ? cell : attrInputs.value[`${i}_${j - 1}`]))
-  )
+  props.logical.attributes[0].values.map((label, i) => [
+    label,
+    ...props.logical.attributes.slice(1).map((_, j) => attrInputs.value[`${i}_${j}`])
+  ])
 
-// Add solution checking logic
+const isTableComplete = (table) =>
+  table.every(row => row.every(cell => cell !== null && cell !== undefined && cell !== ''))
+
+// Emits ('solution-check', complete, table). The parent asks the server
+// whether a complete table is correct.
 const checkSolution = () => {
-  const isCorrect = validateSolution()
-  emit('solution-check', isCorrect, isCorrect ? submittedTable() : null)
+  const table = submittedTable()
+  emit('solution-check', isTableComplete(table), table)
 }
 
 const toXY = (i, j, k) => {

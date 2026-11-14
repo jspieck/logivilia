@@ -70,7 +70,6 @@ const logical = ref({
   image: "",
   date: "",
   author: "",
-  solution: [],
 });
 const rating = ref(null);
 const rateMax = ref(5);
@@ -135,48 +134,47 @@ const checkIfAlreadySolved = async () => {
   }
 };
 
-const handleSolutionCheck = async (isCorrect, submittedTable) => {
-  try {
-    if (isCorrect) {
-      solved.value = true;
-      solveLabel.value = "Gratulation, das Rätsel ist gelöst!";
-      
-      // Only save if user is logged in and puzzle wasn't already solved
-      if (store.isUserLoggedIn && !alreadySolved.value) {
-        await saveSolvedState(submittedTable);
-      }
-    } else {
-      solved.value = false;
-      solveLabel.value = "Es existieren noch Fehler!";
+// Logged-in players record the solve (the server checks it first); guests
+// and players who solved it before only ask whether the table is correct.
+const isCorrectOnServer = async (table) => {
+  const logicalId = parseInt(route.params.id, 10);
+  if (store.isUserLoggedIn && !alreadySolved.value) {
+    try {
+      await UserService.logicalSolved(store.user.id, logicalId, table);
+    } catch (error) {
+      if (error.response?.data?.code === 'SOLUTION_INCORRECT') return false;
+      throw error;
     }
-  } catch (error) {
-    console.error('Error handling solution:', error);
-    oruga.notification.open({
-      message: 'Fehler beim Überprüfen der Lösung',
-      duration: 3000,
-      variant: 'danger'
-    });
-  }
-};
-
-const saveSolvedState = async (submittedTable) => {
-  try {
-    if (!store.isUserLoggedIn || alreadySolved.value) return;
-
-    const userId = store.user.id;
-    const logicalId = parseInt(route.params.id, 10);
-    await UserService.logicalSolved(userId, logicalId, submittedTable);
-    
     alreadySolved.value = true;
     oruga.notification.open({
       message: 'Rätsel erfolgreich als gelöst markiert!',
       duration: 3000,
       variant: 'success'
     });
+    return true;
+  }
+  const res = await LogicalService.check(logicalId, table);
+  return res.data.solved === true;
+};
+
+const handleSolutionCheck = async (isComplete, submittedTable) => {
+  if (!isComplete) {
+    solved.value = false;
+    solveLabel.value = "Bitte zuerst alle Felder ausfüllen.";
+    return;
+  }
+  try {
+    if (await isCorrectOnServer(submittedTable)) {
+      solved.value = true;
+      solveLabel.value = "Gratulation, das Rätsel ist gelöst!";
+    } else {
+      solved.value = false;
+      solveLabel.value = "Es existieren noch Fehler!";
+    }
   } catch (error) {
-    console.error('Error saving solved state:', error);
+    console.error('Error checking solution:', error);
     oruga.notification.open({
-      message: 'Fehler beim Speichern des Lösungsstatus',
+      message: 'Fehler beim Überprüfen der Lösung',
       duration: 3000,
       variant: 'danger'
     });

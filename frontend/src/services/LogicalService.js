@@ -12,5 +12,9 @@ export default {
   },
   put(logical) {
     return Api().put(`logical/${logical.id}`, logical);
+  },
+  // solution: one row per value of the first attribute, that value first
+  check(logicalId, solution) {
+    return Api().post(`logical/${logicalId}/check`, { solution });
   }
 };

@@ -1,6 +1,8 @@
 // Shared CRUD handlers for the puzzle types (Logical, Nonogram, Linelog).
 // `editableFields` is the whitelist of fields a client may set; everything
 // else (id, UserId, timestamps) is controlled by the server.
+// `view` turns a stored puzzle into what players get (no solution), and
+// `verify` + `bodyField` check a submitted grid for `POST /<type>/:id/check`.
 
 const { sendError } = require('../utils/apiError');
 
@@ -16,11 +18,11 @@ function pickFields (body, fields) {
   return result;
 }
 
-module.exports = function createPuzzleController ({ model, idParam, editableFields }) {
+module.exports = function createPuzzleController ({ model, idParam, editableFields, view, verify, bodyField }) {
   return {
     async index (req, res) {
       try {
-        res.send(await model.findAll());
+        res.send((await model.findAll()).map(view));
       } catch (err) {
         console.error(err);
         sendError(res, 500, 'PUZZLE_LIST_FAILED');
@@ -32,7 +34,7 @@ module.exports = function createPuzzleController ({ model, idParam, editableFiel
         if (!puzzle) {
           return sendError(res, 404, 'PUZZLE_NOT_FOUND');
         }
-        res.send(puzzle);
+        res.send(view(puzzle));
       } catch (err) {
         console.error(err);
         sendError(res, 500, 'PUZZLE_FETCH_FAILED');
@@ -64,6 +66,21 @@ module.exports = function createPuzzleController ({ model, idParam, editableFiel
       } catch (err) {
         console.error(err);
         sendError(res, 500, 'PUZZLE_UPDATE_FAILED');
+      }
+    },
+    // Lets anyone (also guests) ask whether a finished grid is correct.
+    // Logged-in players record a solve via PATCH /users/:id/<type>/:id,
+    // which runs the same check.
+    async check (req, res) {
+      try {
+        const puzzle = await model.findByPk(req.params[idParam]);
+        if (!puzzle) {
+          return sendError(res, 404, 'PUZZLE_NOT_FOUND');
+        }
+        res.send({ solved: verify(puzzle, req.body && req.body[bodyField]) });
+      } catch (err) {
+        console.error(err);
+        sendError(res, 500, 'PUZZLE_FETCH_FAILED');
       }
     }
   };

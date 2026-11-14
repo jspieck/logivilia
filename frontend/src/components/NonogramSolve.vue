@@ -199,7 +199,8 @@ export default {
       height: 0,
       difficulty: 1,
       colors: ['#FFFFFF', '#FFFFFF'],
-      solution: [],
+      rowClues: [],
+      columnClues: [],
     });
     const revertHistory = ref([]);
     const revertIndex = ref(0);
@@ -233,200 +234,54 @@ export default {
       return baseColors;
     });
     const backgroundNumber = computed(() => colors.value.length - 2);
-    const solution = computed(() => {
-      const solution = nonogram.value.solution;
-      const adaptedSolution = [];
-      for (const row of solution) {
-        const adaptedRow = [];
-        for (let i = 0; i < row.length; i++) {
-          if (row[i] == 0) {
-            adaptedRow.push(colors.value.length - 2);
-          } else {
-            adaptedRow.push(row[i] - 1);
-          }
-        }
-        adaptedSolution.push(adaptedRow);
-      }
-      return adaptedSolution;
-    });
-    const horizontalInfo = computed(() => {
-      const horizontalInfo = [];
+    // The server sends only the clues, as [[colour, length], ...] per line
+    // in the stored encoding (colour k >= 1). In the UI, colour k is k - 1.
+    const toUiClues = (lines) => (lines || []).map(line =>
+      line.map(([colour, length]) => ({ currentNumber: colour - 1, currentNumberCounter: length }))
+    );
+    const horizontalClues = computed(() => toUiClues(nonogram.value.rowClues));
+    const verticalClues = computed(() => toUiClues(nonogram.value.columnClues));
+
+    // Clue blocks for display: lines in groups of 5, each line padded at the
+    // front with empty blocks so all lines are as long as the longest one.
+    const clueDisplay = (lines) => {
+      const groups = [];
       let cellId = 0;
-      let longestRow = 0;
-      for (let a = 0; a < height.value; a += 5) {
-        const infoGroup = [];
-        for (let b = 0; b < 5; b += 1) {
-          const i = a + b;
-          if (i >= height.value) {
-            break;
-          }
-          const rowInfo = [];
-          let currentNumber = solution.value[i][0];
-          let currentNumberCounter = 1;
-          for (let j = 1; j < width.value; j++) {
-            if (solution.value[i][j] != currentNumber) {
-              if (currentNumber != backgroundNumber.value && currentNumber != colors.value.length - 1) {
-                rowInfo.push({
-                  'colorId': currentNumber,
-                  'id': cellId,
-                  'color': fontColors.value[currentNumber],
-                  'blockLength': currentNumberCounter,
-                  background: colors.value[currentNumber]
-                });
-                cellId += 1;
-              }
-              currentNumber = solution.value[i][j];
-              currentNumberCounter = 1;
-            } else {
-              currentNumberCounter += 1;
-            }
-          }
-          if (currentNumber != backgroundNumber.value && currentNumber != colors.value.length - 1) {
-            rowInfo.push({
-              'colorId': currentNumber,
-              'id': cellId,
-              'color': fontColors.value[currentNumber],
-              'blockLength': currentNumberCounter,
-              background: colors.value[currentNumber]
-            });
-            cellId += 1;
-          }
-          infoGroup.push(rowInfo);
-          longestRow = Math.max(longestRow, rowInfo.length);
+      let longest = 0;
+      for (let a = 0; a < lines.length; a += 5) {
+        const group = lines.slice(a, a + 5).map(line => line.map(({ currentNumber, currentNumberCounter }) => ({
+          colorId: currentNumber,
+          id: cellId++,
+          color: fontColors.value[currentNumber],
+          blockLength: currentNumberCounter,
+          background: colors.value[currentNumber]
+        })));
+        for (const line of group) {
+          longest = Math.max(longest, line.length);
         }
-        horizontalInfo.push(infoGroup);
+        groups.push(group);
       }
-      for (const group of horizontalInfo) {
-        for (const row of group) {
-          for (let o = row.length; o < longestRow; o += 1) {
-            row.unshift({
-              'colorId': backgroundNumber.value,
-              'color': '#fff',
-              'id': cellId,
+      for (const group of groups) {
+        for (const line of group) {
+          while (line.length < longest) {
+            line.unshift({
+              colorId: backgroundNumber.value,
+              color: '#fff',
+              id: cellId++,
               blockLength: 0,
               background: '#fff'
             });
-            cellId += 1;
           }
         }
       }
-      return horizontalInfo;
-    });
+      return groups;
+    };
+    const horizontalInfo = computed(() => clueDisplay(horizontalClues.value));
     const horizontalWidth = computed(() => {
       if (horizontalInfo.value[0] == null) return 0;
       return horizontalInfo.value[0][0].length;
     });
-    const horizontalClues = computed(() => {
-      const rowInfos = [];
-      for (let b = 0; b < height.value; b++) {
-        const rowInfo = [];
-        let currentNumber = solution.value[b][0];
-        let currentNumberCounter = 1;
-        for (let a = 1; a < width.value; a++) {
-          if (solution.value[b][a] != currentNumber) {
-            if (currentNumber != backgroundNumber.value) {
-              rowInfo.push({ currentNumber, currentNumberCounter });
-            }
-            currentNumber = solution.value[b][a];
-            currentNumberCounter = 1;
-          } else {
-            currentNumberCounter += 1;
-          }
-        }
-        if (currentNumber != backgroundNumber.value) {
-          rowInfo.push({ currentNumber, currentNumberCounter });
-        }
-        rowInfos.push(rowInfo);
-      }
-      return rowInfos;
-    });
-    const verticalClues = computed(() => {
-      const columnInfos = [];
-      for (let b = 0; b < width.value; b++) {
-        const columnInfo = [];
-        let currentNumber = solution.value[0][b];
-        let currentNumberCounter = 1;
-        for (let a = 1; a < height.value; a++) {
-          if (solution.value[a][b] != currentNumber) {
-            if (currentNumber != backgroundNumber.value) {
-              columnInfo.push({ currentNumber, currentNumberCounter });
-            }
-            currentNumber = solution.value[a][b];
-            currentNumberCounter = 1;
-          } else {
-            currentNumberCounter += 1;
-          }
-        }
-        if (currentNumber != backgroundNumber.value) {
-          columnInfo.push({ currentNumber, currentNumberCounter });
-        }
-        columnInfos.push(columnInfo);
-      }
-      return columnInfos;
-    });
-    const verticalInfo = computed(() => {
-      const verticalInfo = [];
-      let cellId = 0;
-      let longestColumn = 0;
-      for (let a = 0; a < width.value; a += 5) {
-        const infoGroup = [];
-        for (let b = 0; b < 5; b += 1) {
-          const i = a + b;
-          if (i >= width.value) {
-            break;
-          }
-          const columnInfo = [];
-          let currentNumber = solution.value[0][i];
-          let currentNumberCounter = 1;
-          for (let j = 1; j < height.value; j += 1) {
-            if (solution.value[j][i] != currentNumber) {
-              if (currentNumber != backgroundNumber.value) {
-                columnInfo.push({
-                  'colorId': currentNumber,
-                  'id': cellId,
-                  'color': fontColors.value[currentNumber],
-                  'blockLength': currentNumberCounter,
-                  background: colors.value[currentNumber]
-                });
-                cellId += 1;
-              }
-              currentNumber = solution.value[j][i];
-              currentNumberCounter = 1;
-            } else {
-              currentNumberCounter += 1;
-            }
-          }
-          if (currentNumber != backgroundNumber.value) {
-            columnInfo.push({
-              'colorId': currentNumber,
-              'id': cellId,
-              'color': fontColors.value[currentNumber],
-              'blockLength': currentNumberCounter,
-              background: colors.value[currentNumber]
-            });
-            cellId += 1;
-          }
-          infoGroup.push(columnInfo);
-          longestColumn = Math.max(longestColumn, columnInfo.length);
-        }
-        verticalInfo.push(infoGroup);
-      }
-      for (const group of verticalInfo) {
-        for (const row of group) {
-          for (let o = row.length; o < longestColumn; o += 1) {
-            row.unshift({
-              'colorId': backgroundNumber.value,
-              'color': '#fff',
-              'id': cellId,
-              blockLength: 0,
-              background: '#fff'
-            });
-            cellId += 1;
-          }
-        }
-      }
-      return verticalInfo;
-    });
+    const verticalInfo = computed(() => clueDisplay(verticalClues.value));
     const verticalHeight = computed(() => {
       if (verticalInfo.value[0] == null) return 0;
       return verticalInfo.value[0][0].length;
@@ -894,7 +749,6 @@ export default {
       width,
       colors,
       backgroundNumber,
-      solution,
       horizontalInfo,
       horizontalWidth,
       horizontalClues,

@@ -146,9 +146,10 @@ The **stored** encoding is `0 = empty, k = colour k`. The solve components use a
 
 ### Solving flow
 
-1. The solve page loads the puzzle, **including its solution** (still needed to compute clues in the browser; see the audit).
-2. When the player finishes, the page calls `PATCH /api/users/:userId/<type>/:id` with `{ grid }` (or `{ solution }` for logicals).
-3. The server checks that `:userId` is the logged-in user, verifies the submission with `utils/verifySolution.js`, and adds the puzzle ID to the user's `solved*` JSON array.
+1. The solve page loads the puzzle **without its solution**. `utils/puzzleView.js` removes `solution` from every puzzle `GET` and adds what the player needs instead: `rowClues` and `columnClues` for nonograms (`[[colour, length], ...]` per line), and `informationColors` for linelogs (the colour of each numbered cell). Logicals need nothing extra.
+2. The page decides when the player is done: nonograms when every line matches its clues, linelogs when every number is connected by a path of the right length, logicals when the player clicks "Überprüfen" with every field filled.
+3. Logged-in players then call `PATCH /api/users/:userId/<type>/:id` with `{ grid }` (or `{ solution }` for logicals). The server checks that `:userId` is the logged-in user, verifies the submission with `utils/verifySolution.js`, and adds the puzzle ID to the user's `solved*` JSON array. A wrong submission gets `400 SOLUTION_INCORRECT`.
+4. Guests, and players who solved the puzzle before, call `POST /api/<type>/:id/check` with the same body instead. It answers `{ solved: true | false }`, records nothing, needs no login, and is limited to 30 requests per minute per IP.
 
 ### API overview
 
@@ -197,8 +198,7 @@ Rate limits (in memory, per IP, 15-minute window): login 10, register / forgot /
 
 ## 6. Known issues and gotchas
 
-- **Solutions are still sent to the browser.** The server now verifies solves, but a determined user can read the solution from the API and submit it. The fix is to compute clues on the server (audit item 3).
-- **Nonograms with stale cells:** 9 nonograms stored cells outside their declared `width × height` (left over from resizing in the editor). The seed file is fixed. The live database may still contain them; it makes no difference to players (the UI and verifier ignore those cells), but crop them before computing clues on the server: `npm run fix:nonograms -w backend` (dry run), then with `-- --apply`. It needs the production DB settings in its environment.
+- **Nonograms with stale cells:** 9 nonograms stored cells outside their declared `width × height` (left over from resizing in the editor). The seed file is fixed. The live database may still contain them; it makes no difference to players (the server ignores those cells when it computes clues and checks solves), but cropping keeps the data clean: `npm run fix:nonograms -w backend` (dry run), then with `-- --apply`. It needs the production DB settings in its environment.
 - **`npm run seed` wipes the database.** In production it refuses unless `SEED_CONFIRM=wipe-all-data` is set. Seed users get random passwords, printed once.
 - **Plesk's "Node.js-Befehle ausführen" tab does not get the Umgebungsvariablen:** commands run there see `NODE_ENV` unset and no DB settings. Don't judge the live configuration from that tab, and don't run `seed` or `fix:nonograms` there.
 - **Two sources of truth for solves:** the `solved*` JSON arrays on `User` (used) and the `UserSolved*` join tables (defined, unused).
@@ -213,4 +213,4 @@ Rate limits (in memory, per IP, 15-minute window): login 10, register / forgot /
 
 ## 7. Where to go next
 
-See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). In short: hide the solutions from the client, clean up the database layer, then build the generic puzzle model together with the planned **automatic solver**, which can then power uniqueness checks, difficulty rating and hints.
+See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). In short: clean up the database layer, then build the generic puzzle model together with the planned **automatic solver**, which can then power uniqueness checks, difficulty rating and hints.

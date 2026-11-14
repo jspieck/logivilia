@@ -5,7 +5,9 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { verifyNonogram, verifyLinelog, verifyLogical } = require('../utils/verifySolution');
+const {
+  verifyNonogram, verifyLinelog, verifyLogical, nonogramClues, linelogInformationColors
+} = require('../utils/verifySolution');
 const { cropSolution, needsCrop } = require('../scripts/fixNonogramSizes');
 const nonograms = require('../seed/nonograms.json');
 const linelogs = require('../seed/linelogs.json');
@@ -118,5 +120,39 @@ describe('cropSolution', () => {
     const puzzle = { width: 2, height: 1, solution: [[1, 0]] };
     assert.equal(needsCrop(puzzle), false);
     assert.deepEqual(cropSolution(puzzle), [[1, 0]]);
+  });
+});
+
+describe('clues sent to players', () => {
+  test('every seed nonogram has one clue line per row and column', () => {
+    for (const n of nonograms) {
+      const { rowClues, columnClues } = nonogramClues(n);
+      assert.equal(rowClues.length, Number(n.height), n.name);
+      assert.equal(columnClues.length, Number(n.width), n.name);
+    }
+  });
+
+  test('clues of a small two-colour nonogram', () => {
+    // rows [1,1,0] and [0,2,2]
+    const puzzle = { width: 3, height: 2, colors: ['#000', '#f00', '#fff'], solution: [[1, 1, 0], [0, 2, 2]] };
+    assert.deepEqual(nonogramClues(puzzle), {
+      rowClues: [[[1, 2]], [[2, 2]]],
+      columnClues: [[[1, 1]], [[1, 1], [2, 1]], [[2, 1]]]
+    });
+  });
+
+  test('linelog clue colours match the solution on numbered cells only', () => {
+    for (const l of linelogs) {
+      const colours = linelogInformationColors(l);
+      l.information.forEach((row, y) => row.forEach((cell, x) => {
+        assert.equal(colours[y][x], cell !== 0 ? l.solution[y][x] : 0, l.name);
+      }));
+    }
+  });
+
+  test('a logical ignores the row label column', () => {
+    const l = logicals[0];
+    const table = l.solution.map(row => ['label', ...row.slice(1)]);
+    assert.equal(verifyLogical(l, table), true);
   });
 });

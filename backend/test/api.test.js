@@ -226,6 +226,75 @@ describe('solving', () => {
   });
 });
 
+describe('solutions stay on the server', () => {
+  const types = () => [
+    ['nonogram', nonogram.id, ['rowClues', 'columnClues']],
+    ['linelog', linelog.id, ['information', 'informationColors']],
+    ['logical', logical.id, ['clues', 'attributes']]
+  ];
+
+  test('puzzle list and detail never contain the solution', async () => {
+    for (const [type, id, expected] of types()) {
+      const list = await api().get(`/api/${type}`);
+      assert.equal(list.status, 200);
+      assert.ok(list.body.length > 0, type);
+      for (const puzzle of list.body) {
+        assert.equal('solution' in puzzle, false, `${type} list`);
+      }
+      const detail = await api().get(`/api/${type}/${id}`);
+      assert.equal(detail.status, 200);
+      assert.equal('solution' in detail.body, false, `${type} detail`);
+      for (const field of expected) {
+        assert.ok(Array.isArray(detail.body[field]), `${type} has ${field}`);
+      }
+    }
+  });
+
+  test('nonogram clues match the stored solution', async () => {
+    const res = await api().get(`/api/nonogram/${nonogram.id}`);
+    assert.equal(res.body.rowClues.length, Number(seedNonograms[0].height));
+    assert.equal(res.body.columnClues.length, Number(seedNonograms[0].width));
+    const grid = cropSolution(seedNonograms[0]);
+    const firstRow = [];
+    let prev = 0;
+    for (const cell of grid[0]) {
+      if (cell !== 0 && cell === prev) firstRow[firstRow.length - 1][1] += 1;
+      else if (cell !== 0) firstRow.push([cell, 1]);
+      prev = cell;
+    }
+    assert.deepEqual(res.body.rowClues[0], firstRow);
+  });
+
+  test('linelog clue colours are given only on numbered cells', async () => {
+    const res = await api().get(`/api/linelog/${linelog.id}`);
+    const { information, informationColors } = res.body;
+    information.forEach((row, y) => row.forEach((cell, x) => {
+      const expected = cell !== 0 ? seedLinelogs[0].solution[y][x] : 0;
+      assert.equal(informationColors[y][x], expected);
+    }));
+  });
+
+  test('anyone can check a grid without recording a solve', async () => {
+    const cases = [
+      ['nonogram', nonogram.id, { grid: cropSolution(seedNonograms[0]) },
+        { grid: cropSolution(seedNonograms[0]).map(row => row.map(() => 0)) }],
+      ['linelog', linelog.id, { grid: seedLinelogs[0].solution },
+        { grid: seedLinelogs[0].solution.map(row => row.map(() => 0)) }],
+      ['logical', logical.id, { solution: seedLogicals[0].solution },
+        { solution: seedLogicals[0].solution.map(row => row.map(() => 'x')) }]
+    ];
+    for (const [type, id, right, wrong] of cases) {
+      const ok = await api().post(`/api/${type}/${id}/check`).send(right);
+      assert.equal(ok.status, 200, type);
+      assert.deepEqual(ok.body, { solved: true }, type);
+      const bad = await api().post(`/api/${type}/${id}/check`).send(wrong);
+      assert.deepEqual(bad.body, { solved: false }, type);
+    }
+    const unknown = await api().post('/api/nonogram/999999/check').send({ grid: [[0]] });
+    assert.equal(unknown.status, 404);
+  });
+});
+
 describe('ratings and comments', () => {
   test('ratings outside 1-5 are rejected', async () => {
     for (const rating of [0, 6, 1000, 2.5, '5']) {

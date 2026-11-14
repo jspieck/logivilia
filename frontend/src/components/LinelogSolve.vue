@@ -145,7 +145,7 @@ const linelog = ref({
   width: 0,
   height: 0,
   information: [],
-  solution: [],
+  informationColors: [],
   colors: ["#FFFFFF"],
 });
 
@@ -209,7 +209,7 @@ watch(
       for (let y = 0; y < information.value.length; y++) {
         for (let x = 0; x < information.value[y].length; x++) {
           if (information.value[y][x] != 0) {
-            gridState.value[x + y * width.value] = solution.value[y][x];
+            gridState.value[x + y * width.value] = clueColors.value[y][x];
           }
         }
       }
@@ -300,22 +300,13 @@ const information = computed(() => {
   return information;
 });
 
-const solution = computed(() => {
-  const solution = [];
-  // create a copy
-  for (const row of linelog.value.solution) {
-    const solutionRow = [];
-    for (const cell of row) {
-      if (cell == 0) {
-        solutionRow.push(backgroundNumber.value);
-      } else {
-        solutionRow.push(cell - 1);
-      }
-    }
-    solution.push(solutionRow);
-  }
-  return solution;
-});
+// Colour of each numbered cell in UI encoding (stored colour k is k - 1,
+// 0 is the background). The server sends only these, not the solution.
+const clueColors = computed(() =>
+  (linelog.value.informationColors || []).map(row =>
+    row.map(cell => (cell == 0 ? backgroundNumber.value : cell - 1))
+  )
+);
 
 const fontColors = computed(() => {
   const fontColors = [];
@@ -338,7 +329,7 @@ onMounted(async () => {
   for (let y = 0; y < information.value.length; y++) {
     for (let x = 0; x < information.value[y].length; x++) {
       if (information.value[y][x] != 0) {
-        gridState.value[x + y * width.value] = solution.value[y][x];
+        gridState.value[x + y * width.value] = clueColors.value[y][x];
       }
     }
   }
@@ -583,7 +574,7 @@ const moveEvent = (x, y) => {
     if (
       cellReachable &&
       information.value[y][x] != 0 &&
-      selectedColor.value != solution.value[y][x]
+      selectedColor.value != clueColors.value[y][x]
     ) {
       errorMessage("Falsche Farbe");
       cellReachable = false;
@@ -656,25 +647,32 @@ const moveEvent = (x, y) => {
   }
   lastMousePos.value = [x, y];
 };
-const checkIfSolved = () => {
-  let solved = true;
-  for (let y = 0; y < solution.value.length; y++) {
-    for (let x = 0; x < solution.value[y].length; x++) {
-      // check that twos are connected
-      if (
-        (information.value[y][x] > 1 && pathIndices.value[y * width.value + x] == -1) ||
-        solution.value[y][x] != gridState.value[y * width.value + x]
-      ) {
-        solved = false;
-        break;
+// Every number is connected when each number > 1 lies on a path, and each
+// path has the right length and ends on two numbered cells. Whether that is
+// the solution is decided by the server.
+const allNumbersConnected = () => {
+  for (let y = 0; y < information.value.length; y++) {
+    for (let x = 0; x < information.value[y].length; x++) {
+      if (information.value[y][x] > 1 && pathIndices.value[y * width.value + x] == -1) {
+        return false;
       }
     }
   }
-  if (solved) {
+  return Object.values(paths.value).every(path => {
+    const [x0, y0] = path.cells[0];
+    const [x1, y1] = path.cells[path.cells.length - 1];
+    return path.cells.length == path.correctLength &&
+      information.value[y0][x0] != 0 &&
+      information.value[y1][x1] != 0;
+  });
+};
+const checkIfSolved = async () => {
+  if (solved.value || !allNumbersConnected()) return;
+  if (await checkWithServer()) {
+    solved.value = true;
     scaleToScreenSize();
-  }
-  if (!alreadySolved.value && solved) {
-    saveSolvedLinelog();
+  } else {
+    errorMessage("Alle Zahlen sind verbunden, aber die Lösung stimmt nicht.");
   }
 };
 // Converts the UI grid back to the stored encoding (0 = empty,
@@ -691,21 +689,29 @@ const submittedGrid = () => {
   }
   return grid;
 };
-let solvedSaveInFlight = false;
-const saveSolvedLinelog = async () => {
-  if (!store.isUserLoggedIn || alreadySolved.value || solvedSaveInFlight) {
-    return;
-  }
-  solvedSaveInFlight = true;
+// Logged-in players record the solve (the server checks it first); guests
+// and players who solved it before only ask whether the grid is correct.
+let checkInFlight = false;
+const checkWithServer = async () => {
+  if (checkInFlight) return false;
+  checkInFlight = true;
+  const linelogId = parseInt(route.params.id, 10);
+  const grid = submittedGrid();
   try {
-    const userId = store.user.id;
-    const linelogId = parseInt(route.params.id, 10);
-    await UserService.linelogSolved(userId, linelogId, submittedGrid());
-    alreadySolved.value = true;
+    if (store.isUserLoggedIn && !alreadySolved.value) {
+      await UserService.linelogSolved(store.user.id, linelogId, grid);
+      alreadySolved.value = true;
+      return true;
+    }
+    const res = await LinelogService.check(linelogId, grid);
+    return res.data.solved === true;
   } catch (error) {
-    console.error("Error saving solved status:", error);
+    if (error.response?.data?.code !== "SOLUTION_INCORRECT") {
+      console.error("Error checking solution:", error);
+    }
+    return false;
   } finally {
-    solvedSaveInFlight = false;
+    checkInFlight = false;
   }
 };
 const setPathIndices = (cells, pathIndex) => {
@@ -768,33 +774,6 @@ const mainGridMouseUp = () => {
   }
 };
 
-// Add a watch for gridState
-watch(gridState, (newState) => {
-  if (!solved.value) {
-    checkSolution(newState);
-  }
-}, { deep: true });
-
-const checkSolution = (state) => {
-  if (!state || !solution.value) return;
-  
-  let isCorrect = true;
-  for (let y = 0; y < height.value; y++) {
-    for (let x = 0; x < width.value; x++) {
-      if (state[x + y * width.value] !== solution.value[y][x]) {
-        isCorrect = false;
-        break;
-      }
-    }
-    if (!isCorrect) break;
-  }
-
-  if (isCorrect) {
-    solved.value = true;
-    saveSolvedLinelog();
-  }
-};
-
 // Add a watch for the linelog data to ensure grid is properly initialized
 watch(
   () => linelog.value,
@@ -811,7 +790,7 @@ watch(
       for (let y = 0; y < information.value.length; y++) {
         for (let x = 0; x < information.value[y].length; x++) {
           if (information.value[y][x] != 0) {
-            gridState.value[x + y * width.value] = solution.value[y][x];
+            gridState.value[x + y * width.value] = clueColors.value[y][x];
           }
         }
       }

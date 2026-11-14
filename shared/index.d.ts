@@ -83,7 +83,38 @@ export interface Linelog extends PuzzleBase {
 
 export type Puzzle = Logical | Nonogram | Linelog;
 
-/** What the solve endpoints accept: a nonogram/linelog grid or a logical table. */
+// ---------------------------------------------------------------------------
+// What the puzzle GET endpoints send. The stored solution never leaves the
+// server; players get only what they need to solve the puzzle.
+// ---------------------------------------------------------------------------
+
+/** One clue block: `[colour, length]`, colour in the stored encoding (k >= 1). */
+export type ClueBlock = [number, number];
+
+export interface PublicNonogram extends Omit<Nonogram, 'solution'> {
+  /** Clues per row, top to bottom. */
+  rowClues: ClueBlock[][];
+  /** Clues per column, left to right. */
+  columnClues: ClueBlock[][];
+}
+
+export interface PublicLinelog extends Omit<Linelog, 'solution'> {
+  /** Colour of every numbered cell (stored encoding), 0 elsewhere. */
+  informationColors: ColorGrid;
+}
+
+export type PublicLogical = Omit<Logical, 'solution'>;
+
+/** Answer of `POST /<type>/:id/check`. */
+export interface CheckResult {
+  solved: boolean;
+}
+
+/**
+ * What the solve and check endpoints accept: a nonogram/linelog grid
+ * (`{ grid }`) or a logical table (`{ solution }`, one row per value of the
+ * first attribute, that value in column 0).
+ */
 export type SubmittedSolution = ColorGrid | string[][];
 
 /** Fields a client may set when creating or editing a puzzle. */
