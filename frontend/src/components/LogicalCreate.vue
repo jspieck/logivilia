@@ -1,29 +1,29 @@
 <template>
 <div>
-  <h2>Logikrätsel erstellen</h2>
+  <h2>{{ t('logicalCreate.title') }}</h2>
   <div id="wrapMe" class="wrapMe">
-    <label>Rätselvorschau:</label>
+    <label>{{ t('logicalCreate.preview') }}</label>
     <Toggle class="solutionToggle" v-model="preview"/>
   </div>
   <div class="columns">
     <div :class="preview ? ['column', 'is-one-third'] : 'column'">
       <div class="puzzleSet">
-        <o-field label="Name des Rätsels">
+        <o-field :label="t('logicalCreate.name')">
           <input v-model="logical.name"/>
         </o-field>
-        <p class="error" v-if="!nameFinished">Bitte einen Namen für das Rätsel festlegen.</p>
-        <o-field label="Schwierigkeit">
+        <p class="error" v-if="!nameFinished">{{ t('logicalCreate.nameError') }}</p>
+        <o-field :label="t('overview.difficulty')">
           <MySelect :options="difficulties" v-model="logical.difficulty"/>
         </o-field>
-        <o-field label="Beschreibung">
-          <textarea v-model="logical.description" placeholder="Leiten Sie zum Thema des Rätsels hin."/>
+        <o-field :label="t('logical.description')">
+          <textarea v-model="logical.description" :placeholder="t('logicalCreate.descriptionPlaceholder')"/>
         </o-field>
-        <p class="error" v-if="!descriptionFinished">Bitte das Rätselthema mit mindestens 20 Zeichen beschreiben.</p>
-        <o-field label="Frage">
-          <textarea v-model="logical.question" placeholder="Beispiel: Wer (Vorname und Nachname) mag welche Obstsorte?"/>
+        <p class="error" v-if="!descriptionFinished">{{ t('logicalCreate.descriptionError') }}</p>
+        <o-field :label="t('logicalCreate.question')">
+          <textarea v-model="logical.question" :placeholder="t('logicalCreate.questionPlaceholder')"/>
         </o-field>
-        <p class="error" v-if="!questionFinished">Bitte eine Rätselfrage mit mindestens 20 Zeichen stellen.</p>
-        <o-field label="Hinweise" :addons="false">
+        <p class="error" v-if="!questionFinished">{{ t('logicalCreate.questionError') }}</p>
+        <o-field :label="t('logical.clues')" :addons="false">
           <draggable v-model="logical.clues" group="clues" @start="drag=true" @end="drag=false" handle=".handle" item-key="id">
             <template #item="{element, index}">
               <div class="clue">
@@ -33,18 +33,18 @@
               </div>
             </template>
           </draggable>
-          <button class="button" @click="addClue">Neuer Hinweis</button>
+          <button class="button" @click="addClue">{{ t('logicalCreate.addClue') }}</button>
         </o-field>
-        <p class="error" v-if="!cluesFinished">Bitte mindestens einen Hinweis geben. Jeder Hinweis muss mindestens 10 Zeichen lang sein.</p>
-        <o-field label="Lösung" :addons="false">
-          <p>Anzahl an Attributwerten:</p>
+        <p class="error" v-if="!cluesFinished">{{ t('logicalCreate.cluesError') }}</p>
+        <o-field :label="t('logical.solution')" :addons="false">
+          <p>{{ t('logicalCreate.numValues') }}</p>
           <!--<input type="number" @input="setAttributeValNumber"/>-->
           <MySelect :options='attrValNumberOptions' v-model="numAttributeValues"/>
           <table class="attributeTable">
             <thead>
               <!-- All the attribute names -->
               <tr>
-                <td>Attributname</td>
+                <td>{{ t('logicalCreate.attrName') }}</td>
                 <td v-for="[i, attr] in logical.attributes.entries()" v-bind:key="'attrN' + i">
                   <input v-model="attr.name"/>
                 </td>
@@ -53,7 +53,7 @@
             <tbody>
               <!-- All the attribute values -->
               <tr v-for="i in numAttributeValues" v-bind:key="'attrR' + i">
-                <td><p>Attributgruppe {{i}}</p></td>
+                <td><p>{{ t('logicalCreate.attrGroup', { n: i }) }}</p></td>
                 <td v-for="[j, attr] in logical.attributes.entries()" v-bind:key="'attrVal' + i + ' ' + j">
                   <!--<p>{{attr.values[i - 1]}}</p>-->
                   <input v-model='attr.values[i - 1].name'/>
@@ -69,27 +69,27 @@
           </table>
           <o-modal v-model="isModalActive" :destroy-on-hide="true">
             <div class="box">
-              <h3 class="title is-4">Attribut löschen</h3>
-              <p>Willst du das Attribut wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+              <h3 class="title is-4">{{ t('logicalCreate.deleteAttr') }}</h3>
+              <p>{{ t('logicalCreate.deleteAttrText') }}</p>
               <div class="buttons mt-4">
-                <o-button label="Nicht löschen" @click="isModalActive = false" />
-                <o-button label="Löschen" variant="danger" @click="confirmDelete" />
+                <o-button :label="t('logicalCreate.keep')" @click="isModalActive = false" />
+                <o-button :label="t('logicalCreate.delete')" variant="danger" @click="confirmDelete" />
               </div>
             </div>
           </o-modal>
-          <button class="button" @click="addAttribute">Neues Attribut</button>
+          <button class="button" @click="addAttribute">{{ t('logicalCreate.addAttr') }}</button>
         </o-field>
-        <p class="error" v-if="!solutionFinished">Bitte alle Attributgruppen ausfüllen und unterscheidbar benennen.</p>
+        <p class="error" v-if="!solutionFinished">{{ t('logicalCreate.solutionError') }}</p>
         <!-- <o-field label="Lösung">
           <input v-model="logical.solution"/>
         </o-field> -->
         <!--<o-field label="Bildpfad">
           <input v-model="logical.image"/>
         </o-field>-->
-        <o-field label="Autor">
+        <o-field :label="t('logicalCreate.author')">
           <input v-model="logical.author"/>
         </o-field>
-        <button class="button is-primary" @click="createLogical">Rätsel erstellen</button>
+        <button class="button is-primary" @click="createLogical">{{ t('logicalCreate.submit') }}</button>
       </div>
     </div>
     <div class="column" v-if="preview">
@@ -102,6 +102,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useOruga } from '@oruga-ui/oruga-next';
+import { useI18n } from 'vue-i18n';
 import Toggle from './Toggle.vue';
 import MySelect from './MySelect.vue';
 import PuzzleService from '@/services/PuzzleService';
@@ -110,6 +111,7 @@ import LogicalDisplay from './LogicalDisplay.vue';
 
 // Composables
 const oruga = useOruga();
+const { t } = useI18n();
 
 // State
 const difficulties = ref([1, 2, 3, 4, 5]);
@@ -221,7 +223,7 @@ const removeAttribute = (i) => {
     isModalActive.value = true;
   } else {
     oruga.notification.open({
-      message: 'Es muss mindestens drei Attribute geben, damit eins gelöscht werden kann!',
+      message: t('logicalCreate.minAttrs'),
       duration: 2000,
       variant: 'warning'
     });
@@ -232,7 +234,7 @@ const confirmDelete = () => {
   logical.value.attributes.splice(deleteIndex.value, 1);
   isModalActive.value = false;
   oruga.notification.open({
-    message: 'Attribut gelöscht!',
+    message: t('logicalCreate.attrDeleted'),
     variant: 'success',
     duration: 2000
   });
@@ -280,13 +282,13 @@ const createLogical = async () => {
       
       await PuzzleService.post(logicalData)
       oruga.notification.open({
-        message: 'Logikrätsel erfolgreich erstellt!',
+        message: t('logicalCreate.created'),
         duration: 2000,
         variant: 'success'
       })
     } else {
       oruga.notification.open({
-        message: 'Das Rätsel ist noch nicht vollständig!',
+        message: t('logicalCreate.incomplete'),
         duration: 2000,
         variant: 'danger'
       })
@@ -294,7 +296,7 @@ const createLogical = async () => {
   } catch(err) {
     console.error(err)
     oruga.notification.open({
-      message: 'Fehler beim Erstellen des Logikrätsels',
+      message: t('logicalCreate.failed'),
       duration: 2000,
       variant: 'danger'
     })

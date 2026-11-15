@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Toggle from './Toggle.vue'
 import MySelect from './MySelect.vue'
 import DifficultyIndicator from './DifficultyIndicator.vue'
 
+const { t } = useI18n()
 const props = defineProps({
     logical: {
         type: Object,
@@ -325,7 +327,7 @@ onMounted(() => {
     window.ondragstart = () => false;
     setPadding();
     initializeGridState();
-    window.onbeforeunload = () => "Möchten Sie die Seite wirklich verlassen. Nicht gespeicherte Rätsel sind für immer verloren!";
+    window.onbeforeunload = () => t('puzzle.leaveConfirm');
 });
 
 onBeforeUnmount(() => {
@@ -367,9 +369,9 @@ defineExpose({
         <div class="puzzle-body" v-if="logical != null">
             <!-- Image and Description -->
             <div class="puzzle-intro">
-                <img v-if="logical.image" class="header-image" :src="logical.image" alt="header image" width="320" />
+                <img v-if="logical.image" class="header-image" :src="logical.image" :alt="t('logical.headerImage')" width="320" />
                 <div class="description-section">
-                    <h3>Beschreibung</h3>
+                    <h3>{{ t('logical.description') }}</h3>
                     <p>{{ logical.description }}</p>
                     <div class="question">
                         <strong>{{ logical.question }}</strong>
@@ -379,7 +381,7 @@ defineExpose({
 
             <!-- Clues Section -->
             <div class="clues-section">
-                <h3>Hinweise</h3>
+                <h3>{{ t('logical.clues') }}</h3>
                 <ol class="clues-list">
                     <li v-for="(clue, i) in logical.clues" :key="`clueActual${i}`" class="clue">
                         {{ clue }}
@@ -389,7 +391,7 @@ defineExpose({
 
             <!-- Attributes Section -->
             <div class="attributes-section">
-                <h3>Attribute</h3>
+                <h3>{{ t('logical.attributes') }}</h3>
                 <ul class="attributes-list">
                     <li v-for="(attr, i) in logical.attributes" :key="`realAtr${i}`">
                         <div class="attribute-row">
@@ -404,11 +406,11 @@ defineExpose({
 
             <!-- Solution Section -->
             <div class="solution-section">
-                <h3>Lösung</h3>
+                <h3>{{ t('logical.solution') }}</h3>
                 <div class="solution-container">
                     <!-- Toggle for Extended Table -->
                     <div class="toggle-container">
-                        <label>Zeige die erweiterte Tabelle:</label>
+                        <label>{{ t('logical.showTable') }}</label>
                         <Toggle class="solution-toggle" v-model="tableVisible" />
                     </div>
 

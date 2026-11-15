@@ -8,7 +8,7 @@
       @solution-check="check"
     />
     <div class="check-solution">
-      <button class="button is-primary" :disabled="checking" @click="display.checkSolution()">Überprüfen</button>
+      <button class="button is-primary" :disabled="checking" @click="display.checkSolution()">{{ t('logical.check') }}</button>
       <img v-if="solved" class="success-icon" src="@/assets/haken.png" width="40" height="40" alt="" />
       <h4 class="solution-message">{{ message }}</h4>
     </div>
@@ -21,6 +21,7 @@
 // table with the stored solution (shared/puzzles/logical.js).
 
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import LogicalDisplay from '@/components/LogicalDisplay.vue'
 
 const props = defineProps({
@@ -29,6 +30,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['solved'])
 
+const { t } = useI18n()
 const display = ref(null)
 const solved = ref(false)
 const checking = ref(false)
@@ -43,17 +45,17 @@ watch(() => props.puzzle, () => {
 // first attribute, that value in column 0.
 const check = async (isComplete, table) => {
   if (!isComplete) {
-    message.value = 'Bitte zuerst alle Felder ausfüllen.'
+    message.value = t('logical.fillAll')
     return
   }
   checking.value = true
   try {
     if (await props.submit(table)) {
       solved.value = true
-      message.value = 'Gratulation, das Rätsel ist gelöst!'
+      message.value = t('logical.solved')
       emit('solved')
     } else {
-      message.value = 'Es existieren noch Fehler!'
+      message.value = t('logical.mistakes')
     }
   } finally {
     checking.value = false

@@ -31,18 +31,24 @@ function hash (text) {
 
 /**
  * The puzzle of the day for `key` (YYYY-MM-DD) out of `puzzles` (any order).
- * The type rotates daily (nonogram, linelog, logical, ...); within the type
- * the choice is a hash of the date over the puzzles sorted by id.
+ * The type rotates daily (nonogram, linelog, logical, ...). Within a type the
+ * puzzles are shuffled into a fixed order (by a hash of their id) and each of
+ * that type's days takes the next one, so no puzzle comes back before every
+ * other one has had its day. New puzzles slot into the order; nobody has to
+ * schedule anything.
  */
 function pickDaily (puzzles, key) {
   const dayNumber = Math.floor(Date.parse(`${key}T00:00:00Z`) / 86400000);
+  const round = Math.floor(dayNumber / PUZZLE_TYPES.length);
   for (let offset = 0; offset < PUZZLE_TYPES.length; offset++) {
     const type = PUZZLE_TYPES[(dayNumber + offset) % PUZZLE_TYPES.length];
     const candidates = puzzles
       .filter(p => p.type === type && (p.difficulty == null || p.difficulty <= DAILY_MAX_DIFFICULTY))
-      .sort((a, b) => a.id - b.id);
+      .map(p => ({ p, order: hash(`${type}:${p.id}`) }))
+      .sort((a, b) => a.order - b.order || a.p.id - b.p.id)
+      .map(entry => entry.p);
     if (candidates.length) {
-      return candidates[hash(key) % candidates.length];
+      return candidates[round % candidates.length];
     }
   }
   return null;

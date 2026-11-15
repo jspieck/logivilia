@@ -11,6 +11,9 @@ module.exports = defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: `http://localhost:${PORT}`,
+    // The app picks its language from the browser on a first visit;
+    // the tests check the German texts.
+    locale: 'de-DE',
     trace: 'retain-on-failure'
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

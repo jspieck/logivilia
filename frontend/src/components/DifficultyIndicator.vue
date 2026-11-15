@@ -14,7 +14,7 @@ defineProps({
 
 <template>
   <div class="difficulty-indicator">
-    <div class="difficulty-label">Schwierigkeit</div>
+    <div class="difficulty-label">{{ $t('overview.difficulty') }}</div>
     <div class="difficulty-bar">
       <div 
         class="difficulty-progress"

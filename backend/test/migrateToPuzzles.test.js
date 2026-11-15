@@ -7,7 +7,7 @@ process.env.NODE_ENV = 'test';
 
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { DataTypes } = require('sequelize');
+const { DataTypes, Op } = require('sequelize');
 
 const db = require('../models');
 const { migrate } = require('../scripts/migrateToPuzzles');
@@ -102,8 +102,12 @@ test('a dry run changes nothing', async () => {
 test('--apply copies puzzles, ratings, solves and comment links', async () => {
   assert.equal(await migrate(true), true);
 
-  const puzzles = await Puzzle.findAll({ order: [['id', 'ASC']] });
+  // The copied old puzzles, plus the new seed nonograms that later
+  // migrations add to every existing database.
+  const puzzles = await Puzzle.findAll({ where: { legacyId: { [Op.ne]: null } }, order: [['id', 'ASC']] });
   assert.equal(puzzles.length, 6);
+  const added = require('../migrations/20261115-03-new-nonograms').NAMES;
+  assert.equal(await Puzzle.count({ where: { legacyId: null } }), added.length);
   const idOf = (type, legacyId) => puzzles.find(p => p.type === type && p.legacyId === legacyId).id;
 
   const nonogram = puzzles.find(p => p.type === 'nonogram' && p.legacyId === 1);
@@ -147,7 +151,7 @@ test('old accounts count as verified, and the old tables are kept', async () => 
 
 test('running it again changes nothing', async () => {
   assert.equal(await migrate(true), true);
-  assert.equal(await Puzzle.count(), 6);
+  assert.equal(await Puzzle.count({ where: { legacyId: { [Op.ne]: null } } }), 6);
   assert.equal(await PuzzleSolve.count(), 5);
 });
 
@@ -163,7 +167,7 @@ test('dropLegacy removes the old tables and columns and keeps the new data', asy
   }
   assert.equal('solvedNonograms' in await qi.describeTable('Users'), false);
   assert.equal('riddleType' in await qi.describeTable('Comments'), false);
-  assert.equal(await Puzzle.count(), 6);
+  assert.equal(await Puzzle.count({ where: { legacyId: { [Op.ne]: null } } }), 6);
   assert.equal(await PuzzleSolve.count(), 5);
   assert.equal((await Comment.findAll()).length, 3);
 });

@@ -1,14 +1,14 @@
 <template>
   <div ref="root" class="board" :class="{ 'is-solved': solved, expanded }">
     <div v-if="!solved" class="toolbar">
-      <div class="tool-group palette" role="radiogroup" aria-label="Farbe">
+      <div class="tool-group palette" role="radiogroup" :aria-label="t('nonogram.colour')">
         <button
           v-for="(entry, i) in palette"
           :key="entry.value"
           class="swatch"
           :class="{ active: selected === entry.value, dot: entry.value === DOT }"
           :style="{ backgroundColor: entry.color }"
-          :title="entry.value === DOT ? 'Leer markieren (Rechtsklick)' : `Farbe ${i + 1} (Taste ${i + 1})`"
+          :title="entry.value === DOT ? t('nonogram.markEmpty') : t('nonogram.colourN', { n: i + 1 })"
           role="radio"
           :aria-checked="selected === entry.value"
           @click="selected = entry.value"
@@ -16,37 +16,37 @@
       </div>
 
       <div class="tool-group">
-        <button class="tool" title="Rückgängig (Strg+Z)" :disabled="!history.canUndo.value" @click="undo">
+        <button class="tool" :title="t('nonogram.undo')" :disabled="!history.canUndo.value" @click="undo">
           <ion-icon name="return-up-back-outline"></ion-icon>
         </button>
-        <button class="tool" title="Wiederholen (Strg+Y)" :disabled="!history.canRedo.value" @click="redo">
+        <button class="tool" :title="t('nonogram.redo')" :disabled="!history.canRedo.value" @click="redo">
           <ion-icon name="return-up-forward-outline"></ion-icon>
         </button>
       </div>
 
       <div class="tool-group">
-        <button class="tool labelled" title="Zeigt eine Zeile oder Spalte, in der sich etwas folgern lässt" @click="showHint">
-          <ion-icon name="bulb-outline"></ion-icon><span>Tipp</span>
+        <button class="tool labelled" :title="t('nonogram.hintTitle')" @click="showHint">
+          <ion-icon name="bulb-outline"></ion-icon><span>{{ t('nonogram.hint') }}</span>
         </button>
-        <button class="tool labelled" title="Markiert falsch gesetzte Felder" @click="checkMistakes">
-          <ion-icon name="checkmark-done-outline"></ion-icon><span>Prüfen</span>
+        <button class="tool labelled" :title="t('nonogram.checkTitle')" @click="checkMistakes">
+          <ion-icon name="checkmark-done-outline"></ion-icon><span>{{ t('nonogram.check') }}</span>
         </button>
-        <button class="tool" title="Neu beginnen" @click="restart">
+        <button class="tool" :title="t('nonogram.restart')" @click="restart">
           <ion-icon name="refresh-outline"></ion-icon>
         </button>
       </div>
 
       <div class="tool-group">
-        <button class="tool" title="Verkleinern" @click="zoom.zoomOut"><ion-icon name="remove-outline"></ion-icon></button>
-        <button class="tool" title="Vergrößern" @click="zoom.zoomIn"><ion-icon name="add-outline"></ion-icon></button>
-        <button class="tool labelled" :title="expanded ? 'Großansicht schließen (Esc)' : 'In einer Großansicht über die ganze Seite lösen'"
+        <button class="tool" :title="t('nonogram.zoomOut')" @click="zoom.zoomOut"><ion-icon name="remove-outline"></ion-icon></button>
+        <button class="tool" :title="t('nonogram.zoomIn')" @click="zoom.zoomIn"><ion-icon name="add-outline"></ion-icon></button>
+        <button class="tool labelled" :title="expanded ? t('nonogram.closeExpandedTitle') : t('nonogram.expandTitle')"
                 :aria-pressed="expanded" @click="toggleExpanded">
           <ion-icon :name="expanded ? 'contract-outline' : 'expand-outline'"></ion-icon>
-          <span>{{ expanded ? 'Schließen' : 'Großansicht' }}</span>
+          <span>{{ expanded ? t('common.close') : t('nonogram.expand') }}</span>
         </button>
       </div>
 
-      <div class="timer" title="Spielzeit"><ion-icon name="time-outline"></ion-icon>{{ formatTime(elapsed) }}</div>
+      <div class="timer" :title="t('nonogram.time')"><ion-icon name="time-outline"></ion-icon>{{ formatTime(elapsed) }}</div>
     </div>
 
     <!-- Always takes its space, so the grid doesn't jump when a message appears. -->
@@ -147,13 +147,11 @@
       </svg>
     </div>
 
-    <p v-if="solved" class="solved-time">Gelöst in {{ formatTime(elapsed) }}</p>
+    <p v-if="solved" class="solved-time">{{ t('nonogram.solvedIn', { time: formatTime(elapsed) }) }}</p>
     <p v-else class="help">
-      Linksklick: Feld füllen · Rechtsklick: Punkt (sicher leer) · nochmal klicken: zurücknehmen ·
-      ziehen füllt eine Reihe ·
-      <template v-if="multiColour">Klick auf eine Zahl wählt ihre Farbe, Rechtsklick streicht sie ab</template>
-      <template v-else>Klick auf eine Zahl streicht sie ab</template> ·
-      ein Klick in ein Tipp-Feld setzt die vorgeschlagene Farbe
+      {{ t('nonogram.help') }} ·
+      {{ multiColour ? t('nonogram.helpClueMulti') : t('nonogram.helpClue') }} ·
+      {{ t('nonogram.helpHint') }}
     </p>
   </div>
 </template>
@@ -173,6 +171,7 @@
 // Progress and time are kept in localStorage per puzzle.
 
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   UNKNOWN, DOT, lineStatus, rowOf, columnOf, nextHint, solutionFromClues,
   wrongCells, dragLine, dragAction, applyDrag
@@ -187,6 +186,7 @@ const props = defineProps({
   submit: { type: Function, required: true }
 })
 const emit = defineEmits(['solved'])
+const { t } = useI18n()
 
 const root = ref(null)
 const zoom = useZoom({ base: 25, min: 12, step: 3 })
@@ -411,7 +411,7 @@ const redo = () => {
 }
 
 function restart () {
-  if (started.value && !window.confirm('Alle Eintragungen und die Zeit zurücksetzen?')) return
+  if (started.value && !window.confirm(t('nonogram.restartConfirm'))) return
   try { localStorage.removeItem(storageKey()) } catch { /* ignore */ }
   reset()
 }
@@ -419,30 +419,30 @@ function restart () {
 function showHint () {
   mistakes.value = []
   const result = nextHint(state.value, { rowClues: rowClues.value, columnClues: columnClues.value })
-  const name = (axis, index) => `${axis === 'row' ? 'Zeile' : 'Spalte'} ${index + 1}`
+  const name = (axis, index) => t(axis === 'row' ? 'nonogram.row' : 'nonogram.column', { n: index + 1 })
   if (result.kind === 'error') {
     hint.value = { axis: result.axis, index: result.index, cells: [] }
-    message.value = { kind: 'error', text: `${name(result.axis, result.index)} passt nicht mehr zu ihren Zahlen.` }
+    message.value = { kind: 'error', text: t('nonogram.lineError', { line: name(result.axis, result.index) }) }
   } else if (result.kind === 'line') {
     hint.value = { axis: result.axis, index: result.index, cells: result.cells }
     message.value = {
       kind: 'info',
-      text: `In ${name(result.axis, result.index)} lassen sich ${result.cells.length === 1 ? 'ein Feld' : `${result.cells.length} Felder`} folgern (markiert).`
+      text: t('nonogram.lineHint', { line: name(result.axis, result.index), n: result.cells.length }, result.cells.length)
     }
   } else if (result.kind === 'cross') {
     hint.value = { axis: null, index: null, cells: [{ x: result.x, y: result.y, value: result.value }] }
     message.value = {
       kind: 'info',
-      text: `Das markierte Feld folgt aus Zeile ${result.y + 1} und Spalte ${result.x + 1} zusammen: vergleiche, welche Farben beide dort erlauben.`
+      text: t('nonogram.crossHint', { row: result.y + 1, column: result.x + 1 })
     }
   } else if (result.kind === 'stuck') {
     hint.value = null
     message.value = {
       kind: 'info',
-      text: 'Keine Zeile oder Spalte gibt allein etwas her. Nimm für ein Feld eine Farbe an und prüfe, ob das zu einem Widerspruch führt.'
+      text: t('nonogram.stuck')
     }
   } else {
-    message.value = { kind: 'info', text: 'Alles ist eingetragen.' }
+    message.value = { kind: 'info', text: t('nonogram.allFilled') }
   }
 }
 
@@ -450,13 +450,13 @@ function checkMistakes () {
   hint.value = null
   if (!solution) solution = solutionFromClues({ rowClues: rowClues.value, columnClues: columnClues.value })
   if (!solution) {
-    message.value = { kind: 'error', text: 'Die Prüfung ist für dieses Rätsel nicht verfügbar.' }
+    message.value = { kind: 'error', text: t('nonogram.checkUnavailable') }
     return
   }
   mistakes.value = wrongCells(state.value, solution)
   message.value = mistakes.value.length
-    ? { kind: 'error', text: `${mistakes.value.length} ${mistakes.value.length === 1 ? 'Feld ist' : 'Felder sind'} falsch (rot markiert).` }
-    : { kind: 'success', text: 'Bisher ist alles richtig.' }
+    ? { kind: 'error', text: t('nonogram.mistakes', mistakes.value.length) }
+    : { kind: 'success', text: t('nonogram.allCorrect') }
 }
 
 // ---------------------------------------------------------------------------

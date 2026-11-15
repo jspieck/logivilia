@@ -17,7 +17,7 @@
               <span>{{commentDate(comment.date)}}</span>
               <div v-if="commentLevel < 4 && loggedIn" class="comment-action" @click="showReply(comment.id)">
                 <ion-icon class="chatbubble" name="chatbubble"></ion-icon>
-                <label class="comment-action-label reply-label">Antworten</label>
+                <label class="comment-action-label reply-label">{{ $t('comments.answer') }}</label>
               </div>
               <div :class="loggedIn ? (userVotes.includes(comment.id) ? ['comment-action', 'upvoted'] : ['comment-action']) :'comment-action-anonymous' " @click="commentUpvote(comment.id)">
                 <ion-icon class="comment-heart" name="heart"></ion-icon>
@@ -49,6 +49,7 @@
 import { ref, computed } from 'vue';
 import { useMainStore } from '@/store/store';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import CommentUpvoteService from '@/services/CommentUpvoteService';
 
 export default {
@@ -72,6 +73,7 @@ export default {
     }
   },
   setup(props, { emit }) {
+    const { t } = useI18n();
     const store = useMainStore();
     const { isUserLoggedIn } = storeToRefs(store);
     const activeReply = ref(-1);
@@ -102,26 +104,25 @@ export default {
 
     const commentDate = (d) => {
       let diff = new Date(Date.now()) - new Date(d);
-      console.log(diff, new Date(Date.now()), new Date(d));
       // ms to s
       diff /= 1000;
       if(diff < 60)
-        return "Vor unter einer Minute";
+        return t('comments.time.justNow');
       else if(diff < 60 * 2)
-        return "Vor über einer Minute";
+        return t('comments.time.minute');
       else if(diff < 60 * 60)
-        return `Vor über ${Math.floor(diff / 60)} Minuten`;
+        return t('comments.time.minutes', { n: Math.floor(diff / 60) });
       else if(diff < 60 * 60 * 2)
-        return "Vor über einer Stunde";
+        return t('comments.time.hour');
       else if(diff < 60 * 60 * 24)
-        return `Vor über ${Math.floor(diff / (60 * 60))} Stunden`;
+        return t('comments.time.hours', { n: Math.floor(diff / (60 * 60)) });
       else if(diff < 60 * 60 * 24 * 2)
-        return "Vor über einem Tag";
+        return t('comments.time.day');
       else if(diff < 60 * 60 * 24 * 365)
-        return `Vor über ${Math.floor(diff / (60 * 60 * 24))} Tagen`;
+        return t('comments.time.days', { n: Math.floor(diff / (60 * 60 * 24)) });
       else if(diff < 60*60*24*365*2)
-        return "Vor über einem Jahr";
-      return `Vor über ${Math.floor(diff / (60 * 60 * 24 * 365.5))} Jahren`;
+        return t('comments.time.year');
+      return t('comments.time.years', { n: Math.floor(diff / (60 * 60 * 24 * 365.5)) });
     };
 
     const showReply = (commentId) => {

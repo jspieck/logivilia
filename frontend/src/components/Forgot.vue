@@ -2,7 +2,7 @@
   <div class="forgot-container">
     <div class="forgot-card">
       <div class="card-header">
-        <h2>Passwort vergessen?</h2>
+        <h2>{{ $t('login.forgot') }}</h2>
         <div class="header-icon">
           <ion-icon name="lock-open-outline" size="large"></ion-icon>
         </div>
@@ -10,23 +10,22 @@
 
       <div class="card-content">
         <p class="instruction">
-          Geben Sie die E-Mail-Adresse Ihres Accounts ein, damit wir Ihnen eine E-Mail
-          zusenden können, welche einen Link zum Zurücksetzen Ihres Passworts enthält.
+          {{ $t('forgot.instruction') }}
         </p>
 
-        <o-field label="E-Mail">
+        <o-field :label="$t('common.email')">
           <o-input
             class="email-input"
             v-model="forgottenEmail"
             type="email"
-            placeholder="ihre@email.de"
+            :placeholder="$t('forgot.placeholder')"
             :class="{ 'has-error': error }"
           />
         </o-field>
 
         <div class="action-buttons">
           <button class="button is-primary" @click="forgot" :disabled="!forgottenEmail">
-            <span>Zurücksetzen</span>
+            <span>{{ $t('forgot.submit') }}</span>
             <ion-icon name="arrow-forward-outline"></ion-icon>
           </button>
         </div>
@@ -37,8 +36,8 @@
         </div>
 
         <p class="register-link">
-          Noch kein Account? 
-          <router-link to="/register">Hier registrieren</router-link>
+          {{ $t('login.noAccount') }}
+          <router-link to="/register">{{ $t('forgot.registerHere') }}</router-link>
         </p>
       </div>
     </div>
@@ -178,7 +177,7 @@
 import { ref } from 'vue'
 import AuthenticationService from '@/services/AuthenticationService'
 import { useOruga } from '@oruga-ui/oruga-next'
-import { apiErrorMessage } from '@/i18n'
+import i18n, { apiErrorMessage } from '@/i18n'
 
 export default {
   name: 'Forgot',
@@ -194,7 +193,7 @@ export default {
         
         oruga.notification.open({
           duration: 3000,
-          message: `Falls ein Konto mit ${forgottenEmail.value} existiert, wurde eine E-Mail versendet`,
+          message: i18n.global.t('messages.FORGOT_EMAIL_SENT'),
           position: 'top-right',
           variant: 'success',
           closable: true

@@ -166,7 +166,7 @@ All variables are documented in [`.env.example`](../.env.example). The important
 | Linelog (number paths, Link-a-Pix style) | `linelog` | same, plus `information` (the numbers shown) | Coloured grid must equal `solution` |
 | Logical (logic grid / zebra puzzle) | `logical` | `description`, `question`, `clues`, `attributes`, `solution` (table, first column = row label), `image` | Table must equal `solution` |
 
-Seed data: 181 nonograms, 85 linelogs, 54 logicals.
+Seed data: 241 nonograms, 85 linelogs, 54 logicals.
 
 **One model for all types.** Every puzzle is a row of `Puzzles`: common columns (`type`, `name`, `difficulty`, `date`, `author`, `UserId`, `legacyId`) plus a `data` JSON with the fields above. `PuzzleRatings` (one per user and puzzle), `PuzzleSolves` (verified solves, one per user and puzzle) and `Comments.PuzzleId` refer to it. `legacyId` is the puzzle's ID in the old per-type table, so old links such as `/nonogramSolve/12` still redirect to `/puzzle/<id>`.
 

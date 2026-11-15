@@ -1,12 +1,12 @@
 <template>
   <div class="verify-page">
-    <h2>E-Mail-Adresse bestätigen</h2>
-    <p v-if="state === 'pending'">Einen Moment, Ihre Adresse wird bestätigt …</p>
+    <h2>{{ $t('verify.title') }}</h2>
+    <p v-if="state === 'pending'">{{ $t('verify.pending') }}</p>
     <p v-else-if="state === 'done'" class="verify-ok">
-      Vielen Dank! Ihre E-Mail-Adresse ist bestätigt. Sie können jetzt kommentieren und eigene Rätsel veröffentlichen.
+      {{ $t('verify.done') }}
     </p>
     <p v-else class="error-message">{{ error }}</p>
-    <router-link to="/" class="navLink">Zur Startseite</router-link>
+    <router-link to="/" class="navLink">{{ $t('common.toHome') }}</router-link>
   </div>
 </template>
 

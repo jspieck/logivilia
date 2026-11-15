@@ -3,26 +3,25 @@
   <!-- Hero: what Logivilia is, plus the puzzle of the day -->
   <section class="hero">
     <div class="hero-text">
-      <p class="kicker">Kostenlose Logikrätsel, jeden Tag ein neues</p>
+      <p class="kicker">{{ t('home.kicker') }}</p>
       <h1 class="hero-title">
-        Zeit für Ihre <span class="highlight">geistige Fitness</span>
+        {{ t('home.titleBefore') }}<span class="highlight">{{ t('home.titleHighlight') }}</span>{{ t('home.titleAfter') }}
       </h1>
       <p class="hero-subtitle">
-        <template v-if="totalCount >= 100">Über {{ roundedTotal }} Nonogramme, Linelogs und Logikrätsel</template>
-        <template v-else>Nonogramme, Linelogs und Logikrätsel</template>
-        – direkt im Browser, ohne Anmeldung.
+        <template v-if="totalCount >= 100">{{ t('home.subtitleCount', { count: roundedTotal }) }}</template>
+        <template v-else>{{ t('home.subtitle') }}</template>
       </p>
       <div class="hero-buttons">
         <router-link v-if="daily" :to="`/puzzle/${daily.id}`" class="cta-button">
           <ion-icon name="calendar-outline"></ion-icon>
-          Rätsel des Tages lösen
+          {{ t('home.solveDaily') }}
         </router-link>
         <router-link v-else to="/nonogram-overview" class="cta-button">
           <ion-icon name="play-outline"></ion-icon>
-          Jetzt rätseln
+          {{ t('home.playNow') }}
         </router-link>
         <router-link v-if="recent" :to="`/puzzle/${recent.id}`" class="secondary-button">
-          Weiterspielen: {{ recent.name }}
+          {{ t('home.continue', { name: recent.name }) }}
           <ion-icon name="arrow-forward-outline"></ion-icon>
         </router-link>
       </div>
@@ -30,7 +29,7 @@
 
     <router-link v-if="daily" :to="`/puzzle/${daily.id}`" class="daily-card">
       <div class="daily-head">
-        <span><ion-icon name="calendar-outline"></ion-icon> Rätsel des Tages</span>
+        <span><ion-icon name="calendar-outline"></ion-icon> {{ t('home.daily') }}</span>
         <span>{{ typeLabel(daily.type) }}<template v-if="daily.width"> · {{ daily.width }}×{{ daily.height }}</template></span>
       </div>
       <div class="daily-name">{{ daily.name }}</div>
@@ -45,7 +44,7 @@
 
       <div class="daily-foot">
         <span>{{ difficultyLabel(daily.difficulty) }}</span>
-        <span v-if="daily.solvedLast24h">{{ daily.solvedLast24h }}× gelöst in den letzten 24 Std.</span>
+        <span v-if="daily.solvedLast24h">{{ t('home.solvedLast24h', { count: daily.solvedLast24h }) }}</span>
       </div>
     </router-link>
   </section>
@@ -56,20 +55,20 @@
       <div class="type-head">
         <div class="type-icon"><ion-icon :name="type.icon"></ion-icon></div>
         <div>
-          <h2>{{ type.title }}</h2>
-          <p>{{ type.tagline }}</p>
+          <h2>{{ t(type.title) }}</h2>
+          <p>{{ t(type.tagline) }}</p>
         </div>
       </div>
-      <img v-if="type.image" class="type-image" :src="type.image" :alt="`${type.title} Beispiel`" loading="lazy" />
+      <img v-if="type.image" class="type-image" :src="type.image" :alt="t('home.example', { type: t(type.title) })" loading="lazy" />
       <div v-else class="type-sample">
-        <strong>Welcher Zwergpudel besitzt welche Fellfarbe?</strong>
-        <span>1. Der Zwergpudel namens Bello hat kein rotes Fell.</span>
-        <span>2. Der blaue Pudel hat einen längeren Namen als der gelbe.</span>
+        <strong>{{ t('home.sampleQuestion') }}</strong>
+        <span>{{ t('home.sampleHint1') }}</span>
+        <span>{{ t('home.sampleHint2') }}</span>
       </div>
       <div class="type-foot">
-        <span>{{ counts[type.key] != null ? `${counts[type.key]} Rätsel` : '' }}</span>
-        <span v-if="solved">{{ solved[type.key] || 0 }} gelöst</span>
-        <span class="type-link">Ansehen <ion-icon name="arrow-forward-outline"></ion-icon></span>
+        <span>{{ counts[type.key] != null ? t('home.puzzleCount', { count: counts[type.key] }) : '' }}</span>
+        <span v-if="solved">{{ t('home.solvedCount', { count: solved[type.key] || 0 }) }}</span>
+        <span class="type-link">{{ t('home.view') }} <ion-icon name="arrow-forward-outline"></ion-icon></span>
       </div>
     </router-link>
   </section>
@@ -77,19 +76,19 @@
   <!-- Popular puzzles and the leaderboard -->
   <section v-if="popular.length || topPlayers.length" class="bottom-row">
     <div v-if="popular.length" class="panel">
-      <h3>Beliebte Rätsel</h3>
+      <h3>{{ t('home.popular') }}</h3>
       <router-link v-for="p in popular" :key="p.id" :to="`/puzzle/${p.id}`" class="list-row">
         <span>{{ p.name }} <span class="muted">· {{ typeLabel(p.type) }}</span></span>
         <span class="muted">{{ difficultyLabel(p.difficulty) }}</span>
       </router-link>
     </div>
     <div v-if="topPlayers.length" class="panel">
-      <h3>Bestenliste</h3>
+      <h3>{{ t('nav.leaderboard') }}</h3>
       <router-link v-for="(player, i) in topPlayers" :key="player.id" :to="`/user/${player.id}`" class="list-row">
         <span>{{ i + 1 }}. {{ player.username }}</span>
-        <span class="muted">{{ player.solvedCount }} gelöst</span>
+        <span class="muted">{{ t('home.solvedCount', { count: player.solvedCount }) }}</span>
       </router-link>
-      <router-link to="/leaderboard" class="panel-link">Ganze Bestenliste <ion-icon name="arrow-forward-outline"></ion-icon></router-link>
+      <router-link to="/leaderboard" class="panel-link">{{ t('home.fullLeaderboard') }} <ion-icon name="arrow-forward-outline"></ion-icon></router-link>
     </div>
   </section>
 </div>
@@ -97,6 +96,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useMainStore } from '@/store/store'
 import PuzzleService from '@/services/PuzzleService'
@@ -105,16 +105,16 @@ import { recentPuzzle } from '@/puzzles/recentPuzzle'
 import nonoExample from '@/assets/nonoExample.png'
 import linelogExample from '@/assets/linelogExample.png'
 
-const TYPE_LABELS = { nonogram: 'Nonogramm', linelog: 'Linelog', logical: 'Logikrätsel' }
 // Bigger puzzles are drawn at most this many cells wide in the daily card.
 const MAX_PREVIEW_CELLS = 15
 
 const types = [
-  { key: 'nonogram', title: 'Nonogramme', tagline: 'Bilder aus Zahlen aufdecken', icon: 'apps-outline', overview: '/nonogram-overview', image: nonoExample },
-  { key: 'linelog', title: 'Linelogs', tagline: 'Gleiche Zahlen verbinden', icon: 'git-network-outline', overview: '/linelog-overview', image: linelogExample },
-  { key: 'logical', title: 'Logikrätsel', tagline: 'Hinweise kombinieren', icon: 'grid-outline', overview: '/logical-overview', image: null }
+  { key: 'nonogram', title: 'overview.nonogramTitle', tagline: 'home.nonogramTagline', icon: 'apps-outline', overview: '/nonogram-overview', image: nonoExample },
+  { key: 'linelog', title: 'overview.linelogTitle', tagline: 'home.linelogTagline', icon: 'git-network-outline', overview: '/linelog-overview', image: linelogExample },
+  { key: 'logical', title: 'overview.logicalTitle', tagline: 'home.logicalTagline', icon: 'grid-outline', overview: '/logical-overview', image: null }
 ]
 
+const { t, te } = useI18n()
 const store = useMainStore()
 const { isUserLoggedIn, user } = storeToRefs(store)
 
@@ -129,8 +129,8 @@ const totalCount = computed(() => Object.values(counts.value).reduce((a, b) => a
 // "Über 300" reads better than "Über 337".
 const roundedTotal = computed(() => Math.floor(totalCount.value / 50) * 50)
 
-const typeLabel = type => TYPE_LABELS[type] || type
-const difficultyLabel = d => d == null ? '' : d <= 2 ? 'leicht' : d === 3 ? 'mittel' : 'schwer'
+const typeLabel = type => te(`puzzleTypes.${type}`) ? t(`puzzleTypes.${type}`) : type
+const difficultyLabel = d => d == null ? '' : t(d <= 2 ? 'difficulty.easy' : d === 3 ? 'difficulty.medium' : 'difficulty.hard')
 
 const previewSize = p => {
   const scale = Math.min(1, MAX_PREVIEW_CELLS / Math.max(p.width || 1, p.height || 1))

@@ -3,7 +3,7 @@
     class="star-rating"
     :class="{ 'is-disabled': disabled }"
     role="radiogroup"
-    :aria-label="label"
+    :aria-label="label || $t('overview.rating')"
     @mouseleave="hovered = 0"
   >
     <button
@@ -33,7 +33,7 @@ const props = defineProps({
   modelValue: { type: [Number, String], default: 0 },
   max: { type: Number, default: 5 },
   disabled: { type: Boolean, default: false },
-  label: { type: String, default: 'Bewertung' }
+  label: { type: String, default: '' }
 })
 const emit = defineEmits(['update:modelValue'])
 

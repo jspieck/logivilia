@@ -18,18 +18,18 @@
         />
 
         <div class="rating-section">
-          <h3>Bewertung</h3>
+          <h3>{{ t('overview.rating') }}</h3>
           <StarRating v-if="store.isUserLoggedIn" :model-value="rating" :max="5" @update:model-value="saveRating" />
-          <p v-else class="login-message">Bitte loggen Sie sich ein, um das Rätsel zu bewerten.</p>
+          <p v-else class="login-message">{{ t('puzzle.loginToRate') }}</p>
         </div>
 
         <div v-if="solvedNow || alreadySolved" class="status-section">
           <div v-if="solvedNow" class="success-message">
             <ion-icon name="checkmark-circle-outline"></ion-icon>
-            Gratulation! Sie haben dieses Rätsel gelöst!
+            {{ t('puzzle.solvedNow') }}
           </div>
           <div v-else class="already-solved">
-            Sie haben dieses Rätsel bereits gelöst.
+            {{ t('puzzle.alreadySolved') }}
           </div>
         </div>
       </div>
@@ -46,6 +46,7 @@
 
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useOruga } from '@oruga-ui/oruga-next'
 import { useMainStore } from '@/store/store'
 import { apiErrorMessage } from '@/i18n'
@@ -57,6 +58,7 @@ import StarRating from '@/components/StarRating.vue'
 import { getPuzzleType } from './index'
 import { rememberPuzzle, forgetPuzzle } from './recentPuzzle'
 
+const { t } = useI18n()
 const route = useRoute()
 const store = useMainStore()
 const oruga = useOruga()
@@ -123,7 +125,7 @@ const submit = async (answer) => {
       }
       alreadySolved.value = true
       forgetPuzzle(id)
-      notify('Rätsel erfolgreich als gelöst markiert!')
+      notify(t('puzzle.markedSolved'))
       return true
     }
     const solved = (await PuzzleService.check(id, answer)).data.solved === true
@@ -143,7 +145,7 @@ const saveRating = async (value) => {
   rating.value = value
   try {
     await PuzzleService.rate(puzzle.value.id, value)
-    notify('Bewertung gespeichert')
+    notify(t('puzzle.ratingSaved'))
   } catch (error) {
     rating.value = previous
     notify(apiErrorMessage(error), 'danger')
@@ -156,7 +158,7 @@ watch(() => store.isUserLoggedIn, loadUserState)
 onMounted(() => {
   load(route.params.id)
   window.ondragstart = () => false
-  window.onbeforeunload = () => 'Möchten Sie die Seite wirklich verlassen? Nicht gespeicherte Rätsel sind für immer verloren!'
+  window.onbeforeunload = () => t('puzzle.leaveConfirm')
 })
 
 onBeforeUnmount(() => {

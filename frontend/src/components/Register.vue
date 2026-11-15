@@ -2,17 +2,17 @@
   <div class="register-container">
     <div class="register-card">
       <div class="register-form">
-        <h2 class="register-title">Registrieren</h2>
-        <p class="register-subtitle">Erstellen Sie ein kostenloses Konto</p>
+        <h2 class="register-title">{{ t('register.title') }}</h2>
+        <p class="register-subtitle">{{ t('register.subtitle') }}</p>
 
         <div class="form-group" :class="{ 'has-error': registerTry && !username }">
-          <label>Benutzername</label>
+          <label>{{ t('register.username') }}</label>
           <div class="input-wrapper">
             <i class="fas fa-user"></i>
             <input 
               v-model="username"
               type="text"
-              placeholder="Benutzername eingeben"
+              :placeholder="t('register.usernamePlaceholder')"
               @focus="focusField('username')"
               @blur="blurField('username')"
             />
@@ -20,17 +20,17 @@
               <i class="fas" :class="username ? 'fa-check-circle' : 'fa-times-circle'"></i>
             </span>
           </div>
-          <span class="error-message" v-if="registerTry && !username">Benutzername ist erforderlich</span>
+          <span class="error-message" v-if="registerTry && !username">{{ t('register.usernameRequired') }}</span>
         </div>
 
         <div class="form-group" :class="{ 'has-error': registerTry && !isValidEmail }">
-          <label>E-Mail</label>
+          <label>{{ t('common.email') }}</label>
           <div class="input-wrapper">
             <i class="fas fa-envelope"></i>
             <input 
               v-model="email"
               type="email"
-              placeholder="E-Mail eingeben"
+              :placeholder="t('register.emailPlaceholder')"
               @focus="focusField('email')"
               @blur="blurField('email')"
             />
@@ -38,17 +38,17 @@
               <i class="fas" :class="isValidEmail ? 'fa-check-circle' : 'fa-times-circle'"></i>
             </span>
           </div>
-          <span class="error-message" v-if="registerTry && !isValidEmail">Gültige E-Mail-Adresse erforderlich</span>
+          <span class="error-message" v-if="registerTry && !isValidEmail">{{ t('register.emailRequired') }}</span>
         </div>
         
         <div class="form-group" :class="{ 'has-error': registerTry && !isValidPassword }">
-          <label>Passwort</label>
+          <label>{{ t('common.password') }}</label>
           <div class="input-wrapper">
             <i class="fas fa-lock"></i>
             <input 
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
-              placeholder="Passwort eingeben"
+              :placeholder="t('register.passwordPlaceholder')"
               @focus="focusField('password')"
               @blur="blurField('password')"
             />
@@ -67,27 +67,27 @@
           <div class="password-requirements" v-if="password || registerTry">
             <div class="requirement" :class="{ met: hasMinLength }">
               <i class="fas" :class="hasMinLength ? 'fa-check' : 'fa-times'"></i>
-              <span>Mindestens 8 Zeichen</span>
+              <span>{{ t('register.minLength') }}</span>
             </div>
             <div class="requirement" :class="{ met: hasLetter }">
               <i class="fas" :class="hasLetter ? 'fa-check' : 'fa-times'"></i>
-              <span>Mindestens ein Buchstabe</span>
+              <span>{{ t('register.letter') }}</span>
             </div>
             <div class="requirement" :class="{ met: hasNumber }">
               <i class="fas" :class="hasNumber ? 'fa-check' : 'fa-times'"></i>
-              <span>Mindestens eine Zahl</span>
+              <span>{{ t('register.digit') }}</span>
             </div>
           </div>
         </div>  
 
         <div class="form-group" :class="{ 'has-error': registerTry && !passwordsMatch }">
-          <label>Passwort bestätigen</label>
+          <label>{{ t('register.confirmPassword') }}</label>
           <div class="input-wrapper">
             <i class="fas fa-lock"></i>
             <input 
               v-model="passwordCheck"
               :type="showPasswordCheck ? 'text' : 'password'"
-              placeholder="Passwort wiederholen"
+              :placeholder="t('register.repeatPassword')"
               @focus="focusField('passwordCheck')"
               @blur="blurField('passwordCheck')"
             />
@@ -95,7 +95,7 @@
               <i class="fas" :class="showPasswordCheck ? 'fa-eye-slash' : 'fa-eye'"></i>
             </span>
           </div>
-          <span class="error-message" v-if="registerTry && !passwordsMatch">Passwörter stimmen nicht überein</span>
+          <span class="error-message" v-if="registerTry && !passwordsMatch">{{ t('clientErrors.PASSWORD_MISMATCH') }}</span>
         </div>
 
         <button 
@@ -103,7 +103,7 @@
           @click="register"
           :disabled="isRegistering"
         >
-          <span v-if="!isRegistering">Registrieren</span>
+          <span v-if="!isRegistering">{{ t('register.title') }}</span>
           <span v-else class="spinner"></span>
         </button>
         
@@ -112,12 +112,12 @@
         <transition name="fade">
           <div class="success-message" v-if="registerSuccess">
             <i class="fas fa-check-circle"></i>
-            <p>Sie haben sich erfolgreich registriert und sind angemeldet. Wir haben Ihnen eine E-Mail geschickt: Bitte bestätigen Sie Ihre Adresse über den Link darin, damit Sie kommentieren und Rätsel veröffentlichen können.</p>
+            <p>{{ t('register.success') }}</p>
           </div>
         </transition>
         
         <p class="login-link">
-          Bereits registriert? <router-link to="/login">Anmelden</router-link>
+          {{ t('register.haveAccount') }} <router-link to="/login">{{ t('login.submit') }}</router-link>
         </p>
       </div>
       
@@ -129,12 +129,12 @@
         </div>
         <div class="image-content">
           <img src="../assets/registerNoBack.png" alt="Register" class="floating-image"/>
-          <h2>Willkommen bei Logivilia!</h2>
-          <p>Genießen Sie eine Vielzahl an Rätseln und trainieren Sie Ihr logisches Denken.</p>
+          <h2>{{ t('register.welcome') }}</h2>
+          <p>{{ t('register.welcomeText') }}</p>
           <ul class="benefits">
-            <li><i class="fas fa-check"></i> Zugang zu allen Rätseln</li>
-            <li><i class="fas fa-check"></i> Speichern Ihres Fortschritts</li>
-            <li><i class="fas fa-check"></i> Teilnahme an der Community</li>
+            <li><i class="fas fa-check"></i> {{ t('register.benefit1') }}</li>
+            <li><i class="fas fa-check"></i> {{ t('register.benefit2') }}</li>
+            <li><i class="fas fa-check"></i> {{ t('register.benefit3') }}</li>
           </ul>
         </div>
       </div>
@@ -146,9 +146,11 @@
 import { ref, computed, watch } from 'vue'
 import { useMainStore } from '@/store/store'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import AuthenticationService from '@/services/AuthenticationService'
 import i18n, { apiErrorMessage } from '@/i18n'
 
+const { t } = useI18n()
 const store = useMainStore()
 const router = useRouter()
 
@@ -197,9 +199,9 @@ const strengthColor = computed(() => {
 })
 
 const strengthText = computed(() => {
-  if (passwordStrength.value < 40) return 'Schwach'
-  if (passwordStrength.value < 70) return 'Mittel'
-  return 'Stark'
+  if (passwordStrength.value < 40) return t('register.weak')
+  if (passwordStrength.value < 70) return t('register.fair')
+  return t('register.strong')
 })
 
 // Form interaction

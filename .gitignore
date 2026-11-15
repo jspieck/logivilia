@@ -18,3 +18,17 @@ frontend/dist/
 test-results/
 playwright-report/
 .env.example
+
+# Local-only material (never commit)
+do_not_check_in/
+# Nonogram drafts awaiting review (pictures, previews, build scripts)
+backend/seed/unchecked/
+
+# OS clutter
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Local Claude Code config
+.claude/launch.json
+.claude/settings.local.json

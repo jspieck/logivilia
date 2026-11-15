@@ -3,7 +3,7 @@
     <div class="profile-header">
       <div class="header-content">
         <div class="user-avatar">
-          <img class="avatar-image" src="@/assets/bear.svg" alt="Profile picture" />
+          <img class="avatar-image" src="@/assets/bear.svg" :alt="t('user.avatar')" />
           <div class="user-status" :class="{ 'online': isOnline }"></div>
         </div>
         <div class="user-info">
@@ -13,11 +13,11 @@
           <div class="user-details">
             <div class="detail-item" v-if="user.gender">
               <ion-icon name="person-outline"></ion-icon>
-              <span>{{ user.gender }}</span>
+              <span>{{ genderLabel(user.gender) }}</span>
             </div>
             <div class="detail-item" v-if="user.birthyear">
               <ion-icon name="gift-outline"></ion-icon>
-              <span>{{ age }} Jahre</span>
+              <span>{{ t('user.age', { age }) }}</span>
             </div>
             <div class="detail-item" v-if="user.city">
               <ion-icon name="location-outline"></ion-icon>
@@ -25,7 +25,7 @@
             </div>
             <div class="detail-item">
               <ion-icon name="calendar-outline"></ion-icon>
-              <span>Dabei seit {{ formatDate(user.joined) }}</span>
+              <span>{{ t('user.joined', { date: formatDate(user.joined) }) }}</span>
             </div>
           </div>
 
@@ -39,96 +39,95 @@
     <div class="profile-content">
       <div class="stats-grid">
         <div class="stats-card solved">
-          <h3>Gelöste Rätsel</h3>
+          <h3>{{ t('user.solved') }}</h3>
           <div class="stats-numbers">
             <div class="stat-group">
               <div class="stat-value">{{ user.stats.solved.logical }}</div>
-              <div class="stat-label">Logikrätsel</div>
+              <div class="stat-label">{{ t('overview.logicalTitle') }}</div>
             </div>
             <div class="stat-group">
               <div class="stat-value">{{ user.stats.solved.nonogram }}</div>
-              <div class="stat-label">Nonogramme</div>
+              <div class="stat-label">{{ t('overview.nonogramTitle') }}</div>
             </div>
             <div class="stat-group">
               <div class="stat-value">{{ user.stats.solved.linelog }}</div>
-              <div class="stat-label">Linelogs</div>
+              <div class="stat-label">{{ t('overview.linelogTitle') }}</div>
             </div>
           </div>
         </div>
 
         <div class="stats-card created">
-          <h3>Erstellte Rätsel</h3>
+          <h3>{{ t('user.created') }}</h3>
           <div class="stats-numbers">
             <div class="stat-group">
               <div class="stat-value">{{ user.stats.created.logical }}</div>
-              <div class="stat-label">Logikrätsel</div>
+              <div class="stat-label">{{ t('overview.logicalTitle') }}</div>
             </div>
             <div class="stat-group">
               <div class="stat-value">{{ user.stats.created.nonogram }}</div>
-              <div class="stat-label">Nonogramme</div>
+              <div class="stat-label">{{ t('overview.nonogramTitle') }}</div>
             </div>
             <div class="stat-group">
               <div class="stat-value">{{ user.stats.created.linelog }}</div>
-              <div class="stat-label">Linelogs</div>
+              <div class="stat-label">{{ t('overview.linelogTitle') }}</div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="profile-edit" v-if="loggedIn && (store.user.id == route.params.id)">
-        <h3>Profil bearbeiten</h3>
+        <h3>{{ t('user.edit') }}</h3>
         <div class="edit-form">
           <div class="form-group">
-            <label>Wohnort</label>
+            <label>{{ t('user.city') }}</label>
             <input 
               v-model="editedCity" 
-              placeholder="Stadt eingeben"
+              :placeholder="t('user.cityPlaceholder')"
               @keyup.enter="updateProfile"
             />
           </div>
           <div class="form-group">
-            <label>Geschlecht</label>
-            <div><MySelect :options="genderOptions" v-model="selectedGender" /></div>
+            <label>{{ t('user.gender') }}</label>
+            <div><MySelect :options="genderOptions" :format-option="genderLabel" v-model="selectedGender" /></div>
           </div>
           <div class="form-group">
-            <label>Geburtsjahr</label>
+            <label>{{ t('user.birthyear') }}</label>
             <div><MySelect :options="years" v-model="selectedBirthyear" /></div>
           </div>
           <div class="form-group">
-            <label>Über mich</label>
+            <label>{{ t('user.about') }}</label>
             <textarea 
               class="bio-area" 
               v-model="aboutMe" 
-              placeholder="Erzähle etwas über dich..."
+              :placeholder="t('user.aboutPlaceholder')"
             ></textarea>
           </div>
           <button 
             class="button is-primary" 
             @click="updateProfile"
           >
-            Speichern
+            {{ t('common.save') }}
           </button>
         </div>
       </div>
 
       <div class="profile-edit my-data" v-if="loggedIn && (store.user.id == route.params.id)">
-        <h3>Meine Daten</h3>
+        <h3>{{ t('user.myData') }}</h3>
         <p>
-          Laden Sie alle zu Ihrem Konto gespeicherten Daten herunter oder löschen Sie Ihr Konto.
-          Mehr dazu unter <router-link to="/datenschutz" class="navLink">Datenschutz</router-link>.
+          {{ t('user.myDataText') }}
+          <router-link to="/datenschutz" class="navLink">{{ t('user.myDataMore') }}</router-link>
         </p>
-        <button class="button is-primary" :disabled="exporting" @click="downloadData">Daten herunterladen (JSON)</button>
+        <button class="button is-primary" :disabled="exporting" @click="downloadData">{{ t('user.download') }}</button>
 
         <div class="delete-account">
-          <h4>Konto löschen</h4>
+          <h4>{{ t('user.deleteTitle') }}</h4>
           <p>
-            Löscht Ihr Konto mit allen gelösten Rätseln, Bewertungen, Kommentaren und Upvotes. Das kann nicht rückgängig gemacht werden.
-            Von Ihnen veröffentlichte Rätsel bleiben erhalten, aber ohne Verbindung zu Ihrem Konto.
+            {{ t('user.deleteText') }}
           </p>
-          <label for="delete-password">Passwort zur Bestätigung</label>
+          <label for="delete-password">{{ t('user.deletePassword') }}</label>
           <input id="delete-password" v-model="deletePassword" type="password" autocomplete="current-password" />
           <button class="button is-danger" :disabled="!deletePassword || deleting" @click="deleteAccount">
-            Konto endgültig löschen
+            {{ t('user.deleteButton') }}
           </button>
         </div>
       </div>
@@ -139,12 +138,14 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { apiErrorMessage } from '@/i18n';
 import { useMainStore } from '@/store/store';
 import { useOruga } from '@oruga-ui/oruga-next';
 import UserService from '@/services/UserService';
 import MySelect from '@/components/MySelect.vue';
 
+const { t } = useI18n();
 const store = useMainStore();
 const route = useRoute();
 const router = useRouter();
@@ -154,7 +155,10 @@ const user = ref({
   username: "",
   stats: { solved: emptyCounts(), created: emptyCounts() }
 });
+// Stored values stay German; only the displayed text is translated.
 const genderOptions = ["Männlich", "Weiblich", "Divers", ""];
+const GENDER_KEYS = { "Männlich": "male", "Weiblich": "female", "Divers": "diverse", "Nicht angegeben": "unspecified" };
+const genderLabel = (g) => GENDER_KEYS[g] ? t(`user.genders.${GENDER_KEYS[g]}`) : g;
 const editedCity = ref("");
 const aboutMe = ref("");
 const selectedBirthyear = ref(1975);
@@ -203,7 +207,7 @@ const updateProfile = async () => {
 
     // Show success notification
     oruga.notification.open({
-      message: 'Profil erfolgreich aktualisiert!',
+      message: t('user.updated'),
       duration: 3000,
       variant: 'success',
       position: 'bottom-right'
@@ -212,7 +216,7 @@ const updateProfile = async () => {
   } catch (error) {
     console.error('Error updating profile:', error);
     oruga.notification.open({
-      message: 'Fehler beim Aktualisieren des Profils',
+      message: t('user.updateFailed'),
       duration: 3000,
       variant: 'danger',
       position: 'bottom-right'
@@ -252,14 +256,14 @@ const downloadData = async () => {
 };
 
 const deleteAccount = async () => {
-  if (!window.confirm('Möchten Sie Ihr Konto wirklich endgültig löschen?')) {
+  if (!window.confirm(t('user.deleteConfirm'))) {
     return;
   }
   deleting.value = true;
   try {
     await UserService.deleteAccount(store.user.id, deletePassword.value);
     store.logout();
-    notify('Ihr Konto wurde gelöscht.', 'success');
+    notify(t('user.deleted'), 'success');
     router.push('/');
   } catch (err) {
     notify(apiErrorMessage(err), 'danger');

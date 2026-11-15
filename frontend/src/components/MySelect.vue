@@ -5,7 +5,7 @@
       :disabled="isDisabled"
       @click="clicked = !clicked">
       <option v-for="[i, option] in options.entries()" :value="option" :key="`sel${i}`">
-        {{ option }}
+        {{ formatOption ? formatOption(option) : option }}
       </option>
     </select>
     <ion-icon class="select-icon" name="caret-down-outline"></ion-icon>
@@ -18,7 +18,9 @@ import { ref, watch } from 'vue'
 const props = defineProps({
   modelValue: [String, Number], // Allow both String and Number
   options: Array,
-  isDisabled: Boolean
+  isDisabled: Boolean,
+  // Optional display text for each option (the value stays unchanged).
+  formatOption: Function
 })
 
 const emit = defineEmits(['update:modelValue'])

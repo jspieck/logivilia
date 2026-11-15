@@ -3,6 +3,8 @@ import de from './de.json'
 import en from './en.json'
 
 export const SUPPORTED_LOCALES = ['de', 'en']
+// Shown in each language's own name, so people can find theirs.
+export const LOCALE_NAMES = { de: 'Deutsch', en: 'English' }
 const DEFAULT_LOCALE = 'de'
 
 function initialLocale () {
@@ -10,9 +12,13 @@ function initialLocale () {
     const stored = localStorage.getItem('locale')
     if (SUPPORTED_LOCALES.includes(stored)) return stored
   } catch {
-    // localStorage can be unavailable (private mode); fall back to German.
+    // localStorage can be unavailable (private mode); fall back below.
   }
-  return DEFAULT_LOCALE
+  // First visit: German browsers get German, everyone else English.
+  const languages = (typeof navigator !== 'undefined' && (navigator.languages || [navigator.language])) || []
+  const first = String(languages[0] || '').toLowerCase()
+  if (!first) return DEFAULT_LOCALE
+  return first.startsWith('de') ? 'de' : 'en'
 }
 
 const i18n = createI18n({

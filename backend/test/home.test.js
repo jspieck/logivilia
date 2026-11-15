@@ -75,3 +75,16 @@ test('the puzzle of the day is stable for a date and the type rotates daily', ()
   // A type without puzzles falls through to the next one.
   assert.ok(pickDaily([{ id: 9, type: 'logical', difficulty: 1 }], '2026-11-15'));
 });
+
+test('the puzzle of the day goes through every puzzle before one repeats', () => {
+  const list = [];
+  for (let id = 1; id <= 40; id++) {
+    list.push({ id, type: ['nonogram', 'linelog', 'logical'][id % 3], difficulty: 1 });
+  }
+  const start = Date.parse('2026-11-15T00:00:00Z');
+  const day = i => new Date(start + i * 86400000).toISOString().slice(0, 10);
+  const picks = Array.from({ length: 120 }, (_, i) => pickDaily(list, day(i)).id);
+  // 40 puzzles, about 13 per type, one type per day: 39 days without a repeat.
+  assert.equal(new Set(picks.slice(0, 39)).size, 39);
+  assert.equal(new Set(picks).size, 40);
+});

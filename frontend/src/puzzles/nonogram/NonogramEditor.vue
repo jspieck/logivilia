@@ -1,50 +1,50 @@
 <template>
   <div class="editor-page">
-    <h1 class="page-title">{{ editId ? 'Nonogramm bearbeiten' : 'Nonogramm erstellen' }}</h1>
+    <h1 class="page-title">{{ editId ? $t('editor.titleEdit') : $t('editor.titleCreate') }}</h1>
     <div v-if="loadError" class="notification is-danger">{{ loadError }}</div>
 
     <div v-else class="editor-layout">
       <!-- Drawing -->
       <section class="card canvas-card">
         <div class="toolbar">
-          <div class="tool-group" role="radiogroup" aria-label="Werkzeug">
+          <div class="tool-group" role="radiogroup" :aria-label="$t('editor.tool')">
             <button v-for="t in TOOLS" :key="t.id" class="tool" :class="{ active: tool === t.id }"
-                    :title="t.title" role="radio" :aria-checked="tool === t.id" @click="tool = t.id">
-              <ion-icon :name="t.icon"></ion-icon><span>{{ t.label }}</span>
+                    :title="$t(t.title)" role="radio" :aria-checked="tool === t.id" @click="tool = t.id">
+              <ion-icon :name="t.icon"></ion-icon><span>{{ $t(t.label) }}</span>
             </button>
           </div>
 
-          <div class="tool-group palette" role="radiogroup" aria-label="Farbe">
+          <div class="tool-group palette" role="radiogroup" :aria-label="$t('nonogram.colour')">
             <button v-for="(colour, i) in fills" :key="i" class="swatch" :style="{ backgroundColor: colour }"
-                    :class="{ active: selected === i + 1 }" :title="`Farbe ${i + 1} (Taste ${i + 1})`"
+                    :class="{ active: selected === i + 1 }" :title="$t('nonogram.colourN', { n: i + 1 })"
                     role="radio" :aria-checked="selected === i + 1" @click="selected = i + 1"></button>
             <button class="swatch eraser" :style="{ backgroundColor: background }" :class="{ active: selected === 0 }"
-                    title="Hintergrund / Radierer (Rechtsklick, Taste 0)" role="radio" :aria-checked="selected === 0"
+                    :title="$t('editor.eraser')" role="radio" :aria-checked="selected === 0"
                     @click="selected = 0"><ion-icon name="close-outline"></ion-icon></button>
           </div>
 
           <div class="tool-group">
-            <button class="tool" title="Rückgängig (Strg+Z)" :disabled="!history.canUndo.value" @click="undo">
+            <button class="tool" :title="$t('nonogram.undo')" :disabled="!history.canUndo.value" @click="undo">
               <ion-icon name="return-up-back-outline"></ion-icon>
             </button>
-            <button class="tool" title="Wiederholen (Strg+Y)" :disabled="!history.canRedo.value" @click="redo">
+            <button class="tool" :title="$t('nonogram.redo')" :disabled="!history.canRedo.value" @click="redo">
               <ion-icon name="return-up-forward-outline"></ion-icon>
             </button>
           </div>
 
           <div class="tool-group">
-            <button class="tool" title="Nach links schieben" @click="transform(g => shift(g, -1, 0))"><ion-icon name="arrow-back-outline"></ion-icon></button>
-            <button class="tool" title="Nach oben schieben" @click="transform(g => shift(g, 0, -1))"><ion-icon name="arrow-up-outline"></ion-icon></button>
-            <button class="tool" title="Nach unten schieben" @click="transform(g => shift(g, 0, 1))"><ion-icon name="arrow-down-outline"></ion-icon></button>
-            <button class="tool" title="Nach rechts schieben" @click="transform(g => shift(g, 1, 0))"><ion-icon name="arrow-forward-outline"></ion-icon></button>
-            <button class="tool" title="Waagerecht spiegeln" @click="transform(flipHorizontal)"><ion-icon name="swap-horizontal-outline"></ion-icon></button>
-            <button class="tool" title="Senkrecht spiegeln" @click="transform(flipVertical)"><ion-icon name="swap-vertical-outline"></ion-icon></button>
-            <button class="tool" title="Alles leeren" @click="clearAll"><ion-icon name="trash-outline"></ion-icon></button>
+            <button class="tool" :title="$t('editor.shiftLeft')" @click="transform(g => shift(g, -1, 0))"><ion-icon name="arrow-back-outline"></ion-icon></button>
+            <button class="tool" :title="$t('editor.shiftUp')" @click="transform(g => shift(g, 0, -1))"><ion-icon name="arrow-up-outline"></ion-icon></button>
+            <button class="tool" :title="$t('editor.shiftDown')" @click="transform(g => shift(g, 0, 1))"><ion-icon name="arrow-down-outline"></ion-icon></button>
+            <button class="tool" :title="$t('editor.shiftRight')" @click="transform(g => shift(g, 1, 0))"><ion-icon name="arrow-forward-outline"></ion-icon></button>
+            <button class="tool" :title="$t('editor.flipH')" @click="transform(flipHorizontal)"><ion-icon name="swap-horizontal-outline"></ion-icon></button>
+            <button class="tool" :title="$t('editor.flipV')" @click="transform(flipVertical)"><ion-icon name="swap-vertical-outline"></ion-icon></button>
+            <button class="tool" :title="$t('editor.clear')" @click="clearAll"><ion-icon name="trash-outline"></ion-icon></button>
           </div>
 
           <div class="tool-group">
-            <button class="tool" title="Verkleinern" @click="zoom.zoomOut"><ion-icon name="remove-outline"></ion-icon></button>
-            <button class="tool" title="Vergrößern" @click="zoom.zoomIn"><ion-icon name="add-outline"></ion-icon></button>
+            <button class="tool" :title="$t('nonogram.zoomOut')" @click="zoom.zoomOut"><ion-icon name="remove-outline"></ion-icon></button>
+            <button class="tool" :title="$t('nonogram.zoomIn')" @click="zoom.zoomIn"><ion-icon name="add-outline"></ion-icon></button>
           </div>
         </div>
 
@@ -96,86 +96,84 @@
           </svg>
         </div>
         <p class="help">
-          Linksklick malt mit der gewählten Farbe, Rechtsklick radiert. Tasten: 1–9 Farbe, 0 Radierer,
-          P Stift, L Linie, R Rechteck, F Füllen.
+          {{ $t('editor.help') }}
         </p>
       </section>
 
       <!-- Side panel -->
       <aside class="side">
         <section class="card status-card" :class="statusClass">
-          <h2>Prüfung</h2>
+          <h2>{{ $t('editor.check') }}</h2>
           <p class="status-line">
             <ion-icon :name="statusIcon"></ion-icon>
             <span>{{ statusText }}</span>
           </p>
           <template v-if="analysis.status === 'ambiguous'">
             <label class="checkbox-line">
-              <input v-model="showOther" type="checkbox"> Zweite Lösung anzeigen
+              <input v-model="showOther" type="checkbox"> {{ $t('editor.showOther') }}
             </label>
             <button class="button is-small" :disabled="fixState === 'searching'" @click="findFixes">
-              {{ fixState === 'searching' ? 'Suche Korrekturen …' : 'Korrekturen vorschlagen' }}
+              {{ fixState === 'searching' ? $t('editor.searchingFixes') : $t('editor.suggestFixes') }}
             </button>
-            <p v-if="fixState === 'none'" class="muted">Keine Korrektur mit einem einzigen Feld gefunden. Ändere das Bild an den rot markierten Stellen.</p>
+            <p v-if="fixState === 'none'" class="muted">{{ $t('editor.noFix') }}</p>
             <ul v-if="fixes.length" class="fix-list">
               <li v-for="fix in fixes" :key="`${fix.x}-${fix.y}-${fix.value}`"
                   @mouseenter="previewFix = fix" @mouseleave="previewFix = null">
                 <span class="fix-swatch" :style="{ backgroundColor: fix.value ? fills[fix.value - 1] : background }"></span>
                 <span class="fix-text">
-                  Z {{ fix.y + 1 }}, S {{ fix.x + 1 }}: {{ fix.value ? `Farbe ${fix.value}` : 'leer' }}
-                  <span class="muted">{{ fix.technique === 'line' ? '· leicht' : '· schwer' }}</span>
+                  {{ $t('editor.fixCell', { row: fix.y + 1, column: fix.x + 1 }) }}: {{ fix.value ? $t('editor.colourN', { n: fix.value }) : $t('editor.empty') }}
+                  <span class="muted">· {{ fix.technique === 'line' ? $t('difficulty.easy') : $t('difficulty.hard') }}</span>
                 </span>
-                <button class="tool small apply" title="Anwenden" @click="applyFix(fix)">Anwenden</button>
+                <button class="tool small apply" :title="$t('editor.apply')" @click="applyFix(fix)">{{ $t('editor.apply') }}</button>
               </li>
             </ul>
           </template>
         </section>
 
         <section class="card">
-          <h2>Rätsel</h2>
-          <label class="field-label">Name
-            <input v-model.trim="name" class="input" maxlength="80" placeholder="z. B. Leuchtturm">
+          <h2>{{ $t('editor.puzzle') }}</h2>
+          <label class="field-label">{{ $t('overview.name') }}
+            <input v-model.trim="name" class="input" maxlength="80" :placeholder="$t('editor.namePlaceholder')">
           </label>
           <div class="size-row">
-            <label class="field-label">Breite
+            <label class="field-label">{{ $t('overview.width') }}
               <input v-model.number="sizeInput.width" class="input" type="number" :min="MIN_SIZE" :max="MAX_SIZE" @change="applySize">
             </label>
-            <label class="field-label">Höhe
+            <label class="field-label">{{ $t('overview.height') }}
               <input v-model.number="sizeInput.height" class="input" type="number" :min="MIN_SIZE" :max="MAX_SIZE" @change="applySize">
             </label>
           </div>
-          <label class="field-label">Schwierigkeit
+          <label class="field-label">{{ $t('overview.difficulty') }}
             <select v-model.number="difficulty" class="input">
-              <option v-for="d in 5" :key="d" :value="d">{{ d }}{{ d === suggested ? ' (Vorschlag)' : '' }}</option>
+              <option v-for="d in 5" :key="d" :value="d">{{ d }}{{ d === suggested ? ` (${$t('editor.suggested')})` : '' }}</option>
             </select>
           </label>
 
-          <div class="field-label">Farben</div>
+          <div class="field-label">{{ $t('overview.colors') }}</div>
           <div class="colour-list">
             <div v-for="(colour, i) in fills" :key="i" class="colour-row">
-              <input type="color" :value="colour" :aria-label="`Farbe ${i + 1}`" @input="setFill(i, $event.target.value)">
-              <span>Farbe {{ i + 1 }}</span>
-              <button v-if="fills.length > 1" class="tool small" title="Farbe entfernen" @click="removeFill(i)">
+              <input type="color" :value="colour" :aria-label="$t('editor.colourN', { n: i + 1 })" @input="setFill(i, $event.target.value)">
+              <span>{{ $t('editor.colourN', { n: i + 1 }) }}</span>
+              <button v-if="fills.length > 1" class="tool small" :title="$t('editor.removeColour')" @click="removeFill(i)">
                 <ion-icon name="close-outline"></ion-icon>
               </button>
             </div>
             <div class="colour-row">
-              <input type="color" :value="background" aria-label="Hintergrund" @input="setBackground($event.target.value)">
-              <span>Hintergrund</span>
+              <input type="color" :value="background" :aria-label="$t('editor.background')" @input="setBackground($event.target.value)">
+              <span>{{ $t('editor.background') }}</span>
             </div>
-            <button v-if="fills.length < MAX_FILLS" class="button is-small" @click="addFill">+ Farbe</button>
+            <button v-if="fills.length < MAX_FILLS" class="button is-small" @click="addFill">+ {{ $t('editor.addColour') }}</button>
           </div>
         </section>
 
         <section class="card">
-          <h2>Bild importieren</h2>
-          <p class="muted">Ein eigenes Bild oder Foto wird auf die Rastergröße verkleinert und auf wenige Farben reduziert.
-            Nutze nur Bilder, an denen du die Rechte hast.</p>
+          <h2>{{ $t('editor.importTitle') }}</h2>
+          <p class="muted">{{ $t('editor.importText') }}</p>
           <div class="size-row">
-            <label class="field-label">Breite
+            <label class="field-label">{{ $t('overview.width') }}
               <input v-model.number="importOptions.width" class="input" type="number" :min="MIN_SIZE" :max="MAX_SIZE">
             </label>
-            <label class="field-label">Farben
+            <label class="field-label">{{ $t('overview.colors') }}
               <select v-model.number="importOptions.colours" class="input">
                 <option v-for="n in 6" :key="n" :value="n">{{ n }}</option>
               </select>
@@ -186,12 +184,12 @@
         </section>
 
         <section class="card actions">
-          <button class="button" @click="togglePlay">{{ playing ? 'Probespiel beenden' : 'Probespielen' }}</button>
+          <button class="button" @click="togglePlay">{{ playing ? $t('editor.stopTest') : $t('editor.test') }}</button>
           <button class="button is-primary" :disabled="!canSave || saving" @click="save">
-            {{ saving ? 'Speichern …' : editId ? 'Änderungen speichern' : 'Veröffentlichen' }}
+            {{ saving ? $t('editor.saving') : editId ? $t('editor.saveChanges') : $t('editor.publish') }}
           </button>
-          <p v-if="!store.isUserLoggedIn" class="muted">Zum Veröffentlichen bitte einloggen. Dein Entwurf bleibt in diesem Browser gespeichert.</p>
-          <p v-else-if="store.user && store.user.emailVerified === false" class="muted">Bestätige zuerst deine E-Mail-Adresse, um Rätsel zu veröffentlichen.</p>
+          <p v-if="!store.isUserLoggedIn" class="muted">{{ $t('editor.loginToPublish') }}</p>
+          <p v-else-if="store.user && store.user.emailVerified === false" class="muted">{{ $t('editor.verifyToPublish') }}</p>
           <p v-else-if="saveBlocker" class="muted">{{ saveBlocker }}</p>
           <p v-if="saveError" class="error-text">{{ saveError }}</p>
         </section>
@@ -199,11 +197,10 @@
     </div>
 
     <section v-if="playing" ref="playCard" class="card play-card">
-      <h2>Probespiel</h2>
-      <p class="muted">So sehen Spieler dein Rätsel. Nichts wird gespeichert.
-        Änderungen am Bild gelten nach „Probespiel beenden“ und erneutem Start.</p>
+      <h2>{{ $t('editor.testTitle') }}</h2>
+      <p class="muted">{{ $t('editor.testText') }}</p>
       <NonogramBoard :puzzle="playPuzzle" :submit="noSubmit" @solved="playSolved = true" />
-      <p v-if="playSolved" class="success-text">Gelöst! Das Rätsel funktioniert.</p>
+      <p v-if="playSolved" class="success-text">{{ $t('editor.testSolved') }}</p>
     </section>
   </div>
 </template>
@@ -215,6 +212,7 @@
 // one-cell fixes. New puzzles are drafted in localStorage until published.
 
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useMainStore } from '@/store/store'
 import { apiErrorMessage } from '@/i18n'
@@ -230,10 +228,10 @@ import { useZoom } from '../engine/useZoom'
 import { textColorFor } from '../engine/colors'
 
 const TOOLS = [
-  { id: 'pen', label: 'Stift', icon: 'pencil-outline', title: 'Stift (P)' },
-  { id: 'line', label: 'Linie', icon: 'remove-outline', title: 'Linie (L)' },
-  { id: 'rect', label: 'Rechteck', icon: 'square-outline', title: 'Gefülltes Rechteck (R)' },
-  { id: 'fill', label: 'Füllen', icon: 'color-fill-outline', title: 'Fläche füllen (F)' }
+  { id: 'pen', label: 'editor.tools.pen', icon: 'pencil-outline', title: 'editor.tools.penTitle' },
+  { id: 'line', label: 'editor.tools.line', icon: 'remove-outline', title: 'editor.tools.lineTitle' },
+  { id: 'rect', label: 'editor.tools.rect', icon: 'square-outline', title: 'editor.tools.rectTitle' },
+  { id: 'fill', label: 'editor.tools.fill', icon: 'color-fill-outline', title: 'editor.tools.fillTitle' }
 ]
 const MAX_FILLS = 8
 const DRAFT_KEY = 'logivilia:nonogram-draft'
@@ -241,6 +239,7 @@ const DRAFT_KEY = 'logivilia:nonogram-draft'
 const route = useRoute()
 const router = useRouter()
 const store = useMainStore()
+const { t } = useI18n()
 const editId = computed(() => (route.params.id ? Number(route.params.id) : null))
 
 const zoom = useZoom({ base: 25, min: 10, step: 3 })
@@ -338,13 +337,13 @@ const shown = computed(() => (analysis.value.status === 'ambiguous' && showOther
 const statusText = computed(() => {
   const a = analysis.value
   switch (a.status) {
-    case 'checking': return 'Wird geprüft …'
-    case 'empty': return 'Noch leer: male ein Bild oder importiere eines.'
+    case 'checking': return t('editor.status.checking')
+    case 'empty': return t('editor.status.empty')
     case 'unique': return a.technique === 'line'
-      ? 'Eindeutig lösbar, Zeile für Zeile.'
-      : 'Eindeutig lösbar, braucht aber Widerspruchs-Schlüsse (schwer).'
-    case 'ambiguous': return `Nicht eindeutig: ${a.cells.length} Felder können auch anders gelöst werden (rot markiert).`
-    default: return 'Zu komplex, um die Eindeutigkeit rechtzeitig zu prüfen. Vereinfache das Bild.'
+      ? t('editor.status.uniqueLine')
+      : t('editor.status.uniqueHard')
+    case 'ambiguous': return t('editor.status.ambiguous', { n: a.cells.length })
+    default: return t('editor.status.tooComplex')
   }
 })
 const statusClass = computed(() => ({
@@ -521,7 +520,7 @@ function importImage (event) {
   }
   image.onerror = () => {
     URL.revokeObjectURL(url)
-    importError.value = 'Das Bild konnte nicht gelesen werden.'
+    importError.value = t('editor.importFailed')
   }
   image.src = url
 }
@@ -574,8 +573,8 @@ function loadDraft () {
 const saving = ref(false)
 const saveError = ref('')
 const saveBlocker = computed(() => {
-  if (!name.value) return 'Gib dem Rätsel einen Namen.'
-  if (analysis.value.status !== 'unique') return 'Veröffentlichen geht, sobald das Rätsel eindeutig lösbar ist.'
+  if (!name.value) return t('editor.needName')
+  if (analysis.value.status !== 'unique') return t('editor.needUnique')
   return ''
 })
 const canSave = computed(() => store.isUserLoggedIn && store.user?.emailVerified !== false && !saveBlocker.value)
@@ -639,7 +638,7 @@ async function load () {
       background.value = data.colors[data.colors.length - 1]
       grid.value = data.solution.slice(0, Number(data.height)).map(row => row.slice(0, Number(data.width)).map(Number))
     } catch (err) {
-      loadError.value = err.response ? apiErrorMessage(err) : 'Dieses Rätsel kann hier nicht bearbeitet werden.'
+      loadError.value = err.response ? apiErrorMessage(err) : t('editor.cannotEdit')
       return
     }
   } else {

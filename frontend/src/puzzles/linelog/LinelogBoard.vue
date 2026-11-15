@@ -1,12 +1,12 @@
 <template>
   <div class="board">
     <div class="notification is-warning" role="alert">
-      Dieser Rätseltyp befindet sich noch in der Testphase. Es kann zu Fehlern kommen.
+      {{ t('linelog.beta') }}
     </div>
 
     <div class="control-panels">
       <div class="control-card">
-        <div class="control-label">Farben</div>
+        <div class="control-label">{{ t('overview.colors') }}</div>
         <div class="color-controls">
           <button
             v-for="(color, index) in colors"
@@ -20,7 +20,7 @@
       </div>
 
       <div class="control-card">
-        <div class="control-label">Zoom</div>
+        <div class="control-label">{{ t('linelog.zoom') }}</div>
         <div class="size-controls">
           <button class="size-button" @click="zoomBy(-1)"><ion-icon name="remove-outline"></ion-icon></button>
           <button class="size-button" @click="zoomBy(1)"><ion-icon name="add-outline"></ion-icon></button>
@@ -59,7 +59,7 @@
 
     <div v-if="solved" class="solved-banner">
       <img src="@/assets/haken.png" width="40" height="40" alt="" />
-      <span>Gratulation! Sie haben dieses Rätsel gelöst!</span>
+      <span>{{ t('puzzle.solvedNow') }}</span>
     </div>
   </div>
 </template>
@@ -73,6 +73,7 @@
 
 import { ref, computed, watch } from 'vue'
 import { useOruga } from '@oruga-ui/oruga-next'
+import { useI18n } from 'vue-i18n'
 import { useGridPointer } from '../engine/useGridPointer'
 import { useZoom } from '../engine/useZoom'
 import { textColorFor } from '../engine/colors'
@@ -83,6 +84,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['solved'])
 
+const { t } = useI18n()
 const oruga = useOruga()
 
 const zoom = useZoom({ base: 25, min: 15, step: 5 })
@@ -212,22 +214,22 @@ const extendPath = ({ x, y }) => {
 
   let problem = null
   if (pathComplete.value) {
-    problem = 'Pfad schon komplett'
+    problem = t('linelog.errors.complete')
   } else if (information.value[y][x] != 0 && selectedColor.value != clueColors.value[y][x]) {
-    problem = 'Falsche Farbe'
+    problem = t('linelog.errors.wrongColor')
   } else if (path.cells.length + 1 > path.correctLength) {
-    problem = 'Zu langer Pfad'
+    problem = t('linelog.errors.tooLong')
   } else if (information.value[y][x] != 0 &&
       (correctLength != path.correctLength || correctLength - 1 != path.cells.length)) {
-    problem = 'Unterschiedliche Pfadlänge'
+    problem = t('linelog.errors.lengthMismatch')
   } else if (cellColor != background.value && cellColor != selectedColor.value) {
-    problem = 'Feld anders gefärbt'
+    problem = t('linelog.errors.otherColor')
   } else if (cellColor != background.value && pathIndex != -1 && !isEnd) {
-    problem = 'Feld in der Mitte eines anderen Pfades'
+    problem = t('linelog.errors.middleOfPath')
   } else if (cellColor != background.value && pathIndex != -1 && isEnd) {
     // Joining another path: the combined path must have the right length.
     if (path.cells.length + paths.value[pathIndex].cells.length != path.correctLength) {
-      problem = 'Falsche Länge des kombinierten Pfads'
+      problem = t('linelog.errors.combinedLength')
     } else {
       pathComplete.value = true
     }
@@ -329,7 +331,7 @@ const checkIfSolved = async () => {
     fitToScreen()
     emit('solved')
   } else {
-    errorMessage('Alle Zahlen sind verbunden, aber die Lösung stimmt nicht.')
+    errorMessage(t('linelog.errors.wrongSolution'))
   }
 }
 </script>

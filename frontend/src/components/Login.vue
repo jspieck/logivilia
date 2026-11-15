@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h2>Anmeldung</h2>
-    <o-field label="Email">
+    <h2>{{ $t('login.title') }}</h2>
+    <o-field :label="$t('common.email')">
       <o-input
         type="email"
         v-model="email"
@@ -9,7 +9,7 @@
       </o-input>
     </o-field>
 
-    <o-field label="Passwort">
+    <o-field :label="$t('common.password')">
       <o-input
         type="password"
         v-model="password"
@@ -21,7 +21,7 @@
       @click="login"
       variant="primary"
       :disabled="isLoading">
-      Anmelden
+      {{ $t('login.submit') }}
     </o-button>
 
     <div v-if="error" class="error-message">{{ error }}</div>

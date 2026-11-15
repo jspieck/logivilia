@@ -115,3 +115,38 @@ test('the four ambiguous nonograms get their one-cell fix, other rows stay', asy
   assert.deepEqual(parse(reverted[0]).solution, before[3].solution);
   await qi.bulkDelete('Puzzles', { name: names });
 });
+
+test('new seed nonograms are added to an existing database once, owned by the Admin', async () => {
+  const migration = require('../migrations/20261115-03-new-nonograms');
+  const { User } = require('../models');
+  const count = async () => (await sequelize.query(
+    `SELECT COUNT(*) AS n FROM Puzzles WHERE type = 'nonogram' AND name IN (${migration.NAMES.map(() => '?').join(',')})`,
+    { replacements: migration.NAMES, type: sequelize.QueryTypes.SELECT }))[0].n;
+
+  // Fresh database (what the seed and the tests start from): nothing added.
+  await migration.up(qi);
+  assert.equal(Number(await count()), 0);
+
+  // Existing database: one old puzzle, a normal user and an Admin.
+  const now = new Date();
+  await qi.bulkInsert('Puzzles', [{ type: 'nonogram', name: 'old-one', data: '{}', createdAt: now, updatedAt: now }]);
+  await User.create({ username: 'player', email: 'p@example.test', password: 'secret123A', role: 'User', emailVerified: true });
+  const admin = await User.create({ username: 'boss', email: 'b@example.test', password: 'secret123A', role: 'Admin', emailVerified: true });
+
+  await migration.up(qi);
+  await migration.up(qi); // idempotent
+  assert.equal(Number(await count()), migration.NAMES.length);
+  const [row] = await sequelize.query("SELECT UserId, legacyId, data FROM Puzzles WHERE name = 'Halloween'",
+    { type: sequelize.QueryTypes.SELECT });
+  assert.equal(row.UserId, admin.id);
+  assert.equal(row.legacyId, null);
+  const data = typeof row.data === 'string' ? JSON.parse(row.data) : row.data;
+  assert.equal(data.width, 15);
+  assert.ok(Array.isArray(data.solution));
+
+  await migration.down(qi);
+  assert.equal(Number(await count()), 0);
+  await qi.bulkDelete('Puzzles', { name: 'old-one' });
+  await User.destroy({ where: { id: [admin.id] } });
+  await User.destroy({ where: { username: 'player' } });
+});

@@ -37,7 +37,7 @@ const formatNumber = (num) => {
   <div class="leaderboard-container">
     <h1 class="leaderboard-title">
       <ion-icon name="trophy-outline"></ion-icon>
-      Bestenliste
+      {{ $t('nav.leaderboard') }}
     </h1>
     
     <div class="rankings-grid">
@@ -48,8 +48,8 @@ const formatNumber = (num) => {
             <ion-icon name="grid-outline"></ion-icon>
           </div>
           <div class="header-text">
-            <h2>Logikrätsel</h2>
-            <span class="subtitle">Top 10 Spieler</span>
+            <h2>{{ $t('overview.logicalTitle') }}</h2>
+            <span class="subtitle">{{ $t('leaderboard.top10') }}</span>
           </div>
         </div>
         <div class="ranking-list" v-if="!loading">
@@ -71,7 +71,7 @@ const formatNumber = (num) => {
             </div>
             <div class="score">
               <span class="score-number">{{ user.solvedCount }}</span>
-              <span class="score-label">gelöst</span>
+              <span class="score-label">{{ $t('leaderboard.solved') }}</span>
             </div>
           </div>
         </div>
@@ -87,8 +87,8 @@ const formatNumber = (num) => {
             <ion-icon name="apps-outline"></ion-icon>
           </div>
           <div class="header-text">
-            <h2>Nonogramme</h2>
-            <span class="subtitle">Top 10 Spieler</span>
+            <h2>{{ $t('overview.nonogramTitle') }}</h2>
+            <span class="subtitle">{{ $t('leaderboard.top10') }}</span>
           </div>
         </div>
         <div class="ranking-list" v-if="!loading">
@@ -110,7 +110,7 @@ const formatNumber = (num) => {
             </div>
             <div class="score">
               <span class="score-number">{{ user.solvedCount }}</span>
-              <span class="score-label">gelöst</span>
+              <span class="score-label">{{ $t('leaderboard.solved') }}</span>
             </div>
           </div>
         </div>
@@ -126,8 +126,8 @@ const formatNumber = (num) => {
             <ion-icon name="git-network-outline"></ion-icon>
           </div>
           <div class="header-text">
-            <h2>Linelogs</h2>
-            <span class="subtitle">Top 10 Spieler</span>
+            <h2>{{ $t('overview.linelogTitle') }}</h2>
+            <span class="subtitle">{{ $t('leaderboard.top10') }}</span>
           </div>
         </div>
         <div class="ranking-list" v-if="!loading">
@@ -149,7 +149,7 @@ const formatNumber = (num) => {
             </div>
             <div class="score">
               <span class="score-number">{{ user.solvedCount }}</span>
-              <span class="score-label">gelöst</span>
+              <span class="score-label">{{ $t('leaderboard.solved') }}</span>
             </div>
           </div>
         </div>

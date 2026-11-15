@@ -8,7 +8,7 @@
       :aria-expanded="isOpen ? 'true' : 'false'"
       @click="toggle"
     >
-      <span>Login</span>
+      <span>{{ t('login.button') }}</span>
       <o-icon :icon="isOpen ? 'chevron-up' : 'chevron-down'"></o-icon>
     </a>
 
@@ -33,16 +33,16 @@
       >
         <form class="login-card" novalidate @submit.prevent="handleLogin">
           <div class="login-header">
-            <h3 id="login-title">Willkommen zurück!</h3>
-            <p>Melden Sie sich an, um fortzufahren</p>
-            <button type="button" class="close-button" aria-label="Schließen" @click="close">
+            <h3 id="login-title">{{ t('login.welcomeBack') }}</h3>
+            <p>{{ t('login.subtitle') }}</p>
+            <button type="button" class="close-button" :aria-label="t('common.close')" @click="close">
               <o-icon icon="close"></o-icon>
             </button>
           </div>
 
           <div class="login-form">
             <div class="form-group">
-              <label for="login-email">E-Mail</label>
+              <label for="login-email">{{ t('common.email') }}</label>
               <div class="input-wrapper">
                 <input
                   id="login-email"
@@ -51,7 +51,7 @@
                   type="email"
                   name="email"
                   autocomplete="username"
-                  placeholder="Ihre E-Mail-Adresse"
+                  :placeholder="t('login.emailPlaceholder')"
                   required
                 />
                 <span class="icon-wrapper">
@@ -61,7 +61,7 @@
             </div>
 
             <div class="form-group">
-              <label for="login-password">Passwort</label>
+              <label for="login-password">{{ t('common.password') }}</label>
               <div class="input-wrapper">
                 <input
                   id="login-password"
@@ -69,7 +69,7 @@
                   :type="showPassword ? 'text' : 'password'"
                   name="password"
                   autocomplete="current-password"
-                  placeholder="Ihr Passwort"
+                  :placeholder="t('login.passwordPlaceholder')"
                   required
                 />
                 <span class="icon-wrapper">
@@ -78,7 +78,7 @@
                 <button
                   type="button"
                   class="toggle-password"
-                  :aria-label="showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'"
+                  :aria-label="showPassword ? t('common.hidePassword') : t('common.showPassword')"
                   @click="showPassword = !showPassword"
                 >
                   <o-icon :icon="showPassword ? 'eye-off' : 'eye'"></o-icon>
@@ -88,21 +88,21 @@
 
             <div class="forgot-password">
               <router-link :to="{ path: '/forgot' }">
-                Passwort vergessen?
+                {{ t('login.forgot') }}
               </router-link>
             </div>
 
             <button type="submit" class="button is-primary is-fullwidth" :disabled="isLoading">
-              <span v-if="!isLoading">Login</span>
+              <span v-if="!isLoading">{{ t('login.button') }}</span>
               <span v-else class="spinner"></span>
             </button>
 
             <div v-if="error" class="error-message" role="alert">{{ error }}</div>
 
             <div class="register-link">
-              Noch kein Konto?
+              {{ t('login.noAccount') }}
               <router-link :to="{ path: '/register' }">
-                Registrieren
+                {{ t('login.register') }}
               </router-link>
             </div>
           </div>
@@ -115,6 +115,7 @@
 <script setup>
 import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useMainStore } from '@/store/store'
 import { useNotification } from '@/composables/useNotification'
 import AuthenticationService from '@/services/AuthenticationService'
@@ -128,6 +129,7 @@ import { apiErrorMessage } from '@/i18n'
 
 const MOBILE_BREAKPOINT = 768
 
+const { t } = useI18n()
 const mainStore = useMainStore()
 const route = useRoute()
 const { showNotification } = useNotification()
@@ -204,7 +206,7 @@ watch(() => route.fullPath, close)
 const handleLogin = async () => {
   if (isLoading.value) return
   if (!loginForm.value.email || !loginForm.value.password) {
-    error.value = 'Bitte E-Mail und Passwort eingeben.'
+    error.value = t('login.missingFields')
     return
   }
   try {
@@ -221,7 +223,7 @@ const handleLogin = async () => {
 
     loginForm.value = { email: '', password: '' }
     showNotification({
-      message: 'Erfolgreich eingeloggt',
+      message: t('login.success'),
       type: 'success'
     })
     close()

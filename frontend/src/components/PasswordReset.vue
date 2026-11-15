@@ -1,22 +1,22 @@
 <template>
   <div>
-    <h2>Ändern des Passworts</h2>
+    <h2>{{ $t('reset.title') }}</h2>
     
-    <o-field label="Passwort">
+    <o-field :label="$t('common.password')">
       <o-input
         type="password"
         v-model="password"
         class="inputForm"/>
     </o-field>  
 
-    <o-field label="Passwort (Kontrolle)">
+    <o-field :label="$t('reset.confirm')">
       <o-input
         type="password"
         v-model="passwordCheck"
         class="inputForm"/>
     </o-field>
 
-    <o-button variant="primary" @click="changePassword">Passwort ändern</o-button>
+    <o-button variant="primary" @click="changePassword">{{ $t('reset.submit') }}</o-button>
     <div v-if="error" class="error">{{ error }}</div>
   </div>
 </template>

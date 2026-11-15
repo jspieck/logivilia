@@ -59,15 +59,20 @@
               </div>
 
               <div class="navbar-end">
-                <div class="navbar-item language-switch" role="group" :aria-label="t('nav.language')">
-                  <button
-                    v-for="l in SUPPORTED_LOCALES"
-                    :key="l"
-                    type="button"
-                    :class="{ active: locale === l }"
-                    :aria-pressed="locale === l"
-                    @click="setLocale(l)"
-                  >{{ l.toUpperCase() }}</button>
+                <div class="navbar-item language-switch" role="group" :aria-label="t('nav.language')" :title="t('nav.language')">
+                  <ion-icon name="globe-outline" aria-hidden="true"></ion-icon>
+                  <div class="language-options">
+                    <button
+                      v-for="l in SUPPORTED_LOCALES"
+                      :key="l"
+                      type="button"
+                      :class="{ active: locale === l }"
+                      :aria-pressed="locale === l"
+                      :lang="l"
+                      :title="LOCALE_NAMES[l]"
+                      @click="setLocale(l)"
+                    >{{ l.toUpperCase() }}</button>
+                  </div>
                 </div>
 
                 <div class="login-dropdown-container">
@@ -126,6 +131,19 @@
         <div class="content has-text-centered">
           <p>
             <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}, <router-link to="/impressum" class="navLink">{{ t('footer.imprint') }}</router-link>, <router-link to="/datenschutz" class="navLink">{{ t('footer.privacy') }}</router-link>
+            <span class="footer-languages" role="group" :aria-label="t('nav.language')">
+            <ion-icon name="globe-outline" aria-hidden="true"></ion-icon>
+            <template v-for="(l, i) in SUPPORTED_LOCALES" :key="l">
+              <span v-if="i > 0" aria-hidden="true"> · </span>
+              <a
+                href="#"
+                :lang="l"
+                :class="{ active: locale === l }"
+                :aria-current="locale === l ? 'true' : undefined"
+                @click.prevent="setLocale(l)"
+              >{{ LOCALE_NAMES[l] }}</a>
+            </template>
+            </span>
           </p>
         </div>
         <CookieConsent />
@@ -142,7 +160,7 @@ import { useNotification } from '@/composables/useNotification'
 import CookieConsent from './components/CookieConsent.vue'
 import LoginDropdown from './components/LoginDropdown.vue'
 import AuthenticationService from '@/services/AuthenticationService'
-import { apiErrorMessage, setLocale, SUPPORTED_LOCALES } from '@/i18n'
+import { apiErrorMessage, setLocale, SUPPORTED_LOCALES, LOCALE_NAMES } from '@/i18n'
 import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n()
@@ -425,11 +443,24 @@ input:focus {
 }
 
 .language-switch {
-  gap: 2px;
+  gap: 6px;
+
+  > ion-icon {
+    font-size: 18px;
+    color: #7957d5;
+  }
+
+  .language-options {
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid #d8cff5;
+    border-radius: 8px;
+    background: #faf8ff;
+  }
 
   button {
-    padding: 2px 7px;
-    border: 1px solid transparent;
+    padding: 3px 9px;
+    border: none;
     border-radius: 6px;
     background: none;
     color: #6b7280;
@@ -440,8 +471,26 @@ input:focus {
     &:hover { color: #262664; }
 
     &.active {
-      border-color: #d8cff5;
-      background: #f3effc;
+      background: #7957d5;
+      color: #fff;
+    }
+  }
+}
+
+.footer-languages {
+  margin-left: 1rem;
+  white-space: nowrap;
+
+  ion-icon {
+    vertical-align: -2px;
+    margin-right: 4px;
+  }
+
+  a {
+    color: inherit;
+
+    &.active {
+      font-weight: 700;
       color: #7957d5;
     }
   }
