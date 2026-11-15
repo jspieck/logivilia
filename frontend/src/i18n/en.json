@@ -20,6 +20,8 @@
     "PUZZLE_CREATE_FAILED": "The puzzle could not be created.",
     "PUZZLE_UPDATE_FAILED": "The puzzle could not be changed.",
     "PUZZLE_INVALID": "The puzzle is incomplete or invalid.",
+    "PUZZLE_NOT_UNIQUE": "The puzzle has more than one solution ({cells} cells are ambiguous). Change the picture there.",
+    "PUZZLE_TOO_COMPLEX": "Could not check in time whether the puzzle has exactly one solution. Simplify it (e.g. larger areas or fewer colours).",
     "PUZZLE_TYPE_INVALID": "Unknown puzzle type.",
     "SOLUTION_INCORRECT": "The solution is not correct.",
     "SOLUTION_SAVE_FAILED": "The solution could not be saved.",

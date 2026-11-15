@@ -21,6 +21,8 @@
     "PUZZLE_UPDATE_FAILED": "Fehler beim Ändern des Rätsels.",
     "PUZZLE_INVALID": "Das Rätsel ist unvollständig oder fehlerhaft.",
     "PUZZLE_TYPE_INVALID": "Unbekannter Rätseltyp.",
+    "PUZZLE_NOT_UNIQUE": "Das Rätsel hat mehr als eine Lösung ({cells} Felder sind nicht eindeutig). Ändere das Bild an diesen Stellen.",
+    "PUZZLE_TOO_COMPLEX": "Es ließ sich nicht rechtzeitig prüfen, ob das Rätsel eindeutig lösbar ist. Vereinfache es (z. B. größere Flächen oder weniger Farben).",
     "SOLUTION_INCORRECT": "Die Lösung ist nicht korrekt.",
     "SOLUTION_SAVE_FAILED": "Die Lösung konnte nicht gespeichert werden.",
     "USER_NOT_FOUND": "Benutzer nicht gefunden.",

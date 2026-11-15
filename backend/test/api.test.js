@@ -224,6 +224,31 @@ describe('puzzles', () => {
     assert.equal(broken.body.code, 'PUZZLE_INVALID');
   });
 
+  test('nonograms with several solutions are rejected', async () => {
+    // A 2x2 diagonal: the clues fit both diagonals.
+    const ambiguous = newNonogram({ name: 'Diagonal', width: 2, height: 2, solution: [[1, 0], [0, 1]] });
+    const res = await api().post('/api/puzzles').set('Authorization', alice.auth).send(ambiguous);
+    assert.equal(res.status, 400);
+    assert.equal(res.body.code, 'PUZZLE_NOT_UNIQUE');
+    assert.equal(res.body.params.cells, 4);
+
+    const created = await api().post('/api/puzzles').set('Authorization', alice.auth)
+      .send(newNonogram({ name: 'Corner', width: 2, height: 2, solution: [[1, 1], [0, 1]] }));
+    assert.equal(created.status, 200, JSON.stringify(created.body));
+    const toAmbiguous = await api().put(`/api/puzzles/${created.body.id}`).set('Authorization', alice.auth)
+      .send({ solution: [[1, 0], [0, 1]] });
+    assert.equal(toAmbiguous.status, 400);
+    assert.equal(toAmbiguous.body.code, 'PUZZLE_NOT_UNIQUE');
+
+    // An old ambiguous puzzle can still be renamed.
+    const old = await Puzzle.create({
+      type: 'nonogram', name: 'Old', UserId: alice.user.id,
+      data: { width: 2, height: 2, numColor: 1, colors: ['#ffffff', '#000000'], solution: [[1, 0], [0, 1]] }
+    });
+    const renamed = await api().put(`/api/puzzles/${old.id}`).set('Authorization', alice.auth).send({ name: 'Older' });
+    assert.equal(renamed.status, 200, JSON.stringify(renamed.body));
+  });
+
   test('old per-type IDs map to the new puzzle ID', async () => {
     const res = await api().get('/api/puzzles/legacy/linelog/7');
     assert.equal(res.status, 200);

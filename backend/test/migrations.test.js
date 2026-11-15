@@ -76,3 +76,42 @@ test('every seed logic puzzle image ships with the frontend', () => {
     }
   }
 });
+
+test('the four ambiguous nonograms get their one-cell fix, other rows stay', async () => {
+  const migration = require('../migrations/20261115-02-unique-nonograms');
+  const seed = require('../seed/nonograms.json');
+  await require('../puzzles').ready;
+  const now = new Date();
+  // The seed is already fixed; undo the fix to get the live (old) data.
+  const before = migration.FIXES.map(fix => {
+    const data = seed.find(n => n.name === fix.name);
+    return migration.applyFix(fix, data, { from: fix.to, to: fix.from, checkUnique: false });
+  });
+  const rows = before.map(data => ({
+    type: 'nonogram', name: data.name, data: JSON.stringify(data), createdAt: now, updatedAt: now
+  }));
+  // Same name, different picture: must not be touched.
+  const other = { ...before[0], solution: before[0].solution.map(row => row.map(() => 1)) };
+  rows.push({ type: 'nonogram', name: 'Bobby', data: JSON.stringify(other), createdAt: now, updatedAt: now });
+  await qi.bulkInsert('Puzzles', rows);
+
+  await migration.up(qi);
+  await migration.up(qi); // idempotent
+
+  const names = migration.FIXES.map(f => f.name);
+  const parse = r => (typeof r.data === 'string' ? JSON.parse(r.data) : r.data);
+  const stored = await sequelize.query(
+    `SELECT name, data FROM Puzzles WHERE type = 'nonogram' AND name IN (${names.map(() => '?').join(',')}) ORDER BY id`,
+    { replacements: names, type: sequelize.QueryTypes.SELECT });
+  const data = stored.map(parse);
+  migration.FIXES.forEach((fix, i) => {
+    assert.deepEqual(data[i].solution, seed.find(n => n.name === fix.name).solution, fix.name);
+  });
+  assert.deepEqual(data[4].solution, other.solution);
+
+  await migration.down(qi);
+  const reverted = await sequelize.query("SELECT data FROM Puzzles WHERE name = 'Drache'",
+    { type: sequelize.QueryTypes.SELECT });
+  assert.deepEqual(parse(reverted[0]).solution, before[3].solution);
+  await qi.bulkDelete('Puzzles', { name: names });
+});

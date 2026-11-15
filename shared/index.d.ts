@@ -154,25 +154,46 @@ export interface PuzzleTypePlugin<T extends PuzzleType> {
   dataFields: readonly (keyof PuzzleData[T] & string)[];
   /** Checks creator input. Returns null if usable, otherwise the reason. */
   checkData(data: Partial<PuzzleData[T]>): string | null;
+  /**
+   * Checks that the puzzle has exactly one solution (runs the solver, so it
+   * can take up to a few seconds). Called after `checkData` when puzzle
+   * data is saved. Returns null if fine, otherwise an API error.
+   */
+  checkSolvable?(data: PuzzleData[T]): ApiError | null;
   /** What players see: `data` without the solution, plus derived clues. */
   computeClues(data: PuzzleData[T]): PublicPuzzleData[T];
   /** True when `answer` solves the puzzle. Runs on the server. */
   validate(data: PuzzleData[T], answer: unknown): boolean;
   /**
-   * Planned (audit B6): finds the solutions of a puzzle from its clues alone.
-   * `solutions` stops at `limit` (2 is enough to prove uniqueness).
+   * Finds the solutions of a puzzle from its clues alone (audit B6; nonogram
+   * so far). `solutions` stops at `limit` (default 2, enough to prove
+   * uniqueness); `maxNodes` and `maxMillis` bound the work.
    */
-  solve?(clues: PublicPuzzleData[T], options?: { limit?: number }): SolveResult<T>;
+  solve?(clues: PublicPuzzleData[T], options?: { limit?: number, maxNodes?: number, maxMillis?: number }): SolveResult<T>;
   /** Planned (audit B8): the next logical step from a partly solved state. */
   hint?(clues: PublicPuzzleData[T], state: PuzzleAnswer[T]): Hint | null;
 }
 
+/**
+ * How hard a puzzle is to solve: 'line' = each row and column alone,
+ * 'contradiction' = assume one cell and follow the lines until a clash,
+ * 'search' = needs guessing (or has no or several solutions).
+ */
+export type SolveTechnique = 'line' | 'contradiction' | 'search';
+
 export interface SolveResult<T extends PuzzleType> {
   solutions: PuzzleAnswer[T][];
-  /** False if the solver had to guess (or gave up). */
+  /** True if it can be solved without guessing (`technique` is not 'search'). */
   logicalOnly: boolean;
-  /** Solver work, the basis for automatic difficulty (audit B7). */
+  /** The hardest technique needed, the basis for automatic difficulty (audit B7). */
+  technique: SolveTechnique;
+  /** Line passes of the first line-logic round, also for difficulty (audit B7). */
   steps: number;
+  /**
+   * False if the node or time budget ran out before finding `limit`
+   * solutions or exhausting the search, so `solutions` may be incomplete.
+   */
+  complete: boolean;
 }
 
 export interface Hint {

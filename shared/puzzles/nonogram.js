@@ -4,8 +4,13 @@
 // accepted, not only the stored solution.
 
 import { isGrid, isIntegerGrid, toNumberGrid, lineClues, sameClues, column, isPositiveInt } from './grid.js';
+import { solveNonogram } from './nonogramSolver.js';
 
 const MAX_SIZE = 100;
+
+// Time the uniqueness check may take when a puzzle is saved. It runs on the
+// request thread; realistic 50x50 puzzles need well under a second.
+const SOLVABLE_CHECK_MILLIS = 3000;
 
 // The solution as the player sees it: only the declared height x width area
 // counts (some older puzzles store extra rows), and colour values outside the
@@ -96,6 +101,27 @@ const nonogram = {
       return false;
     }
     return matchesClues(clues(data), answer);
+  },
+
+  checkSolvable (data) {
+    const solution = normalizedSolution(data);
+    if (!solution) {
+      return { code: 'PUZZLE_INVALID' };
+    }
+    const result = solveNonogram(clues(data), { limit: 2, maxMillis: SOLVABLE_CHECK_MILLIS });
+    if (!result.complete) {
+      return { code: 'PUZZLE_TOO_COMPLEX' };
+    }
+    if (result.solutions.length > 1) {
+      const [a, b] = result.solutions;
+      const cells = a.reduce((sum, row, y) => sum + row.filter((cell, x) => cell !== b[y][x]).length, 0);
+      return { code: 'PUZZLE_NOT_UNIQUE', params: { cells } };
+    }
+    return null;
+  },
+
+  solve (puzzleClues, options) {
+    return solveNonogram(puzzleClues, options);
   }
 };
 

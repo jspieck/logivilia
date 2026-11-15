@@ -4,7 +4,8 @@
 // or Express: which data fields it has, how to check creator input, what
 // players see (computeClues), and when an answer is correct (validate).
 // The frontend adds the Vue component that renders it
-// (frontend/src/puzzles/index.js); the planned solver adds `solve` and `hint`.
+// (frontend/src/puzzles/index.js). `solve` exists for nonograms
+// (nonogramSolver.js); `hint` is planned (audit B8).
 //
 // Adding a puzzle type: write a module like nonogram.js, list it here, add
 // its board component to the frontend registry. No new table, controller,

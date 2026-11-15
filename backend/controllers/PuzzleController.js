@@ -116,6 +116,10 @@ module.exports = {
       if (problem) {
         return sendError(res, 400, 'PUZZLE_INVALID', { reason: problem });
       }
+      const unsolvable = plugin.checkSolvable && plugin.checkSolvable(data);
+      if (unsolvable) {
+        return sendError(res, 400, unsolvable.code, unsolvable.params);
+      }
       const puzzle = await Puzzle.create({
         ...pickFields(req.body, EDITABLE_COMMON_FIELDS),
         type,
@@ -141,10 +145,16 @@ module.exports = {
         return sendError(res, 403, 'FORBIDDEN');
       }
       const plugin = getPlugin(puzzle.type);
-      const data = { ...puzzleData(puzzle), ...pickFields(req.body, plugin.dataFields) };
+      const changes = pickFields(req.body, plugin.dataFields);
+      const data = { ...puzzleData(puzzle), ...changes };
       const problem = plugin.checkData(data);
       if (problem) {
         return sendError(res, 400, 'PUZZLE_INVALID', { reason: problem });
+      }
+      // Only when the puzzle itself changes, so renaming an old puzzle works.
+      const unsolvable = Object.keys(changes).length > 0 && plugin.checkSolvable && plugin.checkSolvable(data);
+      if (unsolvable) {
+        return sendError(res, 400, unsolvable.code, unsolvable.params);
       }
       await puzzle.update({ ...pickFields(req.body, EDITABLE_COMMON_FIELDS), data });
       res.send(publicPuzzle(puzzle));

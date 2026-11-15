@@ -9,6 +9,7 @@
     "seed": "node ./seed",
     "test": "node --test test/*.test.js",
     "fix:nonograms": "node scripts/fixNonogramSizes.js",
+    "check:nonograms": "node scripts/checkNonograms.js",
     "migrate:puzzles": "node scripts/migrateToPuzzles.js",
     "migrate": "node migrator.js up",
     "migrate:status": "node migrator.js status",
