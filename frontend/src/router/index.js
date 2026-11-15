@@ -74,7 +74,13 @@ const routes = [
   {
     path: '/logical-create',
     name: 'Logical Create',
-    component: () => import('@/components/LogicalCreate.vue'),
+    component: () => import('@/puzzles/logical/LogicalEditor.vue'),
+  },
+  {
+    // Edit one of your own logic puzzles (or any, as Admin)
+    path: '/logical-create/:id',
+    name: 'Logical Edit',
+    component: () => import('@/puzzles/logical/LogicalEditor.vue'),
   },
   {
     path: '/nonogram-overview',
