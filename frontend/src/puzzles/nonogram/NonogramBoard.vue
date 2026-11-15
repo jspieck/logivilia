@@ -223,6 +223,8 @@ const hover = ref(null)
 const message = ref(null)
 const hint = ref(null)
 const mistakes = ref([])
+// Großansicht: the board covers the whole window, sized to fit both ways.
+const expanded = ref(false)
 let solution = null
 
 // ---------------------------------------------------------------------------
@@ -388,7 +390,7 @@ function reset () {
   selected.value = 1
   clearFeedback()
   history.reset(state.value)
-  if (saved) message.value = { kind: 'info', text: 'Dein Spielstand wurde wiederhergestellt.' }
+  if (saved) message.value = { kind: 'info', text: t('common.restored') }
 }
 watch(() => props.puzzle, () => { reset(); fitToScreen() }, { immediate: true })
 
@@ -561,9 +563,6 @@ function tick () {
   }
 }
 
-// Großansicht: the board covers the whole window, sized to fit both ways.
-const expanded = ref(false)
-
 function toggleExpanded () {
   expanded.value = !expanded.value
   nextTick(fitToScreen)
@@ -598,48 +597,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
-.board {
-  --accent: #2563eb;
-  --line: #c9ced6;
-  --line-strong: #1f2937;
-  --clue-bg: #f6f7f9;
-  --hover: rgba(37, 99, 235, 0.09);
-  --error: #dc2626;
-  --hint: #f59e0b;
-}
-
-.board.expanded {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  padding: 16px 24px;
-  overflow: auto;
-  background: #fff;
-
-  .grid-area {
-    display: flex;
-    justify-content: center;
-  }
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
-  margin: 4px 0 12px;
-}
-
-.tool-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  background: #fff;
-  border: 1px solid #e3e6ea;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-}
+@import '../engine/board.scss';
 
 .palette {
   gap: 6px;
@@ -672,57 +630,6 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   background: #374151;
   transform: translate(-50%, -50%);
-}
-
-.tool {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 32px;
-  min-width: 32px;
-  padding: 0 7px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: #374151;
-  font-size: 14px;
-  cursor: pointer;
-
-  &:hover:not(:disabled) { background: #f0f2f5; }
-  &:disabled { opacity: 0.35; cursor: default; }
-
-  ion-icon { font-size: 19px; }
-}
-
-.timer {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-variant-numeric: tabular-nums;
-  color: #4b5563;
-
-  ion-icon { font-size: 18px; }
-}
-
-.board-message {
-  margin: 0 0 10px;
-  padding: 7px 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  background: #eff6ff;
-  color: #1e40af;
-
-  &.error { background: #fef2f2; color: #991b1b; }
-  &.success { background: #f0fdf4; color: #166534; }
-  &.empty { background: transparent; }
-  min-height: calc(1.5em + 14px);
-}
-
-.grid-area {
-  overflow: auto;
-  user-select: none;
-  -webkit-user-select: none;
-  padding-bottom: 4px;
 }
 
 .nonogram {
@@ -800,44 +707,4 @@ onBeforeUnmount(() => {
 
 .dot { fill: #4b5563; pointer-events: none; }
 
-.grid-thin {
-  stroke: var(--line);
-  stroke-width: 1;
-  fill: none;
-  shape-rendering: crispEdges;
-  pointer-events: none;
-}
-
-.grid-thick {
-  stroke: var(--line-strong);
-  stroke-width: 2;
-  fill: none;
-  shape-rendering: crispEdges;
-  pointer-events: none;
-}
-
-.drag-count {
-  pointer-events: none;
-
-  rect { fill: var(--accent); }
-  text {
-    fill: #fff;
-    font-size: 12px;
-    font-weight: 700;
-    text-anchor: middle;
-    dominant-baseline: central;
-  }
-}
-
-.help {
-  margin-top: 10px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.solved-time {
-  margin-top: 10px;
-  font-weight: 600;
-  color: #166534;
-}
 </style>

@@ -50,9 +50,6 @@
                     </router-link>
                   </div>
                 </div>
-                <router-link class="navbar-item" :to="{ path: '/linelog-overview' }">
-                  {{ t('nav.linelog') }}
-                </router-link>
                 <router-link class="navbar-item" :to="{ path: '/leaderboard' }">
                   {{ t('nav.leaderboard') }}
                 </router-link>
@@ -176,7 +173,8 @@ const menuOpen = ref(false)
 const suppressed = ref(null)
 const dropdowns = [
   { key: 'nonogram', label: 'nav.nonogram', overview: '/nonogram-overview', create: '/nonogram-create' },
-  { key: 'logical', label: 'nav.logical', overview: '/logical-overview', create: '/logical-create' }
+  { key: 'logical', label: 'nav.logical', overview: '/logical-overview', create: '/logical-create' },
+  { key: 'linelog', label: 'nav.linelog', overview: '/linelog-overview', create: '/linelog-create' }
 ]
 
 const onNavClick = (event) => {

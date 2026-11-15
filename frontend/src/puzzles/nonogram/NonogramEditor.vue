@@ -676,116 +676,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
-.editor-page {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 16px;
-  --accent: #2563eb;
-}
-
-.page-title {
-  font-size: 1.6rem;
-  margin-bottom: 14px;
-}
-
-.editor-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
-  gap: 16px;
-  align-items: start;
-
-  @media (max-width: 960px) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.card {
-  background: #fff;
-  border: 1px solid #e3e6ea;
-  border-radius: 12px;
-  padding: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-
-  h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-}
-
-.side {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-  margin-bottom: 10px;
-}
-
-.tool-group {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 3px;
-  border: 1px solid #e3e6ea;
-  border-radius: 10px;
-}
-
-.palette {
-  gap: 6px;
-  padding: 4px 7px;
-}
-
-.tool {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 30px;
-  min-width: 30px;
-  padding: 0 6px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: #374151;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover:not(:disabled) { background: #f0f2f5; }
-  &.active { background: #dbe7fe; color: #1e40af; }
-  &:disabled { opacity: 0.35; cursor: default; }
-  &.small { height: 24px; min-width: 24px; }
-
-  ion-icon { font-size: 18px; }
-}
-
-.swatch {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  &.active { outline: 3px solid var(--accent); outline-offset: 2px; }
-  &.eraser ion-icon { color: #9ca3af; font-size: 16px; }
-}
-
-.grid-area {
-  overflow: auto;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.editor-svg {
-  display: block;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-}
+@import '../engine/editor.scss';
 
 .clue-bg { fill: #f6f7f9; }
 
@@ -797,61 +688,11 @@ onBeforeUnmount(() => {
   dominant-baseline: middle;
 }
 
-.main-grid {
-  overflow: visible;
-  cursor: crosshair;
-  touch-action: none;
-}
-
-.grid-thin { stroke: rgba(120, 128, 140, 0.45); stroke-width: 1; fill: none; shape-rendering: crispEdges; pointer-events: none; }
-.grid-thick { stroke: #1f2937; stroke-width: 2; fill: none; shape-rendering: crispEdges; pointer-events: none; }
-
-.ambiguous {
-  fill: rgba(220, 38, 38, 0.15);
-  stroke: #dc2626;
-  stroke-width: 2;
-  pointer-events: none;
-}
-
 .fix-preview {
   fill: rgba(245, 158, 11, 0.35);
   stroke: #f59e0b;
   stroke-width: 3;
   pointer-events: none;
-}
-
-.hover-label {
-  pointer-events: none;
-
-  rect { fill: rgba(31, 41, 55, 0.8); }
-  text { fill: #fff; font-size: 11px; text-anchor: middle; dominant-baseline: central; }
-}
-
-.help, .muted {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.help { margin-top: 8px; }
-
-.status-line {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  margin-bottom: 8px;
-
-  ion-icon { font-size: 20px; flex-shrink: 0; }
-}
-
-.ok .status-line ion-icon { color: #16a34a; }
-.bad .status-line ion-icon { color: #dc2626; }
-
-.checkbox-line {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  font-size: 14px;
-  margin-bottom: 8px;
 }
 
 .fix-list {
@@ -881,56 +722,4 @@ onBeforeUnmount(() => {
   border-radius: 3px;
   border: 1px solid rgba(0, 0, 0, 0.3);
 }
-
-.field-label {
-  display: block;
-  text-align: left;
-  font-size: 13px;
-  color: #4b5563;
-  margin-bottom: 8px;
-
-  .input { margin-top: 3px; }
-}
-
-.size-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.colour-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.colour-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-
-  input[type='color'] {
-    width: 34px;
-    height: 26px;
-    padding: 0;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    background: none;
-    cursor: pointer;
-  }
-}
-
-.file-input { font-size: 13px; }
-
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.error-text { color: #b91c1c; font-size: 13px; }
-.success-text { color: #166534; font-weight: 600; margin-top: 8px; }
-
-.play-card { margin-top: 16px; }
 </style>

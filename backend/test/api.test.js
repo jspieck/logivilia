@@ -249,6 +249,31 @@ describe('puzzles', () => {
     assert.equal(renamed.status, 200, JSON.stringify(renamed.body));
   });
 
+  test('linelogs whose numbers allow another picture are rejected', async () => {
+    const newLinelog = extra => ({
+      type: 'linelog', name: 'Tiny linelog', difficulty: 1, numColor: 1, colors: ['#e53935', '#ffffff'], ...extra
+    });
+    // Two 3s in opposite corners: the path can go round either side.
+    const ambiguous = await api().post('/api/puzzles').set('Authorization', alice.auth).send(newLinelog({
+      width: 2, height: 2, information: [[3, 0], [0, 3]], solution: [[1, 1], [0, 1]]
+    }));
+    assert.equal(ambiguous.status, 400);
+    assert.equal(ambiguous.body.code, 'PUZZLE_NOT_UNIQUE');
+    assert.equal(ambiguous.body.params.cells, 2);
+
+    // Numbers that cannot draw the stored picture.
+    const wrong = await api().post('/api/puzzles').set('Authorization', alice.auth).send(newLinelog({
+      width: 3, height: 1, information: [[3, 0, 3]], solution: [[1, 0, 1]]
+    }));
+    assert.equal(wrong.status, 400);
+    assert.equal(wrong.body.code, 'PUZZLE_INVALID');
+
+    const fine = await api().post('/api/puzzles').set('Authorization', alice.auth).send(newLinelog({
+      width: 3, height: 1, information: [[3, 0, 3]], solution: [[1, 1, 1]]
+    }));
+    assert.equal(fine.status, 200, JSON.stringify(fine.body));
+  });
+
   test('only the owner (or an Admin) can load a puzzle with its solution', async () => {
     const created = await api().post('/api/puzzles').set('Authorization', alice.auth)
       .send(newNonogram({ name: 'Editable' }));

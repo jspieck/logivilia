@@ -6,7 +6,7 @@
 //   1 tiny nonogram, 2 tiny linelog, 3 the first seed logical
 // and one user, e2e@example.com / e2e-pass1 (unverified).
 // With --with-seed (for trying the UI by hand) the seed nonograms follow
-// from ID 4 on.
+// from ID 4 on, then the seed linelogs.
 
 process.env.NODE_ENV = 'test';
 process.env.TEST_DB_DIALECT = '';
@@ -39,6 +39,9 @@ async function fixtures () {
   if (process.argv.includes('--with-seed')) {
     for (const row of require('../backend/seed/nonograms.json')) {
       await Puzzle.create({ ...toPuzzleRow('nonogram', row, null), UserId: null });
+    }
+    for (const row of require('../backend/seed/linelogs.json')) {
+      await Puzzle.create({ ...toPuzzleRow('linelog', row, null), UserId: null });
     }
   }
 }

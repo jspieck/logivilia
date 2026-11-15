@@ -170,7 +170,8 @@
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "toHome": "Back to the start page",
-    "save": "Save"
+    "save": "Save",
+    "restored": "Your progress has been restored."
   },
   "login": {
     "button": "Login",
@@ -278,7 +279,9 @@
   },
   "linelog": {
     "beta": "This puzzle type is still in testing. Errors may occur.",
-    "zoom": "Zoom",
+    "progress": "{done}/{total} connected",
+    "progressTitle": "Connected number pairs",
+    "help": "Drag from a number to the same number: the path is as many cells long as the number (both numbers included) · drag back to remove cells · click inside a path to cut it there · right-click deletes a path",
     "errors": {
       "complete": "Path already complete",
       "wrongColor": "Wrong colour",
@@ -287,7 +290,8 @@
       "otherColor": "Cell has a different colour",
       "middleOfPath": "Cell is in the middle of another path",
       "combinedLength": "Wrong length of the combined path",
-      "wrongSolution": "All numbers are connected, but the solution is not correct."
+      "wrongSolution": "All numbers are connected, but the solution is not correct.",
+      "taken": "This number is already connected"
     }
   },
   "logical": {
@@ -398,6 +402,36 @@
     "needName": "Give the puzzle a name.",
     "needUnique": "You can publish as soon as the puzzle is uniquely solvable.",
     "cannotEdit": "This puzzle cannot be edited here."
+  },
+  "linelogEditor": {
+    "titleCreate": "Create a linelog",
+    "titleEdit": "Edit linelog",
+    "helpPaint": "Paint the picture: left-click with the selected colour, right-click erases. Then \"Generate numbers\" creates the paths. Keys: W path, P pen, L line, R rectangle, F fill, 0–9 colour.",
+    "helpPath": "Drag paths over cells of one colour; the length becomes the number at both ends. Dragging from a path end extends it, clicking in the middle cuts it, right-click deletes it. Cells without a path become 1s.",
+    "tools": {
+      "path": "Path",
+      "pathTitle": "Draw paths yourself (W)"
+    },
+    "generateTitle": "Generate numbers",
+    "generateText": "Joins neighbouring cells of one colour into paths as long as the puzzle stays unique. Paths you drew are kept.",
+    "maxNumber": "Largest number",
+    "generate": "Generate numbers",
+    "generating": "Generating …",
+    "regenerate": "Reshuffle",
+    "regenerateTitle": "Discard all paths and generate a different split",
+    "clearPaths": "Clear paths",
+    "generatePartial": "Time ran out before it finished. Click again to continue.",
+    "generateFailed": "Generating failed.",
+    "layoutNotFound": "The paths of this puzzle could not be found in time; generate the numbers again.",
+    "stats": "{paths} paths · {ones} ones · largest number {max}",
+    "dissolve": "Split the ambiguous path into 1s | Split the {n} ambiguous paths into 1s",
+    "needPaths": "Draw paths or let the numbers be generated.",
+    "status": {
+      "empty": "Still empty: paint a picture or import one.",
+      "unique": "Uniquely solvable.",
+      "ambiguous": "Not unique: {n} cells can also be coloured differently (marked red). The paths involved are dashed.",
+      "tooComplex": "Too complex to check uniqueness in time. Use smaller numbers."
+    }
   },
   "logicalCreate": {
     "title": "Create logic puzzle",

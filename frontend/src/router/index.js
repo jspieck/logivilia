@@ -98,6 +98,17 @@ const routes = [
     component: () => import('@/components/LinelogOverview.vue'),
   },
   {
+    path: '/linelog-create',
+    name: 'Linelog Create',
+    component: () => import('@/puzzles/linelog/LinelogEditor.vue'),
+  },
+  {
+    // Edit one of your own linelogs (or any, as Admin)
+    path: '/linelog-create/:id',
+    name: 'Linelog Edit',
+    component: () => import('@/puzzles/linelog/LinelogEditor.vue'),
+  },
+  {
     // Every puzzle type; the page picks the board from the puzzle's type.
     path: '/puzzle/:id',
     name: 'Puzzle',

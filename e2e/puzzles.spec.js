@@ -82,3 +82,43 @@ test('nonogram editor: checks uniqueness live and suggests a fix', async ({ page
   await page.getByRole('button', { name: 'Anwenden' }).first().click();
   await expect(status).toContainText('Eindeutig lösbar');
 });
+
+test('linelog editor: generates numbers, spots an ambiguous path and fixes it', async ({ page }) => {
+  await page.goto('/linelog-create');
+  await expect(page.getByRole('heading', { name: 'Linelog erstellen' })).toBeVisible();
+  const status = page.locator('.status-line');
+  await expect(status).toContainText('Noch leer');
+
+  // Paint four cells in a row with the pen (the default tool).
+  const grid = page.locator('svg.main-grid');
+  const row = [];
+  for (let x = 2; x <= 5; x++) row.push(await cellCenter(grid, 15, 15, x, 2));
+  await page.mouse.move(row[0].x, row[0].y);
+  await page.mouse.down();
+  for (const point of row.slice(1)) await page.mouse.move(point.x, point.y, { steps: 3 });
+  await page.mouse.up();
+  await expect(status).toContainText('Eindeutig lösbar');
+  await expect(page.locator('.stats')).toContainText('0 Pfade · 4 Einsen');
+
+  await page.getByRole('button', { name: 'Zahlen erzeugen' }).last().click();
+  await expect(page.locator('.stats')).toContainText('1 Pfade · 0 Einsen · größte Zahl 4');
+  await expect(status).toContainText('Eindeutig lösbar');
+
+  // An L of three cells, joined by hand: the path could also go round the
+  // other side of the corner.
+  for (const [x, y] of [[2, 5], [3, 5], [3, 6]]) {
+    const point = await cellCenter(grid, 15, 15, x, y);
+    await page.mouse.click(point.x, point.y);
+  }
+  await page.getByRole('radio', { name: 'Pfad' }).click();
+  const corner = [];
+  for (const [x, y] of [[2, 5], [3, 5], [3, 6]]) corner.push(await cellCenter(grid, 15, 15, x, y));
+  await page.mouse.move(corner[0].x, corner[0].y);
+  await page.mouse.down();
+  for (const point of corner.slice(1)) await page.mouse.move(point.x, point.y, { steps: 3 });
+  await page.mouse.up();
+  await expect(status).toContainText('Nicht eindeutig: 2 Felder');
+
+  await page.getByRole('button', { name: /mehrdeutigen Pfad/ }).click();
+  await expect(status).toContainText('Eindeutig lösbar');
+});

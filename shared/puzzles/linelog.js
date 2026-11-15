@@ -4,8 +4,12 @@
 // Players get the numbers and the colour of each numbered cell, not the paths.
 
 import { isGrid, isIntegerGrid, toNumberGrid, isPositiveInt } from './grid.js';
+import { solveLinelog } from './linelogSolver.js';
 
 const MAX_SIZE = 100;
+
+// Time the uniqueness check may take when a puzzle is saved (request thread).
+const SOLVABLE_CHECK_MILLIS = 3000;
 
 // Colour of every numbered cell (stored encoding), 0 elsewhere.
 function informationColors (data) {
@@ -56,6 +60,30 @@ const linelog = {
     }
     const submitted = toNumberGrid(/** @type {unknown[][]} */ (answer));
     return solution.every((row, y) => row.every((cell, x) => cell === submitted[y][x]));
+  },
+
+  // The numbers must lead to exactly one picture, the stored one.
+  checkSolvable (data) {
+    const solution = toNumberGrid(data.solution);
+    const clues = linelog.computeClues(data);
+    // First: can the numbers draw the stored picture at all?
+    const layout = solveLinelog(clues, { target: solution, layoutOnly: true, maxMillis: SOLVABLE_CHECK_MILLIS });
+    if (layout.status === 'none') {
+      return { code: 'PUZZLE_INVALID' };
+    }
+    const result = solveLinelog(clues, { target: solution, maxMillis: SOLVABLE_CHECK_MILLIS });
+    if (result.status === 'too-complex') {
+      return { code: 'PUZZLE_TOO_COMPLEX' };
+    }
+    if (result.status === 'none') {
+      return { code: 'PUZZLE_INVALID' };
+    }
+    if (result.status === 'ambiguous') {
+      const other = /** @type {number[][]} */ (result.other);
+      const cells = solution.reduce((sum, row, y) => sum + row.filter((cell, x) => cell !== other[y][x]).length, 0);
+      return { code: 'PUZZLE_NOT_UNIQUE', params: { cells } };
+    }
+    return null;
   }
 };
 

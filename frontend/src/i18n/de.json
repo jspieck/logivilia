@@ -170,7 +170,8 @@
     "hidePassword": "Passwort verbergen",
     "showPassword": "Passwort anzeigen",
     "toHome": "Zur Startseite",
-    "save": "Speichern"
+    "save": "Speichern",
+    "restored": "Dein Spielstand wurde wiederhergestellt."
   },
   "login": {
     "button": "Login",
@@ -278,7 +279,9 @@
   },
   "linelog": {
     "beta": "Dieser Rätseltyp befindet sich noch in der Testphase. Es kann zu Fehlern kommen.",
-    "zoom": "Zoom",
+    "progress": "{done}/{total} verbunden",
+    "progressTitle": "Verbundene Zahlenpaare",
+    "help": "Von einer Zahl zur gleichen Zahl ziehen: der Pfad ist so viele Felder lang wie die Zahl (beide Zahlen mitgezählt) · zurückziehen nimmt Felder weg · Klick in einen Pfad kürzt ihn dort · Rechtsklick löscht einen Pfad",
     "errors": {
       "complete": "Pfad schon komplett",
       "wrongColor": "Falsche Farbe",
@@ -287,7 +290,8 @@
       "otherColor": "Feld anders gefärbt",
       "middleOfPath": "Feld in der Mitte eines anderen Pfades",
       "combinedLength": "Falsche Länge des kombinierten Pfads",
-      "wrongSolution": "Alle Zahlen sind verbunden, aber die Lösung stimmt nicht."
+      "wrongSolution": "Alle Zahlen sind verbunden, aber die Lösung stimmt nicht.",
+      "taken": "Diese Zahl ist schon verbunden"
     }
   },
   "logical": {
@@ -398,6 +402,36 @@
     "needName": "Gib dem Rätsel einen Namen.",
     "needUnique": "Veröffentlichen geht, sobald das Rätsel eindeutig lösbar ist.",
     "cannotEdit": "Dieses Rätsel kann hier nicht bearbeitet werden."
+  },
+  "linelogEditor": {
+    "titleCreate": "Linelog erstellen",
+    "titleEdit": "Linelog bearbeiten",
+    "helpPaint": "Male das Bild: Linksklick mit der gewählten Farbe, Rechtsklick radiert. Danach erzeugt „Zahlen erzeugen“ die Pfade. Tasten: W Pfad, P Stift, L Linie, R Rechteck, F Füllen, 0–9 Farbe.",
+    "helpPath": "Ziehe Pfade über Felder einer Farbe; die Länge wird zur Zahl an beiden Enden. Ein Pfadende verlängert ihn, ein Klick in die Mitte kürzt ihn, Rechtsklick löscht ihn. Felder ohne Pfad werden zu Einsen.",
+    "tools": {
+      "path": "Pfad",
+      "pathTitle": "Pfade selbst zeichnen (W)"
+    },
+    "generateTitle": "Zahlen erzeugen",
+    "generateText": "Verbindet benachbarte Felder gleicher Farbe zu Pfaden, solange das Rätsel eindeutig bleibt. Selbst gezeichnete Pfade bleiben erhalten.",
+    "maxNumber": "Höchste Zahl",
+    "generate": "Zahlen erzeugen",
+    "generating": "Erzeuge …",
+    "regenerate": "Neu würfeln",
+    "regenerateTitle": "Alle Pfade verwerfen und eine andere Aufteilung erzeugen",
+    "clearPaths": "Pfade löschen",
+    "generatePartial": "Die Zeit hat nicht für alles gereicht. Klicke nochmal, um weiterzumachen.",
+    "generateFailed": "Das Erzeugen ist fehlgeschlagen.",
+    "layoutNotFound": "Die Pfade dieses Rätsels ließen sich nicht rechtzeitig finden; erzeuge die Zahlen neu.",
+    "stats": "{paths} Pfade · {ones} Einsen · größte Zahl {max}",
+    "dissolve": "Den mehrdeutigen Pfad in Einsen auflösen | Die {n} mehrdeutigen Pfade in Einsen auflösen",
+    "needPaths": "Zeichne Pfade oder lass die Zahlen erzeugen.",
+    "status": {
+      "empty": "Noch leer: male ein Bild oder importiere eines.",
+      "unique": "Eindeutig lösbar.",
+      "ambiguous": "Nicht eindeutig: {n} Felder können auch anders gefärbt werden (rot markiert). Die beteiligten Pfade sind gestrichelt.",
+      "tooComplex": "Zu komplex, um die Eindeutigkeit rechtzeitig zu prüfen. Verwende kleinere Zahlen."
+    }
   },
   "logicalCreate": {
     "title": "Logikrätsel erstellen",
