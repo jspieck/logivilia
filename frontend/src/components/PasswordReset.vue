@@ -16,7 +16,7 @@
         class="inputForm"/>
     </o-field>
 
-    <o-button @click="changePassword">Passwort ändern</o-button>
+    <o-button variant="primary" @click="changePassword">Passwort ändern</o-button>
     <div v-if="error" class="error">{{ error }}</div>
   </div>
 </template>

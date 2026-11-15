@@ -99,13 +99,12 @@
         </div>
 
         <button 
-          class="register-button" 
+          class="button is-primary is-fullwidth register-button" 
           @click="register"
           :disabled="isRegistering"
         >
           <span v-if="!isRegistering">Registrieren</span>
           <span v-else class="spinner"></span>
-          <span class="button-glow"></span>
         </button>
         
         <p class="global-error" v-if="error">{{ error }}</p>
@@ -562,41 +561,6 @@ watch(email, (newValue) => {
 
 .requirement:not(.met) i {
   color: #f44336;
-}
-
-.register-button {
-  width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin-top: 1rem;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 48px;
-  overflow: hidden;
-}
-
-.register-button:hover {
-  box-shadow: 0 5px 15px rgba(110, 142, 251, 0.4);
-}
-
-.register-button:active {
-  transform: translateY(0);
-}
-
-.register-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
 .spinner {

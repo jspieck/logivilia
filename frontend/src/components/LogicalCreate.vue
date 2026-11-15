@@ -33,7 +33,7 @@
               </div>
             </template>
           </draggable>
-          <button @click="addClue">Neuer Hinweis</button>
+          <button class="button" @click="addClue">Neuer Hinweis</button>
         </o-field>
         <p class="error" v-if="!cluesFinished">Bitte mindestens einen Hinweis geben. Jeder Hinweis muss mindestens 10 Zeichen lang sein.</p>
         <o-field label="Lösung" :addons="false">
@@ -77,7 +77,7 @@
               </div>
             </div>
           </o-modal>
-          <button @click="addAttribute">Neues Attribut</button>
+          <button class="button" @click="addAttribute">Neues Attribut</button>
         </o-field>
         <p class="error" v-if="!solutionFinished">Bitte alle Attributgruppen ausfüllen und unterscheidbar benennen.</p>
         <!-- <o-field label="Lösung">
@@ -89,7 +89,7 @@
         <o-field label="Autor">
           <input v-model="logical.author"/>
         </o-field>
-        <button @click="createLogical">Rätsel erstellen</button>
+        <button class="button is-primary" @click="createLogical">Rätsel erstellen</button>
       </div>
     </div>
     <div class="column" v-if="preview">
@@ -459,20 +459,6 @@ input {
   padding: 9px;
   box-sizing: border-box;
   height: 30px;
-}
-
-button {
-  color: black;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 5px;
-  height: 40px;
-  padding: 10px;
-  border: none;
-  cursor: pointer;
-
-  &:hover {
-    background: #c6c6c6;
-  }
 }
 
 .checking {

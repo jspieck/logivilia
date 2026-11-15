@@ -8,7 +8,7 @@
       @solution-check="check"
     />
     <div class="check-solution">
-      <button class="check-button" :disabled="checking" @click="display.checkSolution()">Überprüfen</button>
+      <button class="button is-primary" :disabled="checking" @click="display.checkSolution()">Überprüfen</button>
       <img v-if="solved" class="success-icon" src="@/assets/haken.png" width="40" height="40" alt="" />
       <h4 class="solution-message">{{ message }}</h4>
     </div>
@@ -67,26 +67,6 @@ const check = async (isComplete, table) => {
   align-items: center;
   gap: 15px;
   margin-top: 20px;
-
-  .check-button {
-    padding: 10px 20px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.2s;
-
-    &:hover:not(:disabled) {
-      background: #45a049;
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
-  }
 
   .success-icon {
     margin: 0 10px;

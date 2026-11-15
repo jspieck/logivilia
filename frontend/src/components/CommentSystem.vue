@@ -1,24 +1,24 @@
 <template>
   <div id="comment-area" class="comment-area">
     <div class="comments-container">
-      <h3>Kommentare</h3>
+      <h3>{{ $t('comments.title') }}</h3>
       <div v-if="isUserLoggedIn">
         <textarea
           id="mainComment"
           class="comment-input"
-          placeholder="Dein Kommentar..."
+          :placeholder="$t('comments.placeholder')"
           v-model="userComment"
         ></textarea>
         <div class="divsend">
-          <button @click="sendComment">
-            <span>Kommentar abschicken</span>
-            <ion-icon class="sendIcon" name="paper-plane-sharp"></ion-icon>
+          <button class="button is-primary" @click="sendComment">
+            <span>{{ $t('comments.send') }}</span>
+            <ion-icon name="paper-plane-sharp"></ion-icon>
           </button>
-          <div v-if="commentSend" class="dankeBox replyInactive">Danke für den Kommentar!</div>
+          <div v-if="commentSend" class="dankeBox replyInactive">{{ $t('comments.thanks') }}</div>
         </div>
       </div>
       <p v-if="!isUserLoggedIn" class="login-message">
-        Um einen Kommentar zu hinterlassen, müssen Sie sich einloggen.
+        {{ $t('comments.loginRequired') }}
       </p>
       <Comments :comments="comments" :commentLevel="1" :userVotes="userVotes" :replyId="-1"/>
     </div>
@@ -143,13 +143,6 @@ export default {
   width: 100%;
   height: 75px;
   padding: 10px;
-}
-
-.sendIcon {
-  width: 20px;
-  height: 20px;
-  float: right;
-  margin-left: 5px;
 }
 
 .divsend {

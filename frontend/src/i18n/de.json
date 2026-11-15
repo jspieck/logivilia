@@ -55,5 +55,65 @@
     "FORGOT_EMAIL_SENT": "Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine E-Mail versendet.",
     "PASSWORD_CHANGED": "Das Passwort wurde erfolgreich geändert und eine Bestätigungs-E-Mail versendet.",
     "VERIFY_EMAIL_SENT": "Wir haben Ihnen einen neuen Bestätigungslink geschickt."
+  },
+  "nav": {
+    "home": "Startseite",
+    "nonogram": "Nonogramm",
+    "logical": "Logikrätsel",
+    "linelog": "Linelog",
+    "leaderboard": "Bestenliste",
+    "solve": "Lösen",
+    "create": "Erstellen",
+    "register": "Registrieren",
+    "welcome": "Willkommen, {name}",
+    "logout": "Logout",
+    "loggedOut": "Erfolgreich ausgeloggt",
+    "menu": "Menü",
+    "mainNav": "Hauptnavigation",
+    "language": "Sprache"
+  },
+  "banner": {
+    "verify": "Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link, den wir Ihnen geschickt haben. Erst dann können Sie kommentieren und Rätsel veröffentlichen.",
+    "resend": "Link erneut senden"
+  },
+  "footer": {
+    "imprint": "Impressum",
+    "privacy": "Datenschutz"
+  },
+  "overview": {
+    "nonogramTitle": "Nonogramm Auswahl",
+    "linelogTitle": "Linelog Auswahl",
+    "logicalTitle": "Logikrätsel Auswahl",
+    "search": "Nach Namen suchen …",
+    "name": "Name",
+    "difficulty": "Schwierigkeit",
+    "width": "Breite",
+    "height": "Höhe",
+    "colors": "Farben",
+    "rating": "Bewertung",
+    "date": "Datum",
+    "status": "Status",
+    "solved": "Gelöst",
+    "unsolved": "Ungelöst",
+    "empty": "Keine Rätsel gefunden.",
+    "loading": "Lädt …"
+  },
+  "table": {
+    "perPage": "Pro Seite",
+    "range": "{from}–{to} von {total}",
+    "goTo": "Seite",
+    "go": "Los",
+    "next": "Nächste Seite",
+    "previous": "Vorherige Seite",
+    "page": "Seite",
+    "current": "Aktuelle Seite"
+  },
+  "comments": {
+    "title": "Kommentare",
+    "placeholder": "Dein Kommentar …",
+    "send": "Kommentar abschicken",
+    "reply": "Replik abschicken",
+    "thanks": "Danke für den Kommentar!",
+    "loginRequired": "Um einen Kommentar zu hinterlassen, müssen Sie sich einloggen."
   }
 }

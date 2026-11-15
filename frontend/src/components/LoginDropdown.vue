@@ -92,7 +92,7 @@
               </router-link>
             </div>
 
-            <button type="submit" class="login-submit-button" :disabled="isLoading">
+            <button type="submit" class="button is-primary is-fullwidth" :disabled="isLoading">
               <span v-if="!isLoading">Login</span>
               <span v-else class="spinner"></span>
             </button>
@@ -405,44 +405,6 @@ const handleLogin = async () => {
     &:hover {
       text-decoration: underline;
     }
-  }
-}
-
-.login-submit-button {
-  width: 100%;
-  min-height: 42px;
-  padding: 10px;
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: box-shadow 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    box-shadow: 0 5px 15px rgba(110, 142, 251, 0.4);
-    background: linear-gradient(135deg, #4e6ecb, #a777e3);
-  }
-
-  &:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s ease-in-out infinite;
   }
 }
 

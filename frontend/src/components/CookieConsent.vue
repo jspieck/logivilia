@@ -1,7 +1,7 @@
 <template>
   <div v-if="!accepted" class="cookie-consent">
     <span>{{ consentText }} <router-link to="/datenschutz" class="navLink">Mehr zum Datenschutz</router-link></span>
-    <o-button @click="accept">{{ buttonText }}</o-button>
+    <o-button variant="primary" @click="accept">{{ buttonText }}</o-button>
   </div>
 </template>
 

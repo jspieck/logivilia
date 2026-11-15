@@ -54,3 +54,5 @@ export function apiErrorMessage (err) {
 }
 
 export default i18n
+
+document.documentElement.lang = i18n.global.locale.value

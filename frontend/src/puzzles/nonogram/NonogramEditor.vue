@@ -835,13 +835,6 @@ onBeforeUnmount(() => {
 
 .help { margin-top: 8px; }
 
-.status-card {
-  border-left: 4px solid #9ca3af;
-
-  &.ok { border-left-color: #16a34a; }
-  &.bad { border-left-color: #dc2626; }
-}
-
 .status-line {
   display: flex;
   gap: 8px;

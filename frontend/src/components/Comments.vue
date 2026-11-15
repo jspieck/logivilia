@@ -31,11 +31,11 @@
               :id="`comment-input-area${comment.id}`"
               class="comment-input"
               v-model="userComments[comment.id]"
-              placeholder="Deine Replik..."
+              placeholder="Deine Replik …"
             ></textarea>
             <div class="divsend">
-              <button @click="sendComment(comment.id)"><span>Replik abschicken</span><ion-icon class="sendIcon" name="paper-plane-sharp"></ion-icon></button>
-              <div id="danke-box0" class="dankeBox replyInactive">Danke für den Kommentar!</div>
+              <button class="button is-primary is-small" @click="sendComment(comment.id)"><span>{{ $t('comments.reply') }}</span><ion-icon name="paper-plane-sharp"></ion-icon></button>
+              <div id="danke-box0" class="dankeBox replyInactive">{{ $t('comments.thanks') }}</div>
             </div>
           </div>
           <Comments :comments="comments" :commentLevel="commentLevel + 1" :userVotes="userVotes" :replyId="comment.id"/>
@@ -173,12 +173,6 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   border: none;
-}
-.sendIcon {
-  width: 20px;
-  height: 20px;
-  float: right;
-  margin-left: 5px;
 }
 .divsend {
   position: relative;

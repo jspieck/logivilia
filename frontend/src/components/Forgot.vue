@@ -25,7 +25,7 @@
         </o-field>
 
         <div class="action-buttons">
-          <button class="submit-button" @click="forgot" :disabled="!forgottenEmail">
+          <button class="button is-primary" @click="forgot" :disabled="!forgottenEmail">
             <span>Zurücksetzen</span>
             <ion-icon name="arrow-forward-outline"></ion-icon>
           </button>
@@ -123,35 +123,6 @@
   display: flex;
   justify-content: center;
   margin-top: 1.5rem;
-}
-
-.submit-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.8rem 2rem;
-  background: #3498db;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: #2980b9;
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    background: #bdc3c7;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  ion-icon {
-    font-size: 1.2rem;
-  }
 }
 
 .error-message {

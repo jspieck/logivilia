@@ -4,7 +4,7 @@
       <div class="header">
         <div class="headerContainer">
           <!-- Bulma navbar markup (same structure Buefy's b-navbar rendered). -->
-          <nav class="navbar" role="navigation" aria-label="Hauptnavigation">
+          <nav ref="navRef" class="navbar" role="navigation" :aria-label="t('nav.mainNav')" @click="onNavClick">
             <div class="navbar-brand">
               <router-link :to="{ path: '/' }" class="navbar-item pageLogo">
                 <img src="@/assets/logo.svg" alt="Logivilia">
@@ -13,9 +13,9 @@
                 role="button"
                 class="navbar-burger"
                 :class="{ 'is-active': menuOpen }"
-                aria-label="Menü"
+                :aria-label="t('nav.menu')"
                 :aria-expanded="menuOpen ? 'true' : 'false'"
-                @click="menuOpen = !menuOpen"
+                @click.stop="menuOpen = !menuOpen"
               >
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
@@ -26,49 +26,50 @@
             <div class="navbar-menu" :class="{ 'is-active': menuOpen }">
               <div class="navbar-start">
                 <router-link class="navbar-item" :to="{ path: '/' }">
-                  Startseite
+                  {{ t('nav.home') }}
                 </router-link>
+                <!-- The heading itself opens the overview; hovering shows "Erstellen".
+                     After a click the dropdown stays hidden until the mouse leaves. -->
                 <div
+                  v-for="menu in dropdowns"
+                  :key="menu.key"
                   class="navbar-item has-dropdown is-hoverable"
-                  :class="{ 'is-active': nonogramDropdownOpen }"
+                  :class="{ 'hover-suppressed': suppressed === menu.key }"
+                  :data-menu="menu.key"
+                  @mouseleave="suppressed = null"
                 >
-                  <a class="navbar-link" @click="nonogramDropdownOpen = !nonogramDropdownOpen">
-                    Nonogramm
-                  </a>
+                  <router-link class="navbar-link" :to="menu.overview">
+                    {{ t(menu.label) }}
+                  </router-link>
                   <div class="navbar-dropdown">
-                    <router-link class="navbar-item" :to="{ path: '/nonogram-overview' }">
-                      Lösen
+                    <router-link class="navbar-item" :to="menu.overview">
+                      {{ t('nav.solve') }}
                     </router-link>
-                    <router-link class="navbar-item" :to="{ path: '/nonogram-create' }">
-                      Erstellen
-                    </router-link>
-                  </div>
-                </div>
-                <div
-                  class="navbar-item has-dropdown is-hoverable"
-                  :class="{ 'is-active': logicalDropdownOpen }"
-                >
-                  <a class="navbar-link" @click="logicalDropdownOpen = !logicalDropdownOpen">
-                    Logikrätsel
-                  </a>
-                  <div class="navbar-dropdown">
-                    <router-link class="navbar-item" :to="{ path: '/logical-overview' }">
-                      Lösen
-                    </router-link>
-                    <router-link class="navbar-item" :to="{ path: '/logical-create' }">
-                      Erstellen
+                    <router-link class="navbar-item" :to="menu.create">
+                      {{ t('nav.create') }}
                     </router-link>
                   </div>
                 </div>
                 <router-link class="navbar-item" :to="{ path: '/linelog-overview' }">
-                  Linelog
+                  {{ t('nav.linelog') }}
                 </router-link>
                 <router-link class="navbar-item" :to="{ path: '/leaderboard' }">
-                  Bestenliste
+                  {{ t('nav.leaderboard') }}
                 </router-link>
               </div>
 
               <div class="navbar-end">
+                <div class="navbar-item language-switch" role="group" :aria-label="t('nav.language')">
+                  <button
+                    v-for="l in SUPPORTED_LOCALES"
+                    :key="l"
+                    type="button"
+                    :class="{ active: locale === l }"
+                    :aria-pressed="locale === l"
+                    @click="setLocale(l)"
+                  >{{ l.toUpperCase() }}</button>
+                </div>
+
                 <div class="login-dropdown-container">
                   <LoginDropdown v-if="!isLoggedIn" />
                 </div>
@@ -78,7 +79,7 @@
                   :to="{ path: '/register' }"
                   class="navbar-item register-nav-button"
                 >
-                  Registrieren
+                  {{ t('nav.register') }}
                 </router-link>
 
                 <router-link
@@ -91,7 +92,7 @@
                     src="@/assets/bear.svg"
                   >
                   <p>
-                    Willkommen, {{ currentUser?.username }}
+                    {{ t('nav.welcome', { name: currentUser?.username }) }}
                   </p>
                 </router-link>
 
@@ -101,7 +102,7 @@
                   class="navbar-item logout-button"
                   role="button"
                 >
-                  <span>Logout</span>
+                  <span>{{ t('nav.logout') }}</span>
                 </a>
               </div>
             </div>
@@ -110,8 +111,8 @@
       </div>
       <div class="body">
         <div v-if="needsVerification" class="verify-banner" role="status">
-          Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link, den wir Ihnen geschickt haben. Erst dann können Sie kommentieren und Rätsel veröffentlichen.
-          <button class="verify-resend" :disabled="resendBusy" @click="resendVerification">Link erneut senden</button>
+          {{ t('banner.verify') }}
+          <button class="button is-primary is-small" :disabled="resendBusy" @click="resendVerification">{{ t('banner.resend') }}</button>
         </div>
         <div class="bodyContainer">
           <router-view v-slot="{ Component }">
@@ -124,7 +125,7 @@
       <footer class="logFooter">
         <div class="content has-text-centered">
           <p>
-            <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}, <router-link :to="`/impressum`" class="navLink">Impressum</router-link>, <router-link to="/datenschutz" class="navLink">Datenschutz</router-link>
+            <strong>Logivilia</strong> by Jan Spieck. ©{{ new Date().getFullYear() }}, <router-link to="/impressum" class="navLink">{{ t('footer.imprint') }}</router-link>, <router-link to="/datenschutz" class="navLink">{{ t('footer.privacy') }}</router-link>
           </p>
         </div>
         <CookieConsent />
@@ -134,31 +135,50 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useMainStore } from '@/store/store'
 import { useNotification } from '@/composables/useNotification'
 import CookieConsent from './components/CookieConsent.vue'
 import LoginDropdown from './components/LoginDropdown.vue'
 import AuthenticationService from '@/services/AuthenticationService'
-import { apiErrorMessage } from '@/i18n'
+import { apiErrorMessage, setLocale, SUPPORTED_LOCALES } from '@/i18n'
 import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // Router and store setup
 const router = useRouter()
 const route = useRoute()
 
-// Mobile menu state; all close when the user navigates.
+// Burger menu (mobile) and the hover dropdowns (desktop). Any click on a
+// link closes everything; so does a click outside the navbar.
+const navRef = ref(null)
 const menuOpen = ref(false)
-const logicalDropdownOpen = ref(false)
-const nonogramDropdownOpen = ref(false)
-watch(() => route.fullPath, () => {
+const suppressed = ref(null)
+const dropdowns = [
+  { key: 'nonogram', label: 'nav.nonogram', overview: '/nonogram-overview', create: '/nonogram-create' },
+  { key: 'logical', label: 'nav.logical', overview: '/logical-overview', create: '/logical-create' }
+]
+
+const onNavClick = (event) => {
+  const link = event.target.closest('a[href]')
+  if (!link) return
   menuOpen.value = false
-  logicalDropdownOpen.value = false
-  nonogramDropdownOpen.value = false
-})
+  // Bulma also opens a dropdown on :focus-within, so a clicked link would
+  // keep it open. Keyboard users keep focus (detail === 0 for Enter).
+  if (event.detail > 0) link.blur()
+  // Hide the dropdown that was clicked in until the pointer leaves it.
+  suppressed.value = link.closest('[data-menu]')?.dataset.menu ?? null
+}
+
+const onDocumentClick = (event) => {
+  if (menuOpen.value && navRef.value && !navRef.value.contains(event.target)) menuOpen.value = false
+}
+onMounted(() => document.addEventListener('click', onDocumentClick))
+onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
+watch(() => route.fullPath, () => { menuOpen.value = false })
+
 const mainStore = useMainStore()
 const { showNotification } = useNotification()
 
@@ -192,7 +212,7 @@ const handleLogout = () => {
   mainStore.logout()
   router.push('/')
   showNotification({
-    message: 'Erfolgreich ausgeloggt',
+    message: t('nav.loggedOut'),
     type: 'success'
   })
 }
@@ -397,17 +417,33 @@ input:focus {
   gap: 0.75rem;
 }
 
-.verify-resend {
-  background: #6e8efb;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 12px;
-  cursor: pointer;
+@media (min-width: 1024px) {
+  // Must beat Bulma's `.navbar-item.is-hoverable:hover .navbar-dropdown`.
+  .navbar-item.has-dropdown.is-hoverable.hover-suppressed .navbar-dropdown {
+    display: none;
+  }
+}
 
-  &:disabled {
-    background: #ccc;
-    cursor: not-allowed;
+.language-switch {
+  gap: 2px;
+
+  button {
+    padding: 2px 7px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    color: #6b7280;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover { color: #262664; }
+
+    &.active {
+      border-color: #d8cff5;
+      background: #f3effc;
+      color: #7957d5;
+    }
   }
 }
 
@@ -419,29 +455,6 @@ input:focus {
 
 .logoutButton {
   background: #f0f0f0;
-}
-
-.modal-card-body {
-  padding: 20px;
-  
-  button {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-
-    &:hover {
-      background: #2980b9;
-    }
-
-    &:disabled {
-      background: #bdc3c7;
-      cursor: not-allowed;
-    }
-  }
 }
 
 .avatarImg {
@@ -502,63 +515,6 @@ html {
     &:hover {
       text-decoration: underline;
     }
-  }
-}
-
-.login-submit-button {
-  width: 100%;
-  padding: 10px;
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
-  
-  &:hover {
-    box-shadow: 0 5px 15px rgba(110, 142, 251, 0.4);
-    background: linear-gradient(135deg, #4e6ecb, #a777e3);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-  
-  &:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-  
-  .spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s ease-in-out infinite;
-  }
-  
-  .button-glow {
-    position: absolute;
-    width: 50px;
-    height: 100%;
-    top: 0;
-    left: -100px;
-    background: linear-gradient(
-      to right,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.3) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    animation: glow 2s infinite;
-    pointer-events: none;
   }
 }
 

@@ -55,5 +55,65 @@
     "FORGOT_EMAIL_SENT": "If an account with this e-mail address exists, we have sent an e-mail.",
     "PASSWORD_CHANGED": "Your password has been changed and a confirmation e-mail has been sent.",
     "VERIFY_EMAIL_SENT": "We have sent you a new confirmation link."
+  },
+  "nav": {
+    "home": "Home",
+    "nonogram": "Nonogram",
+    "logical": "Logic puzzles",
+    "linelog": "Linelog",
+    "leaderboard": "Leaderboard",
+    "solve": "Solve",
+    "create": "Create",
+    "register": "Sign up",
+    "welcome": "Welcome, {name}",
+    "logout": "Log out",
+    "loggedOut": "Logged out",
+    "menu": "Menu",
+    "mainNav": "Main navigation",
+    "language": "Language"
+  },
+  "banner": {
+    "verify": "Please confirm your e-mail address using the link we sent you. Until then you cannot comment or publish puzzles.",
+    "resend": "Resend link"
+  },
+  "footer": {
+    "imprint": "Legal notice",
+    "privacy": "Privacy"
+  },
+  "overview": {
+    "nonogramTitle": "Nonograms",
+    "linelogTitle": "Linelogs",
+    "logicalTitle": "Logic puzzles",
+    "search": "Search by name …",
+    "name": "Name",
+    "difficulty": "Difficulty",
+    "width": "Width",
+    "height": "Height",
+    "colors": "Colours",
+    "rating": "Rating",
+    "date": "Date",
+    "status": "Status",
+    "solved": "Solved",
+    "unsolved": "Unsolved",
+    "empty": "No puzzles found.",
+    "loading": "Loading …"
+  },
+  "table": {
+    "perPage": "Per page",
+    "range": "{from}–{to} of {total}",
+    "goTo": "Page",
+    "go": "Go",
+    "next": "Next page",
+    "previous": "Previous page",
+    "page": "Page",
+    "current": "Current page"
+  },
+  "comments": {
+    "title": "Comments",
+    "placeholder": "Your comment …",
+    "send": "Post comment",
+    "reply": "Post reply",
+    "thanks": "Thanks for your comment!",
+    "loginRequired": "Please log in to leave a comment."
   }
 }

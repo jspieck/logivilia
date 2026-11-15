@@ -1,5 +1,5 @@
 <template>
-  <div ref="root" class="board" :class="{ 'is-solved': solved }">
+  <div ref="root" class="board" :class="{ 'is-solved': solved, expanded }">
     <div v-if="!solved" class="toolbar">
       <div class="tool-group palette" role="radiogroup" aria-label="Farbe">
         <button
@@ -39,6 +39,11 @@
       <div class="tool-group">
         <button class="tool" title="Verkleinern" @click="zoom.zoomOut"><ion-icon name="remove-outline"></ion-icon></button>
         <button class="tool" title="Vergrößern" @click="zoom.zoomIn"><ion-icon name="add-outline"></ion-icon></button>
+        <button class="tool labelled" :title="expanded ? 'Großansicht schließen (Esc)' : 'In einer Großansicht über die ganze Seite lösen'"
+                :aria-pressed="expanded" @click="toggleExpanded">
+          <ion-icon :name="expanded ? 'contract-outline' : 'expand-outline'"></ion-icon>
+          <span>{{ expanded ? 'Schließen' : 'Großansicht' }}</span>
+        </button>
       </div>
 
       <div class="timer" title="Spielzeit"><ion-icon name="time-outline"></ion-icon>{{ formatTime(elapsed) }}</div>
@@ -68,7 +73,8 @@
             <g v-for="(block, i) in clues" :key="i" class="clue"
                :class="{ done: isDone('row', y, i) }"
                :transform="`translate(${left - (clues.length - i) * cell}, ${top + y * cell})`"
-               @click="toggleCross('row', y, i)">
+               @click="clueClick('row', y, i, block)"
+               @contextmenu.prevent="toggleCross('row', y, i)">
               <rect v-if="multiColour" :width="cell - 2" :height="cell - 2" x="1" y="1" rx="3" :fill="colourOf(block[0])" />
               <text :x="cell / 2" :y="cell / 2 + 1" :style="multiColour ? { fill: textColourOf(block[0]) } : null">{{ block[1] }}</text>
               <line v-if="isDone('row', y, i)" class="strike" :x1="cell * 0.2" :y1="cell * 0.8" :x2="cell * 0.8" :y2="cell * 0.2" />
@@ -80,7 +86,8 @@
             <g v-for="(block, i) in clues" :key="i" class="clue"
                :class="{ done: isDone('column', x, i) }"
                :transform="`translate(${left + x * cell}, ${top - (clues.length - i) * cell})`"
-               @click="toggleCross('column', x, i)">
+               @click="clueClick('column', x, i, block)"
+               @contextmenu.prevent="toggleCross('column', x, i)">
               <rect v-if="multiColour" :width="cell - 2" :height="cell - 2" x="1" y="1" rx="3" :fill="colourOf(block[0])" />
               <text :x="cell / 2" :y="cell / 2 + 1" :style="multiColour ? { fill: textColourOf(block[0]) } : null">{{ block[1] }}</text>
               <line v-if="isDone('column', x, i)" class="strike" :x1="cell * 0.2" :y1="cell * 0.8" :x2="cell * 0.8" :y2="cell * 0.2" />
@@ -143,7 +150,10 @@
     <p v-if="solved" class="solved-time">Gelöst in {{ formatTime(elapsed) }}</p>
     <p v-else class="help">
       Linksklick: Feld füllen · Rechtsklick: Punkt (sicher leer) · nochmal klicken: zurücknehmen ·
-      ziehen füllt eine Reihe · Klick auf eine Zahl streicht sie ab
+      ziehen füllt eine Reihe ·
+      <template v-if="multiColour">Klick auf eine Zahl wählt ihre Farbe, Rechtsklick streicht sie ab</template>
+      <template v-else>Klick auf eine Zahl streicht sie ab</template> ·
+      ein Klick in ein Tipp-Feld setzt die vorgeschlagene Farbe
     </p>
   </div>
 </template>
@@ -162,7 +172,7 @@
 // line can no longer match. "Tipp" and "Prüfen" use the shared solver.
 // Progress and time are kept in localStorage per puzzle.
 
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import {
   UNKNOWN, DOT, lineStatus, rowOf, columnOf, nextHint, solutionFromClues,
   wrongCells, dragLine, dragAction, applyDrag
@@ -226,6 +236,12 @@ const statusOf = (axis, index) => (axis === 'row' ? rowStatus.value : columnStat
 
 const crossKey = (axis, index, i) => `${axis}:${index}:${i}`
 const isDone = (axis, index, i) => statusOf(axis, index)?.done[i] || crossed.value.has(crossKey(axis, index, i))
+// Multi-colour: clicking a clue picks its colour (quick switch while solving);
+// right-click crosses it off. Single colour: click crosses it off.
+const clueClick = (axis, index, i, block) => {
+  if (multiColour.value) selected.value = block[0]
+  else toggleCross(axis, index, i)
+}
 const toggleCross = (axis, index, i) => {
   const next = new Set(crossed.value)
   const key = crossKey(axis, index, i)
@@ -292,7 +308,10 @@ const hintLine = computed(() => {
     ? { x: 0, y: index * cell.value, width: width.value * cell.value, height: cell.value }
     : { x: index * cell.value, y: 0, width: cell.value, height: height.value * cell.value }
 })
-const hintCells = computed(() => hint.value?.cells || [])
+// Hinted cells the player has not set to the suggested value yet.
+const hintCells = computed(() => (hint.value?.cells || [])
+  .filter(c => state.value[c.y * width.value + c.x] !== c.value))
+const hintAt = pos => hintCells.value.find(c => c.x === pos.x && c.y === pos.y)
 
 const formatTime = seconds => {
   const h = Math.floor(seconds / 3600)
@@ -343,6 +362,7 @@ function checkSolved () {
   if (rowStatus.value.every(s => s.complete) && columnStatus.value.every(s => s.complete)) {
     solved.value = true
     hover.value = null
+    if (expanded.value) toggleExpanded()
     clearFeedback()
     save()
     emit('solved')
@@ -455,10 +475,18 @@ const pointer = useGridPointer({
   height,
   enabled: () => !solved.value,
   onStart (pos, event) {
-    clearFeedback()
+    // A left click on a hinted cell sets the suggested value (and picks that
+    // colour), and keeps the remaining hint cells visible.
+    const hinted = event.button !== 2 && hintAt(pos)
+    if (hinted) {
+      mistakes.value = []
+      if (hinted.value > 0) selected.value = hinted.value
+    } else {
+      clearFeedback()
+    }
     dragStart = pos
     before = [...state.value]
-    const value = event.button === 2 ? DOT : selected.value
+    const value = hinted ? hinted.value : event.button === 2 ? DOT : selected.value
     action = dragAction(before[pos.y * width.value + pos.x], value)
     drag(pos)
   },
@@ -506,6 +534,10 @@ const gridHandlers = {
 // ---------------------------------------------------------------------------
 
 function onKey (event) {
+  if (event.key === 'Escape' && expanded.value) {
+    toggleExpanded()
+    return
+  }
   if (solved.value || event.target.closest?.('input, textarea, [contenteditable]')) return
   const ctrl = event.ctrlKey || event.metaKey
   if (ctrl && event.key.toLowerCase() === 'z') {
@@ -529,20 +561,37 @@ function tick () {
   }
 }
 
-function fitToScreen () {
-  const available = (root.value?.clientWidth || window.innerWidth) - 8
-  const columns = width.value + Math.max(1, ...rowClues.value.map(c => c.length))
-  const size = Math.floor(available / columns)
-  zoom.setCellSize(Math.min(Math.max(size, 14), 34))
+// Großansicht: the board covers the whole window, sized to fit both ways.
+const expanded = ref(false)
+
+function toggleExpanded () {
+  expanded.value = !expanded.value
+  nextTick(fitToScreen)
 }
+
+function fitToScreen () {
+  const columns = width.value + Math.max(1, ...rowClues.value.map(c => c.length))
+  const available = (root.value?.clientWidth || window.innerWidth) - (expanded.value ? 48 : 8)
+  let size = Math.floor(available / columns)
+  if (expanded.value) {
+    const rows = height.value + Math.max(1, ...columnClues.value.map(c => c.length))
+    // Room for toolbar, message line and help text.
+    size = Math.min(size, Math.floor((window.innerHeight - 190) / rows))
+  }
+  zoom.setCellSize(Math.min(Math.max(size, 14), expanded.value ? 64 : 34))
+}
+
+const onResize = () => { if (expanded.value) fitToScreen() }
 
 onMounted(() => {
   fitToScreen()
   window.addEventListener('keydown', onKey)
+  window.addEventListener('resize', onResize)
   timer = window.setInterval(tick, 1000)
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
+  window.removeEventListener('resize', onResize)
   window.clearInterval(timer)
   save()
 })
@@ -557,6 +606,20 @@ onBeforeUnmount(() => {
   --hover: rgba(37, 99, 235, 0.09);
   --error: #dc2626;
   --hint: #f59e0b;
+}
+
+.board.expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  padding: 16px 24px;
+  overflow: auto;
+  background: #fff;
+
+  .grid-area {
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .toolbar {

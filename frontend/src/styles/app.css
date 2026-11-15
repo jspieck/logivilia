@@ -49,3 +49,91 @@ h3 {
 .o-pag__ellipsis {
   color: #b5b5b5;
 }
+
+/* One button look for the whole site. Use Bulma's classes:
+   .button (secondary), .button.is-primary (main action), .button.is-danger,
+   plus .is-small / .is-fullwidth. Oruga's <o-button> is mapped to the same
+   look. Icon-only tool buttons (toolbars, stars) keep their own styles. */
+.button,
+.o-btn {
+  height: auto;
+  min-height: 2.4em;
+  padding: 0.35em 1.1em;
+  border: 1px solid #d6d9de;
+  border-radius: 8px;
+  background: #fff;
+  color: #363636;
+  font: inherit;
+  font-weight: 600;
+  gap: 0.45em;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.button:hover,
+.o-btn:hover {
+  border-color: #b5b9c0;
+  background: #f7f7f9;
+  color: #262664;
+}
+.button:focus-visible,
+.o-btn:focus-visible {
+  outline: 2px solid #7957d5;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+.button.is-primary,
+.o-btn--primary {
+  border-color: #7957d5;
+  background: #7957d5;
+  color: #fff;
+}
+.button.is-primary:hover,
+.o-btn--primary:hover {
+  border-color: #6845c8;
+  background: #6845c8;
+  color: #fff;
+}
+.button.is-danger,
+.o-btn--danger {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+.button.is-danger:hover,
+.o-btn--danger:hover {
+  border-color: #b91c1c;
+  background: #b91c1c;
+  color: #fff;
+}
+.button.is-small {
+  min-height: 2em;
+  padding: 0.2em 0.8em;
+  font-size: 0.82rem;
+  border-radius: 6px;
+}
+.button[disabled],
+.button.is-primary[disabled],
+.button.is-danger[disabled],
+.o-btn--disabled {
+  border-color: #e5e7eb;
+  background: #e5e7eb;
+  color: #9ca3af;
+  opacity: 1;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.button ion-icon {
+  font-size: 1.1em;
+}
+.button .spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: button-spin 1s linear infinite;
+}
+@keyframes button-spin {
+  to { transform: rotate(360deg); }
+}

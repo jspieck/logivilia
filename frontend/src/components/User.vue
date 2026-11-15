@@ -103,7 +103,7 @@
             ></textarea>
           </div>
           <button 
-            class="save-button" 
+            class="button is-primary" 
             @click="updateProfile"
           >
             Speichern
@@ -117,7 +117,7 @@
           Laden Sie alle zu Ihrem Konto gespeicherten Daten herunter oder löschen Sie Ihr Konto.
           Mehr dazu unter <router-link to="/datenschutz" class="navLink">Datenschutz</router-link>.
         </p>
-        <button class="save-button" :disabled="exporting" @click="downloadData">Daten herunterladen (JSON)</button>
+        <button class="button is-primary" :disabled="exporting" @click="downloadData">Daten herunterladen (JSON)</button>
 
         <div class="delete-account">
           <h4>Konto löschen</h4>
@@ -127,7 +127,7 @@
           </p>
           <label for="delete-password">Passwort zur Bestätigung</label>
           <input id="delete-password" v-model="deletePassword" type="password" autocomplete="current-password" />
-          <button class="delete-button" :disabled="!deletePassword || deleting" @click="deleteAccount">
+          <button class="button is-danger" :disabled="!deletePassword || deleting" @click="deleteAccount">
             Konto endgültig löschen
           </button>
         </div>
@@ -301,19 +301,6 @@ watch(() => route.params.id, async () => {
     margin-bottom: 8px;
   }
 
-  .delete-button {
-    background: #e74c3c;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-
-    &:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-  }
 }
 
 .profile-page {
@@ -499,20 +486,6 @@ watch(() => route.params.id, async () => {
     }
   }
 
-  .save-button {
-    background: #2196F3;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.2s;
-
-    &:hover {
-      background: #1976D2;
-    }
-  }
 }
 
 @media (max-width: 600px) {
