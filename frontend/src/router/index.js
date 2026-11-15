@@ -82,6 +82,17 @@ const routes = [
     component: () => import('@/components/NonogramOverview.vue'),
   },
   {
+    path: '/nonogram-create',
+    name: 'Nonogram Create',
+    component: () => import('@/puzzles/nonogram/NonogramEditor.vue'),
+  },
+  {
+    // Edit one of your own nonograms (or any, as Admin)
+    path: '/nonogram-create/:id',
+    name: 'Nonogram Edit',
+    component: () => import('@/puzzles/nonogram/NonogramEditor.vue'),
+  },
+  {
     path: '/linelog-overview',
     name: 'Linelog Overview',
     component: () => import('@/components/LinelogOverview.vue'),

@@ -113,6 +113,10 @@ module.exports = () => {
     PuzzleController.legacy);
   router.get('/puzzles/:puzzleId',
     PuzzleController.show);
+  // The full puzzle including its solution, for editing: owner or Admin.
+  router.get('/puzzles/:puzzleId/source',
+    isAuthenticated,
+    PuzzleController.source);
   router.put('/puzzles/:puzzleId',
     isAuthenticated,
     isVerified,

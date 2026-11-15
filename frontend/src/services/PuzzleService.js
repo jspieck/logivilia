@@ -17,6 +17,10 @@ export default {
   legacy (type, legacyId) {
     return Api().get(`puzzles/legacy/${type}/${legacyId}`);
   },
+  // Owner or Admin: the puzzle with its solution, for the editor.
+  source (puzzleId) {
+    return Api().get(`puzzles/${puzzleId}/source`);
+  },
   // puzzle: { type, name, difficulty, ...the type's data fields }
   post (puzzle) {
     return Api().post('puzzles', puzzle);

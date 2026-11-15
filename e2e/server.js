@@ -5,6 +5,8 @@
 // Fixtures, in this order (so their IDs are 1, 2, 3):
 //   1 tiny nonogram, 2 tiny linelog, 3 the first seed logical
 // and one user, e2e@example.com / e2e-pass1 (unverified).
+// With --with-seed (for trying the UI by hand) the seed nonograms follow
+// from ID 4 on.
 
 process.env.NODE_ENV = 'test';
 process.env.TEST_DB_DIALECT = '';
@@ -34,6 +36,11 @@ async function fixtures () {
   });
   await Puzzle.create({ ...toPuzzleRow('logical', seedLogicals[0], null), UserId: null });
   await User.create({ username: 'e2euser', email: 'e2e@example.com', password: 'e2e-pass1', role: 'Mitglied' });
+  if (process.argv.includes('--with-seed')) {
+    for (const row of require('../backend/seed/nonograms.json')) {
+      await Puzzle.create({ ...toPuzzleRow('nonogram', row, null), UserId: null });
+    }
+  }
 }
 
 fixtures().then(() => {

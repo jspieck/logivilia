@@ -28,9 +28,22 @@
                 <router-link class="navbar-item" :to="{ path: '/' }">
                   Startseite
                 </router-link>
-                <router-link class="navbar-item" :to="{ path: '/nonogram-overview' }">
-                  Nonogramm
-                </router-link>
+                <div
+                  class="navbar-item has-dropdown is-hoverable"
+                  :class="{ 'is-active': nonogramDropdownOpen }"
+                >
+                  <a class="navbar-link" @click="nonogramDropdownOpen = !nonogramDropdownOpen">
+                    Nonogramm
+                  </a>
+                  <div class="navbar-dropdown">
+                    <router-link class="navbar-item" :to="{ path: '/nonogram-overview' }">
+                      Lösen
+                    </router-link>
+                    <router-link class="navbar-item" :to="{ path: '/nonogram-create' }">
+                      Erstellen
+                    </router-link>
+                  </div>
+                </div>
                 <div
                   class="navbar-item has-dropdown is-hoverable"
                   :class="{ 'is-active': logicalDropdownOpen }"
@@ -137,12 +150,14 @@ const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
-// Mobile menu state; both close when the user navigates.
+// Mobile menu state; all close when the user navigates.
 const menuOpen = ref(false)
 const logicalDropdownOpen = ref(false)
+const nonogramDropdownOpen = ref(false)
 watch(() => route.fullPath, () => {
   menuOpen.value = false
   logicalDropdownOpen.value = false
+  nonogramDropdownOpen.value = false
 })
 const mainStore = useMainStore()
 const { showNotification } = useNotification()

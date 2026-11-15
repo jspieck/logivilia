@@ -60,3 +60,25 @@ test('logical: renders the story and asks for a complete table before checking',
   await page.getByRole('button', { name: 'Überprüfen' }).click();
   await expect(page.getByText('Bitte zuerst alle Felder ausfüllen.')).toBeVisible();
 });
+
+test('nonogram editor: checks uniqueness live and suggests a fix', async ({ page }) => {
+  await page.goto('/nonogram-create');
+  await expect(page.getByRole('heading', { name: 'Nonogramm erstellen' })).toBeVisible();
+  const status = page.locator('.status-line');
+  await expect(status).toContainText('Noch leer');
+
+  // The editor starts as an empty 15x15 grid.
+  const grid = page.locator('svg.main-grid');
+  const first = await cellCenter(grid, 15, 15, 2, 2);
+  await page.mouse.click(first.x, first.y);
+  await expect(status).toContainText('Eindeutig lösbar');
+
+  // Two diagonal cells can swap: not unique.
+  const second = await cellCenter(grid, 15, 15, 3, 3);
+  await page.mouse.click(second.x, second.y);
+  await expect(status).toContainText('Nicht eindeutig: 4 Felder');
+
+  await page.getByRole('button', { name: 'Korrekturen vorschlagen' }).click();
+  await page.getByRole('button', { name: 'Anwenden' }).first().click();
+  await expect(status).toContainText('Eindeutig lösbar');
+});

@@ -85,6 +85,30 @@ module.exports = {
     }
   },
 
+  // GET /puzzles/:puzzleId/source - common columns plus the stored data
+  // (with the solution), for the owner's editor. Owner or Admin only.
+  async source (req, res) {
+    try {
+      const puzzle = await findPuzzle(req, res);
+      if (!puzzle) {
+        return;
+      }
+      const isOwner = puzzle.UserId != null && puzzle.UserId === req.user.id;
+      if (!isOwner && req.user.role !== ADMIN_ROLE) {
+        return sendError(res, 403, 'FORBIDDEN');
+      }
+      const row = puzzle.get({ plain: true });
+      const result = { ...puzzleData(puzzle) };
+      for (const field of ['id', 'type', 'name', 'difficulty', 'date', 'author', 'UserId']) {
+        result[field] = row[field] === undefined ? null : row[field];
+      }
+      res.send(result);
+    } catch (err) {
+      console.error(err);
+      sendError(res, 500, 'PUZZLE_FETCH_FAILED');
+    }
+  },
+
   // GET /puzzles/legacy/:type/:legacyId - the new ID of a puzzle from the
   // old per-type tables, for redirecting old links.
   async legacy (req, res) {

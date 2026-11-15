@@ -1,120 +1,172 @@
 <template>
-  <div class="board">
-    <div class="control-panels">
-      <div class="control-card">
-        <div class="control-label">Farben</div>
-        <div class="color-controls">
-          <button
-            v-for="(color, index) in colors"
-            :key="index"
-            class="color-button"
-            :style="{ backgroundColor: color }"
-            :class="{ active: selectedColor === index }"
-            :title="index === dotIndex ? 'Als leer markieren' : undefined"
-            @click="selectedColor = index"
-          >
-            <div v-if="index === dotIndex" class="empty-cell-dot"></div>
-          </button>
-        </div>
+  <div ref="root" class="board" :class="{ 'is-solved': solved }">
+    <div v-if="!solved" class="toolbar">
+      <div class="tool-group palette" role="radiogroup" aria-label="Farbe">
+        <button
+          v-for="(entry, i) in palette"
+          :key="entry.value"
+          class="swatch"
+          :class="{ active: selected === entry.value, dot: entry.value === DOT }"
+          :style="{ backgroundColor: entry.color }"
+          :title="entry.value === DOT ? 'Leer markieren (Rechtsklick)' : `Farbe ${i + 1} (Taste ${i + 1})`"
+          role="radio"
+          :aria-checked="selected === entry.value"
+          @click="selected = entry.value"
+        ><span v-if="entry.value === DOT" class="swatch-dot"></span></button>
       </div>
 
-      <div class="control-card">
-        <div class="control-label">Zoom</div>
-        <div class="size-controls">
-          <button class="size-button" @click="zoom.zoomOut"><ion-icon name="remove-outline"></ion-icon></button>
-          <button class="size-button" @click="zoom.zoomIn"><ion-icon name="add-outline"></ion-icon></button>
-        </div>
+      <div class="tool-group">
+        <button class="tool" title="Rückgängig (Strg+Z)" :disabled="!history.canUndo.value" @click="undo">
+          <ion-icon name="return-up-back-outline"></ion-icon>
+        </button>
+        <button class="tool" title="Wiederholen (Strg+Y)" :disabled="!history.canRedo.value" @click="redo">
+          <ion-icon name="return-up-forward-outline"></ion-icon>
+        </button>
       </div>
 
-      <div class="control-card">
-        <div class="control-label">Rückgängig</div>
-        <div class="size-controls">
-          <button class="size-button" :disabled="!history.canUndo.value" @click="undo">
-            <ion-icon name="return-up-back-outline"></ion-icon>
-          </button>
-          <button class="size-button" :disabled="!history.canRedo.value" @click="redo">
-            <ion-icon name="refresh"></ion-icon>
-          </button>
-        </div>
+      <div class="tool-group">
+        <button class="tool labelled" title="Zeigt eine Zeile oder Spalte, in der sich etwas folgern lässt" @click="showHint">
+          <ion-icon name="bulb-outline"></ion-icon><span>Tipp</span>
+        </button>
+        <button class="tool labelled" title="Markiert falsch gesetzte Felder" @click="checkMistakes">
+          <ion-icon name="checkmark-done-outline"></ion-icon><span>Prüfen</span>
+        </button>
+        <button class="tool" title="Neu beginnen" @click="restart">
+          <ion-icon name="refresh-outline"></ion-icon>
+        </button>
       </div>
+
+      <div class="tool-group">
+        <button class="tool" title="Verkleinern" @click="zoom.zoomOut"><ion-icon name="remove-outline"></ion-icon></button>
+        <button class="tool" title="Vergrößern" @click="zoom.zoomIn"><ion-icon name="add-outline"></ion-icon></button>
+      </div>
+
+      <div class="timer" title="Spielzeit"><ion-icon name="time-outline"></ion-icon>{{ formatTime(elapsed) }}</div>
     </div>
+
+    <!-- Always takes its space, so the grid doesn't jump when a message appears. -->
+    <p v-if="!solved" class="board-message" :class="[message?.kind, { empty: !message }]" role="status">
+      {{ message?.text }}
+    </p>
 
     <div class="grid-area">
-      <table class="nonoGrid">
-        <tr>
-          <td></td>
-          <td>
-            <!-- Column clues -->
-            <svg v-if="!solved" :height="columnClueDepth * cell + 8" :width="width * cell + 1">
-              <template v-for="(clues, x) in columnClueCells" :key="`col-${x}`">
-                <g v-for="(block, i) in clues" :key="i" class="clue"
-                   :transform="`translate(${x * cell}, ${i * cell})`" @click="selectClueColor(block)">
-                  <rect :width="cell" :height="cell" :fill="block.background" />
-                  <text :x="cell / 2" :y="cell / 2" :fill="block.color" dominant-baseline="middle"
-                        text-anchor="middle" :style="`font-size: ${fontSize}px`">{{ block.length || '' }}</text>
-                </g>
-                <rect :x="x * cell" :y="columnClueDepth * cell" :width="cell" height="7"
-                      :fill="INDICATOR[columnOk[x] ? 1 : 0]" />
-              </template>
-              <rect :width="width * cell + 1" :height="columnClueDepth * cell" fill="url(#nonoGrid)" style="pointer-events: none" />
-            </svg>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <!-- Row clues -->
-            <svg v-if="!solved" :width="rowClueDepth * cell + 8" :height="height * cell + 1">
-              <template v-for="(clues, y) in rowClueCells" :key="`row-${y}`">
-                <g v-for="(block, i) in clues" :key="i" class="clue"
-                   :transform="`translate(${i * cell}, ${y * cell})`" @click="selectClueColor(block)">
-                  <rect :width="cell" :height="cell" :fill="block.background" />
-                  <text :x="cell / 2" :y="cell / 2" :fill="block.color" dominant-baseline="middle"
-                        text-anchor="middle" :style="`font-size: ${fontSize}px`">{{ block.length || '' }}</text>
-                </g>
-                <rect :x="rowClueDepth * cell" :y="y * cell" width="7" :height="cell"
-                      :fill="INDICATOR[rowOk[y] ? 1 : 0]" />
-              </template>
-              <rect :width="rowClueDepth * cell" :height="height * cell + 1" fill="url(#nonoGrid)" style="pointer-events: none" />
-            </svg>
-          </td>
-          <td>
-            <!-- Main grid -->
-            <svg :class="solved ? 'solved' : 'main-grid'" :width="width * cell + 1" :height="height * cell + 1"
-                 v-on="pointer.handlers">
-              <defs>
-                <pattern id="nonoSmallGrid" :width="cell" :height="cell" patternUnits="userSpaceOnUse">
-                  <path :d="`M ${cell} 0 L 0 0 0 ${cell}`" fill="none" stroke="#d7dadd" stroke-width="1" />
-                </pattern>
-                <pattern id="nonoGrid" :width="cell * 5" :height="cell * 5" patternUnits="userSpaceOnUse">
-                  <rect :width="cell * 5" :height="cell * 5" fill="url(#nonoSmallGrid)" />
-                  <path :d="`M ${cell * 5} 0 L 0 0 0 ${cell * 5}`" fill="none" stroke="black" stroke-width="2" />
-                </pattern>
-              </defs>
-              <template v-for="y in height" :key="`r${y}`">
-                <g v-for="x in width" :key="`c${x}`" :transform="`translate(${(x - 1) * cell}, ${(y - 1) * cell})`">
-                  <rect :width="cell" :height="cell" :fill="colors[grid[(y - 1) * width + x - 1]]" />
-                  <circle v-if="!solved && grid[(y - 1) * width + x - 1] === dotIndex"
-                          :cx="cell / 2" :cy="cell / 2" r="3" />
-                </g>
-              </template>
-              <rect v-if="!solved" width="100%" height="100%" fill="url(#nonoGrid)" style="pointer-events: none" />
-            </svg>
-          </td>
-        </tr>
-      </table>
+      <svg
+        class="nonogram"
+        :width="left + width * cell + 2"
+        :height="top + height * cell + 2"
+        :style="{ '--cell': `${cell}px` }"
+      >
+        <!-- Clue backgrounds, hover and status per line -->
+        <g v-if="!solved">
+          <rect v-for="y in height" :key="`rbg${y}`" :x="0" :y="top + (y - 1) * cell" :width="left" :height="cell"
+                :class="lineClass('row', y - 1)" class="clue-bg" />
+          <rect v-for="x in width" :key="`cbg${x}`" :x="left + (x - 1) * cell" :y="0" :width="cell" :height="top"
+                :class="lineClass('column', x - 1)" class="clue-bg" />
+
+          <!-- Row clues, right-aligned -->
+          <template v-for="(clues, y) in rowClues" :key="`r${y}`">
+            <g v-for="(block, i) in clues" :key="i" class="clue"
+               :class="{ done: isDone('row', y, i) }"
+               :transform="`translate(${left - (clues.length - i) * cell}, ${top + y * cell})`"
+               @click="toggleCross('row', y, i)">
+              <rect v-if="multiColour" :width="cell - 2" :height="cell - 2" x="1" y="1" rx="3" :fill="colourOf(block[0])" />
+              <text :x="cell / 2" :y="cell / 2 + 1" :style="multiColour ? { fill: textColourOf(block[0]) } : null">{{ block[1] }}</text>
+              <line v-if="isDone('row', y, i)" class="strike" :x1="cell * 0.2" :y1="cell * 0.8" :x2="cell * 0.8" :y2="cell * 0.2" />
+            </g>
+          </template>
+
+          <!-- Column clues, bottom-aligned -->
+          <template v-for="(clues, x) in columnClues" :key="`c${x}`">
+            <g v-for="(block, i) in clues" :key="i" class="clue"
+               :class="{ done: isDone('column', x, i) }"
+               :transform="`translate(${left + x * cell}, ${top - (clues.length - i) * cell})`"
+               @click="toggleCross('column', x, i)">
+              <rect v-if="multiColour" :width="cell - 2" :height="cell - 2" x="1" y="1" rx="3" :fill="colourOf(block[0])" />
+              <text :x="cell / 2" :y="cell / 2 + 1" :style="multiColour ? { fill: textColourOf(block[0]) } : null">{{ block[1] }}</text>
+              <line v-if="isDone('column', x, i)" class="strike" :x1="cell * 0.2" :y1="cell * 0.8" :x2="cell * 0.8" :y2="cell * 0.2" />
+            </g>
+          </template>
+
+          <!-- Clue grid lines -->
+          <path :d="clueLines" class="clue-lines" />
+        </g>
+
+        <!-- Main grid -->
+        <svg :x="left" :y="top" :width="width * cell + 2" :height="height * cell + 2"
+             class="main-grid" :class="{ solved }" v-on="gridHandlers">
+          <rect :width="width * cell" :height="height * cell" :fill="solved ? backgroundColour : '#ffffff'" />
+
+          <!-- Hover cross -->
+          <template v-if="hover && !solved">
+            <rect :x="0" :y="hover.y * cell" :width="width * cell" :height="cell" class="hover-line" />
+            <rect :x="hover.x * cell" :y="0" :width="cell" :height="height * cell" class="hover-line" />
+          </template>
+
+          <!-- Hint line -->
+          <rect v-if="hintLine" class="hint-line" v-bind="hintLine" />
+
+          <!-- Cells -->
+          <template v-for="c in paintedCells" :key="c.i">
+            <rect v-if="c.value > 0" :x="c.x * cell" :y="c.y * cell" :width="cell" :height="cell" :fill="colourOf(c.value)" />
+            <circle v-else-if="!solved" :cx="c.x * cell + cell / 2" :cy="c.y * cell + cell / 2" :r="Math.max(cell * 0.11, 1.5)" class="dot" />
+          </template>
+
+          <!-- Hint cells and mistakes -->
+          <g v-for="c in hintCells" :key="`h${c.x}-${c.y}`" class="hint-cell"
+             :transform="`translate(${c.x * cell}, ${c.y * cell})`">
+            <rect v-if="c.value > 0" :x="cell * 0.2" :y="cell * 0.2" :width="cell * 0.6" :height="cell * 0.6"
+                  :fill="colourOf(c.value)" class="hint-preview" />
+            <circle v-else :cx="cell / 2" :cy="cell / 2" :r="Math.max(cell * 0.11, 1.5)" class="hint-preview dot" />
+            <rect x="2" y="2" :width="cell - 4" :height="cell - 4" class="hint-frame" />
+          </g>
+          <g v-for="i in mistakes" :key="`m${i}`" class="mistake"
+             :transform="`translate(${(i % width) * cell}, ${Math.floor(i / width) * cell})`">
+            <rect :width="cell" :height="cell" />
+            <path :d="`M ${cell * 0.25} ${cell * 0.25} L ${cell * 0.75} ${cell * 0.75} M ${cell * 0.75} ${cell * 0.25} L ${cell * 0.25} ${cell * 0.75}`" />
+          </g>
+
+          <!-- Grid lines: thin per cell, thick every 5 -->
+          <template v-if="!solved">
+            <path :d="gridLines.thin" class="grid-thin" />
+            <path :d="gridLines.thick" class="grid-thick" />
+          </template>
+
+          <!-- Drag length -->
+          <g v-if="dragCount > 1" class="drag-count" :transform="`translate(${dragLabel.x}, ${dragLabel.y})`">
+            <rect x="-14" y="-11" width="28" height="22" rx="11" />
+            <text>{{ dragCount }}</text>
+          </g>
+        </svg>
+      </svg>
     </div>
+
+    <p v-if="solved" class="solved-time">Gelöst in {{ formatTime(elapsed) }}</p>
+    <p v-else class="help">
+      Linksklick: Feld füllen · Rechtsklick: Punkt (sicher leer) · nochmal klicken: zurücknehmen ·
+      ziehen füllt eine Reihe · Klick auf eine Zahl streicht sie ab
+    </p>
   </div>
 </template>
 
 <script setup>
-// Nonogram board. Encoding in the UI: colour k of the puzzle is index k - 1,
-// `background` is the last puzzle colour, and one extra index (`dotIndex`,
-// white with a dot) marks cells the player knows are empty. The shared
-// plugin (shared/puzzles/nonogram.js) decides whether a line matches its
-// clues, exactly as the server does.
+// Nonogram board.
+//
+// Cell values (shared/puzzles/nonogramPlay.js): -1 unknown, 0 dot (the
+// player is sure it's empty), k >= 1 colour k of the puzzle. Unknown cells
+// count as empty for "solved", so dots are optional.
+//
+// Left button sets the selected colour, right button a dot; pressing a cell
+// that already has that value clears it instead. A drag stays on its row or
+// column and only fills unknown cells, so it never destroys work. Clues of a
+// line are crossed off when they are certainly placed, and turn red when the
+// line can no longer match. "Tipp" and "Prüfen" use the shared solver.
+// Progress and time are kept in localStorage per puzzle.
 
-import { ref, computed, watch } from 'vue'
-import { lineMatches } from '@shared/puzzles/index.js'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import {
+  UNKNOWN, DOT, lineStatus, rowOf, columnOf, nextHint, solutionFromClues,
+  wrongCells, dragLine, dragAction, applyDrag
+} from '@shared/puzzles/nonogramPlay.js'
 import { useGridPointer } from '../engine/useGridPointer'
 import { useHistory } from '../engine/useHistory'
 import { useZoom } from '../engine/useZoom'
@@ -126,247 +178,603 @@ const props = defineProps({
 })
 const emit = defineEmits(['solved'])
 
-const INDICATOR = ['#ff0000', '#00ff00']
-
-const zoom = useZoom({ base: 25, min: 15, step: 5 })
+const root = ref(null)
+const zoom = useZoom({ base: 25, min: 12, step: 3 })
 const cell = zoom.cellSize
-const fontSize = computed(() => Math.max(18 + 3 * zoom.level.value, 12))
 const history = useHistory()
 
 const width = computed(() => Number(props.puzzle.width))
 const height = computed(() => Number(props.puzzle.height))
-const colors = computed(() => [...props.puzzle.colors, '#FFFFFF'])
-const background = computed(() => colors.value.length - 2)
-const dotIndex = computed(() => colors.value.length - 1)
+const rowClues = computed(() => props.puzzle.rowClues || [])
+const columnClues = computed(() => props.puzzle.columnClues || [])
+// Stored encoding: colour k is colors[k - 1]; the last colour is the background.
+const fillColours = computed(() => props.puzzle.colors.slice(0, -1))
+const backgroundColour = computed(() => props.puzzle.colors[props.puzzle.colors.length - 1])
+const multiColour = computed(() => fillColours.value.length > 1)
+const colourOf = k => fillColours.value[k - 1] || '#000000'
+const textColourOf = k => textColorFor(colourOf(k))
 
-const selectedColor = ref(0)
+const palette = computed(() => [
+  ...fillColours.value.map((color, i) => ({ value: i + 1, color })),
+  { value: DOT, color: '#ffffff' }
+])
+const selected = ref(1)
+
+const state = ref([])
 const solved = ref(false)
-const grid = ref([])
-const rowOk = ref([])
-const columnOk = ref([])
 
-// Clue blocks for display, padded at the front so all lines are equally long.
-const clueCells = (lines) => {
-  const depth = Math.max(1, ...lines.map(line => line.length))
-  return lines.map(line => [
-    ...Array.from({ length: depth - line.length }, () => ({ colour: null, length: 0, background: '#fff', color: '#fff' })),
-    ...line.map(([colour, length]) => ({
-      colour: colour - 1,
-      length,
-      background: colors.value[colour - 1],
-      color: textColorFor(colors.value[colour - 1])
+// Clue areas; gone once solved, so the picture stands on its own.
+const left = computed(() => (solved.value ? 0 : Math.max(1, ...rowClues.value.map(c => c.length)) * cell.value + 4))
+const top = computed(() => (solved.value ? 0 : Math.max(1, ...columnClues.value.map(c => c.length)) * cell.value + 4))
+const elapsed = ref(0)
+const started = ref(false)
+const crossed = ref(new Set())
+const hover = ref(null)
+const message = ref(null)
+const hint = ref(null)
+const mistakes = ref([])
+let solution = null
+
+// ---------------------------------------------------------------------------
+// Line status and clue crossing
+// ---------------------------------------------------------------------------
+
+const rowStatus = computed(() => rowClues.value.map((clues, y) => lineStatus(rowOf(state.value, width.value, y), clues)))
+const columnStatus = computed(() => columnClues.value.map((clues, x) =>
+  lineStatus(columnOf(state.value, width.value, height.value, x), clues)))
+const statusOf = (axis, index) => (axis === 'row' ? rowStatus.value : columnStatus.value)[index]
+
+const crossKey = (axis, index, i) => `${axis}:${index}:${i}`
+const isDone = (axis, index, i) => statusOf(axis, index)?.done[i] || crossed.value.has(crossKey(axis, index, i))
+const toggleCross = (axis, index, i) => {
+  const next = new Set(crossed.value)
+  const key = crossKey(axis, index, i)
+  next.has(key) ? next.delete(key) : next.add(key)
+  crossed.value = next
+  save()
+}
+
+const lineClass = (axis, index) => {
+  const status = statusOf(axis, index)
+  const hovered = hover.value && (axis === 'row' ? hover.value.y : hover.value.x) === index
+  const hinted = hint.value && hint.value.axis === axis && hint.value.index === index
+  return {
+    hovered,
+    complete: status?.complete,
+    error: status?.error,
+    hinted
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Drawing helpers
+// ---------------------------------------------------------------------------
+
+const paintedCells = computed(() => {
+  const cells = []
+  state.value.forEach((value, i) => {
+    if (value !== UNKNOWN) cells.push({ i, value, x: i % width.value, y: Math.floor(i / width.value) })
+  })
+  return cells
+})
+
+const gridLines = computed(() => {
+  const w = width.value * cell.value
+  const h = height.value * cell.value
+  let thin = ''
+  let thick = ''
+  for (let x = 0; x <= width.value; x++) {
+    const d = `M ${x * cell.value} 0 V ${h} `
+    if (x % 5 === 0 || x === width.value) thick += d; else thin += d
+  }
+  for (let y = 0; y <= height.value; y++) {
+    const d = `M 0 ${y * cell.value} H ${w} `
+    if (y % 5 === 0 || y === height.value) thick += d; else thin += d
+  }
+  return { thin, thick }
+})
+
+const clueLines = computed(() => {
+  let d = ''
+  for (let y = 0; y <= height.value; y += 1) {
+    if (y % 5 === 0) d += `M 0 ${top.value + y * cell.value} H ${left.value} `
+  }
+  for (let x = 0; x <= width.value; x += 1) {
+    if (x % 5 === 0) d += `M ${left.value + x * cell.value} 0 V ${top.value} `
+  }
+  return d
+})
+
+const hintLine = computed(() => {
+  if (!hint.value) return null
+  const { axis, index } = hint.value
+  return axis === 'row'
+    ? { x: 0, y: index * cell.value, width: width.value * cell.value, height: cell.value }
+    : { x: index * cell.value, y: 0, width: cell.value, height: height.value * cell.value }
+})
+const hintCells = computed(() => hint.value?.cells || [])
+
+const formatTime = seconds => {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  const pad = n => String(n).padStart(2, '0')
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
+}
+
+// ---------------------------------------------------------------------------
+// Progress: localStorage per puzzle (may be unavailable, e.g. private mode)
+// ---------------------------------------------------------------------------
+
+const storageKey = () => `logivilia:nonogram:${props.puzzle.id}`
+
+function save () {
+  try {
+    if (solved.value) {
+      localStorage.removeItem(storageKey())
+      return
+    }
+    localStorage.setItem(storageKey(), JSON.stringify({
+      w: width.value, h: height.value, cells: state.value, elapsed: elapsed.value, crossed: [...crossed.value]
     }))
-  ])
-}
-const rowClueCells = computed(() => clueCells(props.puzzle.rowClues || []))
-const columnClueCells = computed(() => clueCells(props.puzzle.columnClues || []))
-const rowClueDepth = computed(() => rowClueCells.value[0]?.length || 0)
-const columnClueDepth = computed(() => columnClueCells.value[0]?.length || 0)
-
-const selectClueColor = (block) => {
-  if (block.colour != null) selectedColor.value = block.colour
+  } catch { /* storage unavailable */ }
 }
 
-// UI value -> stored encoding (0 = empty, k = colour k).
-const stored = value => (value >= background.value ? 0 : value + 1)
-const row = y => grid.value.slice(y * width.value, (y + 1) * width.value).map(stored)
-const column = x => Array.from({ length: height.value }, (_, y) => stored(grid.value[y * width.value + x]))
+function load () {
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey()) || 'null')
+    if (saved && saved.w === width.value && saved.h === height.value &&
+        Array.isArray(saved.cells) && saved.cells.length === width.value * height.value) {
+      return saved
+    }
+  } catch { /* storage unavailable or broken */ }
+  return null
+}
 
-/** The grid in the stored encoding, as the server expects it. */
-const answer = () => Array.from({ length: height.value }, (_, y) => row(y))
+// ---------------------------------------------------------------------------
+// Game flow
+// ---------------------------------------------------------------------------
 
-const checkLines = () => {
-  rowOk.value = (props.puzzle.rowClues || []).map((clues, y) => lineMatches(row(y), clues))
-  columnOk.value = (props.puzzle.columnClues || []).map((clues, x) => lineMatches(column(x), clues))
-  if (!solved.value && rowOk.value.every(Boolean) && columnOk.value.every(Boolean)) {
+const answer = () => Array.from({ length: height.value }, (_, y) =>
+  rowOf(state.value, width.value, y).map(v => (v === UNKNOWN ? 0 : v)))
+
+function checkSolved () {
+  if (solved.value) return
+  if (rowStatus.value.every(s => s.complete) && columnStatus.value.every(s => s.complete)) {
     solved.value = true
+    hover.value = null
+    clearFeedback()
+    save()
     emit('solved')
     // The clues prove it is solved; this records it for logged-in players.
     props.submit(answer())
   }
 }
 
-const reset = () => {
-  grid.value = new Array(width.value * height.value).fill(background.value)
-  solved.value = false
-  history.reset(grid.value)
-  checkLines()
+function clearFeedback () {
+  hint.value = null
+  mistakes.value = []
+  message.value = null
 }
-watch(() => props.puzzle, reset, { immediate: true })
 
-// Drag-fill: paint the rectangle between the start cell and the current
-// cell, starting from the grid as it was before the drag.
-let start = null
-let before = null
-let paint = 0
-const fillTo = ({ x, y }) => {
-  const next = [...before]
-  for (let yy = Math.min(start.y, y); yy <= Math.max(start.y, y); yy++) {
-    for (let xx = Math.min(start.x, x); xx <= Math.max(start.x, x); xx++) {
-      next[yy * width.value + xx] = paint
-    }
-  }
-  grid.value = next
+function reset () {
+  const saved = load()
+  state.value = saved ? saved.cells : new Array(width.value * height.value).fill(UNKNOWN)
+  elapsed.value = saved ? saved.elapsed || 0 : 0
+  crossed.value = new Set(saved ? saved.crossed || [] : [])
+  started.value = Boolean(saved)
+  solved.value = false
+  solution = null
+  selected.value = 1
+  clearFeedback()
+  history.reset(state.value)
+  if (saved) message.value = { kind: 'info', text: 'Dein Spielstand wurde wiederhergestellt.' }
 }
+watch(() => props.puzzle, () => { reset(); fitToScreen() }, { immediate: true })
+
+function commit (next) {
+  if (next.every((v, i) => v === state.value[i])) return
+  state.value = next
+  history.push(next)
+  started.value = true
+  save()
+  checkSolved()
+}
+
+const undo = () => {
+  const previous = history.undo()
+  if (previous) { clearFeedback(); state.value = previous; save() }
+}
+const redo = () => {
+  const next = history.redo()
+  if (next) { clearFeedback(); state.value = next; save(); checkSolved() }
+}
+
+function restart () {
+  if (started.value && !window.confirm('Alle Eintragungen und die Zeit zurücksetzen?')) return
+  try { localStorage.removeItem(storageKey()) } catch { /* ignore */ }
+  reset()
+}
+
+function showHint () {
+  mistakes.value = []
+  const result = nextHint(state.value, { rowClues: rowClues.value, columnClues: columnClues.value })
+  const name = (axis, index) => `${axis === 'row' ? 'Zeile' : 'Spalte'} ${index + 1}`
+  if (result.kind === 'error') {
+    hint.value = { axis: result.axis, index: result.index, cells: [] }
+    message.value = { kind: 'error', text: `${name(result.axis, result.index)} passt nicht mehr zu ihren Zahlen.` }
+  } else if (result.kind === 'line') {
+    hint.value = { axis: result.axis, index: result.index, cells: result.cells }
+    message.value = {
+      kind: 'info',
+      text: `In ${name(result.axis, result.index)} lassen sich ${result.cells.length === 1 ? 'ein Feld' : `${result.cells.length} Felder`} folgern (markiert).`
+    }
+  } else if (result.kind === 'cross') {
+    hint.value = { axis: null, index: null, cells: [{ x: result.x, y: result.y, value: result.value }] }
+    message.value = {
+      kind: 'info',
+      text: `Das markierte Feld folgt aus Zeile ${result.y + 1} und Spalte ${result.x + 1} zusammen: vergleiche, welche Farben beide dort erlauben.`
+    }
+  } else if (result.kind === 'stuck') {
+    hint.value = null
+    message.value = {
+      kind: 'info',
+      text: 'Keine Zeile oder Spalte gibt allein etwas her. Nimm für ein Feld eine Farbe an und prüfe, ob das zu einem Widerspruch führt.'
+    }
+  } else {
+    message.value = { kind: 'info', text: 'Alles ist eingetragen.' }
+  }
+}
+
+function checkMistakes () {
+  hint.value = null
+  if (!solution) solution = solutionFromClues({ rowClues: rowClues.value, columnClues: columnClues.value })
+  if (!solution) {
+    message.value = { kind: 'error', text: 'Die Prüfung ist für dieses Rätsel nicht verfügbar.' }
+    return
+  }
+  mistakes.value = wrongCells(state.value, solution)
+  message.value = mistakes.value.length
+    ? { kind: 'error', text: `${mistakes.value.length} ${mistakes.value.length === 1 ? 'Feld ist' : 'Felder sind'} falsch (rot markiert).` }
+    : { kind: 'success', text: 'Bisher ist alles richtig.' }
+}
+
+// ---------------------------------------------------------------------------
+// Pointer input
+// ---------------------------------------------------------------------------
+
+let dragStart = null
+let before = null
+let action = null
+const dragCount = ref(0)
+const dragLabel = ref({ x: 0, y: 0 })
 
 const pointer = useGridPointer({
   cellSize: cell,
   width,
   height,
   enabled: () => !solved.value,
-  onStart (cellPos, event) {
-    start = cellPos
-    before = [...grid.value]
-    // Right button paints the background.
-    paint = event.button === 2 ? background.value : selectedColor.value
-    fillTo(cellPos)
+  onStart (pos, event) {
+    clearFeedback()
+    dragStart = pos
+    before = [...state.value]
+    const value = event.button === 2 ? DOT : selected.value
+    action = dragAction(before[pos.y * width.value + pos.x], value)
+    drag(pos)
   },
-  onMove: fillTo,
+  onMove (pos) {
+    hover.value = pos
+    drag(pos)
+  },
   onEnd () {
-    history.push(grid.value)
-    checkLines()
+    const next = state.value
+    state.value = before
+    dragCount.value = 0
+    dragStart = null
+    commit(next)
   }
 })
 
-const undo = () => {
-  const state = history.undo()
-  if (state) { grid.value = state; checkLines() }
+function drag (pos) {
+  const cells = dragLine(dragStart, pos)
+  state.value = applyDrag(before, width.value, cells, action)
+  dragCount.value = cells.length
+  const end = cells[cells.length - 1]
+  dragLabel.value = { x: end.x * cell.value + cell.value / 2, y: Math.max(end.y * cell.value - 12, 12) }
 }
-const redo = () => {
-  const state = history.redo()
-  if (state) { grid.value = state; checkLines() }
+
+const cellAt = (event) => {
+  const rect = event.currentTarget.getBoundingClientRect()
+  const x = Math.floor((event.clientX - rect.left) / cell.value)
+  const y = Math.floor((event.clientY - rect.top) / cell.value)
+  return x >= 0 && y >= 0 && x < width.value && y < height.value ? { x, y } : null
 }
+
+const gridHandlers = {
+  ...pointer.handlers,
+  pointermove (event) {
+    if (!pointer.active.value && event.pointerType === 'mouse') hover.value = cellAt(event)
+    pointer.handlers.pointermove(event)
+  },
+  pointerleave () {
+    if (!pointer.active.value) hover.value = null
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Keyboard, timer, fitting the screen
+// ---------------------------------------------------------------------------
+
+function onKey (event) {
+  if (solved.value || event.target.closest?.('input, textarea, [contenteditable]')) return
+  const ctrl = event.ctrlKey || event.metaKey
+  if (ctrl && event.key.toLowerCase() === 'z') {
+    event.preventDefault()
+    event.shiftKey ? redo() : undo()
+  } else if (ctrl && event.key.toLowerCase() === 'y') {
+    event.preventDefault()
+    redo()
+  } else if (!ctrl && /^[1-9]$/.test(event.key) && Number(event.key) <= fillColours.value.length) {
+    selected.value = Number(event.key)
+  } else if (!ctrl && (event.key === '0' || event.key.toLowerCase() === 'x')) {
+    selected.value = DOT
+  }
+}
+
+let timer = null
+function tick () {
+  if (started.value && !solved.value && document.visibilityState === 'visible') {
+    elapsed.value += 1
+    if (elapsed.value % 10 === 0) save()
+  }
+}
+
+function fitToScreen () {
+  const available = (root.value?.clientWidth || window.innerWidth) - 8
+  const columns = width.value + Math.max(1, ...rowClues.value.map(c => c.length))
+  const size = Math.floor(available / columns)
+  zoom.setCellSize(Math.min(Math.max(size, 14), 34))
+}
+
+onMounted(() => {
+  fitToScreen()
+  window.addEventListener('keydown', onKey)
+  timer = window.setInterval(tick, 1000)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  window.clearInterval(timer)
+  save()
+})
 </script>
 
 <style lang="scss" scoped>
-.control-panels {
-  display: flex;
-  gap: 20px;
-  margin: 5px 0 15px;
-  flex-wrap: wrap;
+.board {
+  --accent: #2563eb;
+  --line: #c9ced6;
+  --line-strong: #1f2937;
+  --clue-bg: #f6f7f9;
+  --hover: rgba(37, 99, 235, 0.09);
+  --error: #dc2626;
+  --hint: #f59e0b;
 }
 
-.control-card {
-  background: white;
-  border-radius: 12px;
-  padding: 10px;
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 4px 0 12px;
+}
+
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.palette {
+  gap: 6px;
+  padding: 5px 7px;
+}
+
+.swatch {
   position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  min-width: 120px;
-  border: 1px solid #dddddd;
-}
-
-.control-label {
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 0 10px;
-  font-size: 14px;
-  color: #666;
-  border-radius: 12px;
-}
-
-.color-controls {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 5px;
-}
-
-.empty-cell-dot {
-  width: 6px;
-  height: 6px;
-  background-color: #000;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+
+  &:hover { transform: scale(1.08); }
+
+  &.active {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.swatch-dot {
   position: absolute;
   top: 50%;
   left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #374151;
   transform: translate(-50%, -50%);
 }
 
-.color-button {
-  position: relative;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-
-  &:hover {
-    transform: scale(1.1);
-  }
-
-  &.active {
-    border-color: #2196F3;
-    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
-  }
-}
-
-.size-controls {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 5px;
-}
-
-.size-button {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: #f5f5f5;
-  cursor: pointer;
-  display: flex;
+.tool {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
+  gap: 5px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0 7px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
 
-  &:hover:not(:disabled) {
-    background: #e0e0e0;
-    transform: scale(1.1);
-  }
+  &:hover:not(:disabled) { background: #f0f2f5; }
+  &:disabled { opacity: 0.35; cursor: default; }
 
-  &:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
+  ion-icon { font-size: 19px; }
+}
 
-  ion-icon {
-    font-size: 20px;
-    color: #666;
-  }
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+  color: #4b5563;
+
+  ion-icon { font-size: 18px; }
+}
+
+.board-message {
+  margin: 0 0 10px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #eff6ff;
+  color: #1e40af;
+
+  &.error { background: #fef2f2; color: #991b1b; }
+  &.success { background: #f0fdf4; color: #166534; }
+  &.empty { background: transparent; }
+  min-height: calc(1.5em + 14px);
 }
 
 .grid-area {
+  overflow: auto;
   user-select: none;
-  overflow-x: auto;
+  -webkit-user-select: none;
+  padding-bottom: 4px;
 }
 
-.nonoGrid {
-  border-spacing: 0;
-  border-collapse: collapse;
+.nonogram {
+  display: block;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
 
-  td {
-    padding: 0;
-    vertical-align: bottom;
-  }
+.clue-bg {
+  fill: var(--clue-bg);
 
-  td:first-child {
-    text-align: right;
-  }
+  &.hovered { fill: #e1eafd; }
+  &.complete { fill: #eef0f3; }
+  &.hinted { fill: #fdecc8; }
+  &.error { fill: #fde2e2; }
 }
 
 .clue {
   cursor: pointer;
+
+  text {
+    font-size: calc(var(--cell) * 0.56);
+    font-weight: 600;
+    fill: #111827;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+
+  &.done text { opacity: 0.35; }
+
+  &:hover rect, &:hover text { opacity: 0.8; }
+}
+
+.strike {
+  stroke: #6b7280;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.clue-lines {
+  stroke: #d5d9df;
+  stroke-width: 1;
+  fill: none;
 }
 
 .main-grid {
-  cursor: pointer;
+  overflow: visible;
+  cursor: crosshair;
   touch-action: none;
+
+  &.solved { cursor: default; }
+}
+
+.hover-line { fill: var(--hover); pointer-events: none; }
+.hint-line { fill: rgba(245, 158, 11, 0.16); pointer-events: none; }
+
+.hint-cell {
+  pointer-events: none;
+}
+
+.hint-frame {
+  fill: none;
+  stroke: var(--hint);
+  stroke-width: 2.5;
+  stroke-dasharray: 4 3;
+}
+
+.hint-preview { opacity: 0.45; }
+
+.mistake {
+  pointer-events: none;
+
+  rect { fill: rgba(220, 38, 38, 0.18); }
+  path { stroke: var(--error); stroke-width: 2; }
+}
+
+.dot { fill: #4b5563; pointer-events: none; }
+
+.grid-thin {
+  stroke: var(--line);
+  stroke-width: 1;
+  fill: none;
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+
+.grid-thick {
+  stroke: var(--line-strong);
+  stroke-width: 2;
+  fill: none;
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+
+.drag-count {
+  pointer-events: none;
+
+  rect { fill: var(--accent); }
+  text {
+    fill: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+}
+
+.help {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.solved-time {
+  margin-top: 10px;
+  font-weight: 600;
+  color: #166534;
 }
 </style>

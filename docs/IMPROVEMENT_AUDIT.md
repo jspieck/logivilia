@@ -133,6 +133,8 @@ Rate difficulty from the solver's work: the deepest technique needed, the number
 - Add drafts, a preview, live solver validation (6) and an Admin review step before publishing.
 - Nonogram from image: upload a picture, quantise it to N colours, and use the solver to adjust it until the result is unique ⚙.
 - **Effort:** M–L.
+- **Nonogram editor done (2026-11-15):** `/nonogram-create` (menu Nonogramm → Erstellen) and `/nonogram-create/:id` for the owner or an Admin (loads via the new `GET /puzzles/:id/source`). Tools: pen, line, rectangle, flood fill, right-click erases, undo/redo, shift, mirror, resize (centred), up to 8 colours plus background. Live clues around the canvas. The solver runs in a Web Worker (`frontend/src/puzzles/nonogram/solverWorker.js`) after each change: unique (line logic or contradiction) / ambiguous with the differing cells marked and the second solution viewable / too complex. "Korrekturen vorschlagen" lists one-cell changes that make it unique. Image import reduces a picture to 1–6 colours (k-means, border colour = background). Test play uses the real board. New puzzles are drafted in localStorage; publishing needs login, a verified e-mail and a unique puzzle. Logic in `shared/puzzles/nonogramEditor.js`, tested in `backend/test/nonogramEditor.test.js`, plus an e2e test.
+- **Still open:** linelog creator, drafts on the server, an Admin review step before publishing, an "edit" link on your own puzzles.
 
 ### Player features
 

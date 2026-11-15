@@ -249,6 +249,19 @@ describe('puzzles', () => {
     assert.equal(renamed.status, 200, JSON.stringify(renamed.body));
   });
 
+  test('only the owner (or an Admin) can load a puzzle with its solution', async () => {
+    const created = await api().post('/api/puzzles').set('Authorization', alice.auth)
+      .send(newNonogram({ name: 'Editable' }));
+    const id = created.body.id;
+    const own = await api().get(`/api/puzzles/${id}/source`).set('Authorization', alice.auth);
+    assert.equal(own.status, 200);
+    assert.deepEqual(own.body.solution, [[1, 0]]);
+    assert.equal(own.body.name, 'Editable');
+    assert.equal((await api().get(`/api/puzzles/${id}/source`).set('Authorization', bob.auth)).status, 403);
+    assert.equal((await api().get(`/api/puzzles/${id}/source`)).status, 403);
+    assert.equal((await api().get('/api/puzzles/999999/source').set('Authorization', alice.auth)).status, 404);
+  });
+
   test('old per-type IDs map to the new puzzle ID', async () => {
     const res = await api().get('/api/puzzles/legacy/linelog/7');
     assert.equal(res.status, 200);
