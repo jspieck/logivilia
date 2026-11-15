@@ -56,15 +56,30 @@ describe('solveLinelog', () => {
     assert.equal(result.status, 'too-complex');
   });
 
-  test('seed puzzles: the two known ambiguous ones are found, the rest proven unique', () => {
+  test('seed puzzles: none is ambiguous, all but the largest are proven unique', () => {
+    // Seeds 13 and 18 were ambiguous until migration 20261115-04 split a path.
     const counts = {};
     for (const p of seeds) {
       const result = solver.solveLinelog(linelog.computeClues(p), { target: pictureOf(p), maxMillis: 2000 });
       counts[result.status] = (counts[result.status] || 0) + 1;
-      if (['13', '18'].includes(String(p.id))) assert.equal(result.status, 'ambiguous', `seed ${p.id}`);
+      assert.notEqual(result.status, 'ambiguous', `seed ${p.id}`);
     }
     assert.equal(counts.none, undefined, 'every seed picture can be drawn from its numbers');
-    assert.ok(counts.unique >= 80, JSON.stringify(counts));
+    assert.ok(counts.unique >= 84, JSON.stringify(counts));
+  });
+
+  test('the fixes for seeds 13 and 18 turn ambiguous puzzles unique', async () => {
+    await require('../puzzles').ready;
+    const { FIXES, applyFix } = require('../migrations/20261115-04-unique-linelogs');
+    for (const fix of FIXES) {
+      const fixed = seeds.find(s => s.name === fix.name);
+      const before = applyFix(fix, fixed, { reverse: true });
+      assert.ok(before, fix.name);
+      assert.equal(linelog.checkSolvable(before)?.code, 'PUZZLE_NOT_UNIQUE', `${fix.name} before`);
+      assert.equal(linelog.checkSolvable(fixed), null, `${fix.name} after`);
+      assert.deepEqual(applyFix(fix, before).information, fixed.information.map(row => row.map(Number)));
+      assert.equal(applyFix(fix, fixed), null, 'an already fixed puzzle is left alone');
+    }
   });
 });
 

@@ -8,6 +8,8 @@ This audit covers security, correctness, architecture, UX and engineering practi
 
 **Progress on Part B (2026-11-14):** B5 mostly done (workspaces, shared types, error codes + `vue-i18n`, Oruga only, lazy routes; legacy folders outside the repo remain). B3 done: the API sends clues instead of solutions, and a public `check` endpoint answers whether a finished grid is correct. B15 started: `npm test` runs 44 backend tests (verifiers over all seed puzzles, API security tests on in-memory SQLite) and GitHub Actions runs tests + build. Still open in B15: frontend/browser tests, Dependabot, GDPR items. B1 and B2 done (2026-11-14, not yet deployed): one `Puzzles` table with `PuzzleRatings` and `PuzzleSolves`, puzzle-type plugins in `shared/puzzles` used by backend and frontend, one `/puzzle/:id` page with a board per type on a shared grid engine. B4 and B15 done (2026-11-14, not yet deployed), which completes the foundation phase: migrations are the only source of the schema and run on server start, MySQL everywhere, e-mail verification, data export, account deletion and a privacy page, Playwright smoke tests, lint/typecheck/MySQL tests/audit in CI, Dependabot. Back up the live database before deploying (HANDOVER §7). `npm test` runs 78 backend tests, `npm run test:e2e` 6 browser tests. Still open from these items: self-hosted logical puzzle images. **B6 done for nonograms (2026-11-15):** a multi-colour nonogram solver (`shared/puzzles/nonogramSolver.js`) found 4 seed nonograms with several solutions; a one-cell fix each (migration `20261115-02`) makes them unique, and saving a nonogram with several solutions is now rejected (`PUZZLE_NOT_UNIQUE`).
 
+**Progress on 2026-11-15 (later):** B6 and B9 done for linelogs too: a linelog solver (`shared/puzzles/linelogSolver.js`) checks uniqueness by picture and is used on save and in the new linelog editor (`/linelog-create`), which turns a painted picture into numbers. The linelog board got the nonogram board's toolbar, undo/redo, timer, saved progress and full view (B2, B10). Logical images are self-hosted (B15). **Mostly open now:** everything for logicals (solver, hints, editor validation, autosave), streaks and achievements (B11), weighted and weekly leaderboards (B12), pinch-zoom and PWA (B13), filters and server-side pagination (B14), Admin review of new puzzles (B9), CSP (A3-20), and changing the leaked SMTP password (A1-1).
+
 ---
 
 ## Part A – Findings
@@ -56,12 +58,12 @@ This audit covers security, correctness, architecture, UX and engineering practi
 - **Very large components:** `NonogramSolve.vue` (≈1,100 lines), `LinelogSolve.vue` (≈1,070), `LogicalDisplay.vue` (≈810). They mix input handling, rendering, rule checking and API calls. Options API and Composition API are mixed. ⚠️ The solve pages are now `PuzzlePage.vue` plus one board per type (B2); `LogicalDisplay.vue` is unchanged.
 - **Two sources of truth for solves:** `solved*` JSON arrays on `User` and the unused `UserSolved*` join tables. ✅ Solves are rows of `PuzzleSolves` (B1); the old columns and tables are no longer read.
 - **Schema management:** `seed` uses `sync({force: true})`; the `migrations/` folder exists but is never run. Production dialect is hardcoded to `mysql`, while recent commits mention Postgres. SQLite, MySQL and Postgres drivers are all installed. ✅ Migrations only, MySQL only (B4).
-- **Two UI libraries** (Buefy and Oruga) loaded together; a single 500 kB+ JS chunk with no code splitting.
-- **Dead code and files:** unused JSON copies in `frontend/src/assets` (≈160 kB `nonograms.json`), `LinelogCreate.vue` with no route, legacy sibling folders `logivilia-backend/`, `logivilia-frontend/`, `logiviliaBackend/` plus installers in the parent folder.
-- **Puzzle verification compares against one stored answer** for linelogs and logicals. Puzzles with more than one valid solution would reject correct answers, and nothing checks uniqueness when a puzzle is created.
+- **Two UI libraries** (Buefy and Oruga) loaded together; a single 500 kB+ JS chunk with no code splitting. ✅ Oruga only, lazy routes (B5).
+- **Dead code and files:** unused JSON copies in `frontend/src/assets` (≈160 kB `nonograms.json`), `LinelogCreate.vue` with no route, legacy sibling folders `logivilia-backend/`, `logivilia-frontend/`, `logiviliaBackend/` plus installers in the parent folder. ⚠️ Inside the repo they are gone (no `LinelogCreate.vue`, no JSON copies in `assets`); the legacy sibling folders and installers outside `logivilia/` remain.
+- **Puzzle verification compares against one stored answer** for linelogs and logicals. Puzzles with more than one valid solution would reject correct answers, and nothing checks uniqueness when a puzzle is created. ⚠️ Nonograms and linelogs are now checked on save (B6); the two ambiguous seed linelogs are fixed (migration `20261115-04`); logicals are still unchecked.
 - **No tests, no CI, no linting in CI;** many `console.log` calls left in components. ✅ Tests, browser tests and CI with lint (B15); some `console.log` calls remain.
-- **Backend error messages are German strings** spread across controllers, which blocks an English version.
-- **External image hotlinking** from `logiklab.de` (availability and licensing risk).
+- **Backend error messages are German strings** spread across controllers, which blocks an English version. ✅ The API returns error codes, translated in the frontend (B5).
+- **External image hotlinking** from `logiklab.de` (availability and licensing risk). ⚠️ 52 of 53 logical images are self-hosted under `/images/logicals/` (migration `20261115-01`); one is still hotlinked from `cdn.pixabay.com`.
 
 ---
 
@@ -82,15 +84,15 @@ Replace the three model/controller/rating/service sets with one `Puzzle` table (
 Each type is one module: `render`, `computeClues(solution)`, `validate(grid)`, `solve(clues)` ⚙ and `hint(state)` ⚙. A shared grid engine handles pointer input, drag-fill, zoom and undo/redo. This splits the 1,000-line solve components and gives the solver a defined place to live.
 - **Effort:** L.
 - **Tip:** design this together with the solver; it is the solver's API.
-- **Done:** `shared/puzzles/<type>.js` implements `PuzzleTypePlugin` (`shared/index.d.ts`): `dataFields`, `checkData` (new: rejects broken puzzles on create/edit), `computeClues`, `validate`. The backend loads the ES modules with a dynamic `import()`; the frontend imports them via the `@shared` alias and adds the board component (`render`) in `frontend/src/puzzles/index.js`. The nonogram board checks lines with the same shared code as the server. The grid engine (`frontend/src/puzzles/engine/`) gives both grid boards Pointer Events input (mouse and touch in one path, drag continues outside the grid), zoom and undo/redo; the linelog board has no undo yet.
-- **Still open:** `solve` exists for nonograms only (B6); `hint` is not implemented (B8). Pinch-zoom and tap-to-cycle (B13) can now go into the engine once.
+- **Done:** `shared/puzzles/<type>.js` implements `PuzzleTypePlugin` (`shared/index.d.ts`): `dataFields`, `checkData` (new: rejects broken puzzles on create/edit), `computeClues`, `validate`. The backend loads the ES modules with a dynamic `import()`; the frontend imports them via the `@shared` alias and adds the board component (`render`) in `frontend/src/puzzles/index.js`. The nonogram board checks lines with the same shared code as the server. The grid engine (`frontend/src/puzzles/engine/`) gives both grid boards Pointer Events input (mouse and touch in one path, drag continues outside the grid), zoom and undo/redo; the linelog board has undo/redo too since 2026-11-15.
+- **Still open:** the plugin `solve` hook exists for nonograms only (the linelog solver is used through `checkSolvable` and the editor); `hint` as a plugin hook is not implemented (the nonogram board has its own hints, B8). Pinch-zoom and tap-to-cycle (B13) can now go into the engine once.
 
 #### 3. 🏗 Stop sending solutions to the browser ✅ (2026-11-14)
 Compute clues on the server (nonogram row/column clues, linelog numbers already exist as `information`) and send only those. Verification already happens on the server (done 2026-11-08). For nonograms, keep accepting any grid that satisfies all clues.
 - **Effort:** M.
 - **Result:** a leaderboard that can't be faked.
 - **Done:** puzzle `GET`s go through `backend/utils/puzzleView.js` (nonograms get `rowClues`/`columnClues`, linelogs get `informationColors`). `POST /api/<type>/:id/check` lets guests check a finished grid. The logical verifier now ignores the row label column, which also makes one seed logical with mislabelled rows solvable.
-- **Still open:** linelogs and logicals are compared with the one stored answer, so a puzzle with a second valid solution rejects it (the linelog page then says "all numbers connected, but the solution is wrong"). The solver (B6) should rule such puzzles out. The check endpoint is an oracle for complete guesses; the rate limit keeps it from being useful for brute force on real puzzle sizes.
+- **Still open:** logicals are compared with the one stored answer, so a logical with a second valid solution rejects it; a logical solver (B6) should rule such puzzles out. (Nonograms accept any grid that fits the clues; linelogs are checked for uniqueness on save, and the seed ones are all unique or too complex to check.) The check endpoint is an oracle for complete guesses; the rate limit keeps it from being useful for brute force on real puzzle sizes.
 
 #### 4. 🏗 Clean up the database layer ✅ (2026-11-14)
 - Use migrations as the only source of schema; keep `sync` out of anything but tests.
@@ -117,16 +119,20 @@ Before a puzzle is published, the solver checks that it has exactly one solution
 - **Ambiguous seed puzzles:** "Bobby", "Mohn im Topf", "Elefant" (15x15) and "Drache" (11x14) had two solutions each. One cell each makes them unique and line-solvable (see the migration for which cell); the seed is fixed, and migration `20261115-02-unique-nonograms` applies the same change on the live DB on the next start (only to rows whose name, size and cell match and which are ambiguous before and unique after). All 181 seed nonograms now take about 0.5 s together: 168 need line logic only, 13 need contradiction.
 - **Rejecting on save:** the plugin hook `checkSolvable` runs after `checkData` on `POST /puzzles` and on `PUT` when data fields change (a rename of an old puzzle still works). It returns `PUZZLE_NOT_UNIQUE` (with the number of ambiguous cells) or `PUZZLE_TOO_COMPLEX` if it can't decide within 3 s.
 - **Performance:** drawn-looking 50x50 puzzles (large areas) are checked in 5–30 ms, 100x100 black-and-white in 0.2–0.5 s; 50x50 with three colours in 0.2–1.2 s. Random-noise puzzles and 70x70+ multi-colour ones with several solutions can hit the 3 s limit and are then rejected as too complex. The check runs on the request thread, so a slow save blocks the server for up to 3 s; move it to a `worker_thread` if that matters.
-- **Still open:** a creator UI that shows the reason (B9); solvers for linelog and logical (their saves are not checked for uniqueness yet).
+- **Done (2026-11-15), linelogs:** `shared/puzzles/linelogSolver.js` checks uniqueness **by picture** (players are judged by colours, not paths). It only branches where a path could stray onto a cell of another colour, which skips the many layouts that just re-pair numbers inside one colour. 82 of 85 seed linelogs were proven unique in a few ms. "Kasette" and "Leuchten" (legacy IDs 13 and 18) had a second picture; splitting one path in each (same picture, three numbers changed) makes them unique and solvable without guessing: the seed is fixed, and migration `20261115-04-unique-linelogs` applies the same change on the live DB on the next start (only to rows whose name, size and numbers match and which are ambiguous before and unique after). Seed 81 (open area, numbers up to 38) is too complex to check. `checkSolvable` returns `PUZZLE_INVALID` if the numbers cannot draw the stored picture, `PUZZLE_NOT_UNIQUE` or `PUZZLE_TOO_COMPLEX` otherwise. Tests in `backend/test/linelogEditor.test.js`.
+- **Still open:** a solver for logicals (their saves are not checked for uniqueness).
 
 #### 7. ✨ Automatic difficulty rating ⚙
 Rate difficulty from the solver's work: the deepest technique needed, the number of steps, and how much branching. This replaces the hand-set 1–5 values and keeps difficulty consistent across authors.
 - **Effort:** S–M.
+- **Partly done:** both editors suggest a difficulty from the solver (nonogram: technique needed; linelog: size, largest number and how much guessing). Existing puzzles keep their hand-set values, and the server does not compute or check difficulty.
 
 #### 8. ✨ Smart hints and mistake checking ⚙
 - "Next logical step" shows one cell or deduction, with a short explanation of why it follows.
 - "Check my mistakes" highlights wrong cells, optionally with a cost (e.g. no leaderboard credit).
 - **Effort:** M. This is the most visible player-facing use of the solver.
+- **Done for nonograms:** "Tipp" marks a row or column where something follows (or a cell that needs a row and a column together) and explains it; "Prüfen" marks wrong cells. Both run in the browser on the shared solver, with no leaderboard cost.
+- **Still open:** linelogs (left out for now: the solution is not sent to the browser, so it would need a server endpoint) and logicals.
 
 #### 9. ✨ Creator studio for all three types
 - There is no nonogram creator, and `LinelogCreate.vue` exists but has no route.
@@ -134,34 +140,45 @@ Rate difficulty from the solver's work: the deepest technique needed, the number
 - Nonogram from image: upload a picture, quantise it to N colours, and use the solver to adjust it until the result is unique ⚙.
 - **Effort:** M–L.
 - **Nonogram editor done (2026-11-15):** `/nonogram-create` (menu Nonogramm → Erstellen) and `/nonogram-create/:id` for the owner or an Admin (loads via the new `GET /puzzles/:id/source`). Tools: pen, line, rectangle, flood fill, right-click erases, undo/redo, shift, mirror, resize (centred), up to 8 colours plus background. Live clues around the canvas. The solver runs in a Web Worker (`frontend/src/puzzles/nonogram/solverWorker.js`) after each change: unique (line logic or contradiction) / ambiguous with the differing cells marked and the second solution viewable / too complex. "Korrekturen vorschlagen" lists one-cell changes that make it unique. Image import reduces a picture to 1–6 colours (k-means, border colour = background). Test play uses the real board. New puzzles are drafted in localStorage; publishing needs login, a verified e-mail and a unique puzzle. Logic in `shared/puzzles/nonogramEditor.js`, tested in `backend/test/nonogramEditor.test.js`, plus an e2e test.
-- **Still open:** linelog creator, drafts on the server, an Admin review step before publishing, an "edit" link on your own puzzles.
+- **Linelog editor done (2026-11-15):** `/linelog-create` (menu Linelog → Erstellen) and `/linelog-create/:id`. Paint or import a picture; "Zahlen erzeugen" starts with a 1 on every coloured cell and joins neighbouring paths while the puzzle stays unique (largest number configurable, "Neu würfeln" for another split). Paths can also be drawn by hand. Live uniqueness check in a Web Worker with the differing cells, the second solution and a button that splits the ambiguous paths into 1s. Editing rebuilds the paths from the stored numbers (works for all 85 seed linelogs). Test play, drafts in localStorage, e2e test.
+- **Still open:** the logical creator (`LogicalCreate.vue`) has no live validation; drafts on the server; an Admin review step before publishing; an "edit" link on your own puzzles (the edit pages are only reachable by URL).
 
 ### Player features
 
 #### 10. ✨ Autosave, resume and timer
 Save progress per puzzle (localStorage for guests, server for logged-in users) and resume it. Add a timer and personal best times. The logical page already warns "unsaved puzzles are lost forever"; this removes that problem.
 - **Effort:** S–M.
+- **Partly done:** nonograms and linelogs save progress and time per puzzle in localStorage and restore them, with a timer and "Gelöst in …".
+- **Still open:** logicals (no autosave; the logical creator still warns that unsaved puzzles are lost), progress on the server for logged-in users across devices, personal best times.
 
 #### 11. ✨ Daily puzzle, streaks and achievements
 - One featured puzzle per type per day, with a shared daily leaderboard.
 - Streak counter and achievements (first 10x10, 50 solved, first colour nonogram, ...).
 - **Effort:** M. Strongest lever for return visits.
+- **Partly done:** the start page shows a daily puzzle (the type rotates daily, difficulty ≤ 3) with how many solved it in the last 24 hours.
+- **Still open:** a daily leaderboard, streaks, achievements.
 
 #### 12. ✨ Better leaderboards
 - Weight solves by difficulty (and optionally time), and add weekly and monthly boards next to all-time.
 - Compute them in SQL from the solves table (4) instead of loading every user into memory.
 - **Effort:** S–M after 4.
+- **Partly done:** rankings are computed in SQL from `PuzzleSolves` (B1).
+- **Still open:** weighting by difficulty or time, weekly and monthly boards.
 
 #### 13. 🎨 Mobile, touch and offline
 - Switch to Pointer Events, add pinch-zoom and a "tap to cycle" mode for small screens, and make the layouts responsive.
 - Make it a PWA (installable, offline play of puzzles already loaded).
 - **Effort:** M.
+- **Partly done:** the grid boards use Pointer Events (mouse and touch in one path), fit the screen width and have a full-page view.
+- **Still open:** pinch-zoom, tap-to-cycle, a responsive check of the remaining pages, PWA (no manifest or service worker).
 
 #### 14. 🎨 Finding puzzles
 - Filters: size, number of colours, difficulty, rating, "unsolved only", author.
 - "Next unsolved puzzle" button on the success screen.
 - Server-side pagination and sorting (today the overview loads every puzzle at once).
 - **Effort:** S–M.
+- **Partly done:** the overview tables have a text search and sortable columns (name, difficulty, size, colours, rating, date, solved).
+- **Still open:** real filters (size range, colours, unsolved only, author), a "next unsolved puzzle" button, server-side pagination (the overview still loads every puzzle of a type).
 
 ### Engineering and trust
 
@@ -175,7 +192,7 @@ Save progress per puzzle (localStorage for guests, server for logged-in users) a
 - **GDPR:** e-mail verification, account deletion, data export, a privacy page that lists what is stored, and self-hosted puzzle images.
 - **Effort:** M overall; start with the tests that protect the solver work.
 - **Done (2026-11-14):** 78 backend tests, including `account.test.js` (verification, export, deletion) and `migrations.test.js`. Playwright smoke tests (`e2e/`) solve a tiny nonogram and linelog through the UI as a guest, check the logical page, the privacy page and the profile's export and deletion; their server uses an in-memory DB and the built frontend. CI: lint, typecheck, tests on SQLite and MySQL, build + browser tests, `npm audit --omit=dev --audit-level=high`; Dependabot weekly. Dependency upgrades for the audit: `jsonwebtoken` 9, `passport` 0.7, `nodemailer` 10, `joi` 18, `vue-i18n` 11 (needs Node ≥ 22 to build). GDPR: e-mail verification (unverified accounts cannot comment or publish; existing accounts count as verified), JSON export and self-service deletion on the profile page, `/datenschutz`.
-- **Still open:** self-hosted puzzle images (needs clarity on the rights to the `logiklab.de` images first); one moderate `npm audit` advisory (`uuid` inside Sequelize, no fix without a Sequelize upgrade); the MySQL CI job and real verification e-mails have not run yet.
+- **Still open:** one logical image still hotlinked from `cdn.pixabay.com` (52 of 53 are self-hosted since 2026-11-15); one moderate `npm audit` advisory (`uuid` inside Sequelize, no fix without a Sequelize upgrade); the MySQL CI job and real verification e-mails have not run yet.
 
 ---
 

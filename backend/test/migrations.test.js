@@ -116,6 +116,43 @@ test('the four ambiguous nonograms get their one-cell fix, other rows stay', asy
   await qi.bulkDelete('Puzzles', { name: names });
 });
 
+test('the two ambiguous linelogs get their path split, other rows stay', async () => {
+  const migration = require('../migrations/20261115-04-unique-linelogs');
+  const seed = require('../seed/linelogs.json');
+  await require('../puzzles').ready;
+  const now = new Date();
+  // The seed is already fixed; undo the fix to get the live (old) data.
+  const before = migration.FIXES.map(fix =>
+    migration.applyFix(fix, seed.find(l => l.name === fix.name), { reverse: true }));
+  const rows = before.map(data => ({
+    type: 'linelog', name: data.name, data: JSON.stringify(data), createdAt: now, updatedAt: now
+  }));
+  // Same name, other numbers: must not be touched.
+  const other = { ...before[0], information: before[0].information.map(row => row.map(() => 0)) };
+  rows.push({ type: 'linelog', name: 'Kasette', data: JSON.stringify(other), createdAt: now, updatedAt: now });
+  await qi.bulkInsert('Puzzles', rows);
+
+  await migration.up(qi);
+  await migration.up(qi); // idempotent
+
+  const names = migration.FIXES.map(f => f.name);
+  const parse = r => (typeof r.data === 'string' ? JSON.parse(r.data) : r.data);
+  const stored = (await sequelize.query(
+    `SELECT name, data FROM Puzzles WHERE type = 'linelog' AND name IN (${names.map(() => '?').join(',')}) ORDER BY id`,
+    { replacements: names, type: sequelize.QueryTypes.SELECT })).map(parse);
+  migration.FIXES.forEach((fix, i) => {
+    const expected = seed.find(l => l.name === fix.name).information.map(row => row.map(Number));
+    assert.deepEqual(stored[i].information, expected, fix.name);
+  });
+  assert.deepEqual(stored[2].information, other.information);
+
+  await migration.down(qi);
+  const reverted = await sequelize.query("SELECT data FROM Puzzles WHERE type = 'linelog' AND name = 'Leuchten'",
+    { type: sequelize.QueryTypes.SELECT });
+  assert.deepEqual(parse(reverted[0]).information, before[1].information.map(row => row.map(Number)));
+  await qi.bulkDelete('Puzzles', { name: names });
+});
+
 test('new seed nonograms are added to an existing database once, owned by the Admin', async () => {
   const migration = require('../migrations/20261115-03-new-nonograms');
   const { User } = require('../models');
