@@ -55,6 +55,7 @@ import CommentSystem from '@/components/CommentSystem.vue'
 import DifficultyIndicator from '@/components/DifficultyIndicator.vue'
 import StarRating from '@/components/StarRating.vue'
 import { getPuzzleType } from './index'
+import { rememberPuzzle, forgetPuzzle } from './recentPuzzle'
 
 const route = useRoute()
 const store = useMainStore()
@@ -100,6 +101,7 @@ const load = async (id) => {
     loadError.value = apiErrorMessage(error)
     return
   }
+  rememberPuzzle(puzzle.value)
   await loadUserState()
 }
 
@@ -120,10 +122,13 @@ const submit = async (answer) => {
         throw error
       }
       alreadySolved.value = true
+      forgetPuzzle(id)
       notify('Rätsel erfolgreich als gelöst markiert!')
       return true
     }
-    return (await PuzzleService.check(id, answer)).data.solved === true
+    const solved = (await PuzzleService.check(id, answer)).data.solved === true
+    if (solved) forgetPuzzle(id)
+    return solved
   } catch (error) {
     console.error('Error checking solution:', error)
     notify(apiErrorMessage(error), 'danger')

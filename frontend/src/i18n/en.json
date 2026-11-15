@@ -25,6 +25,7 @@
     "SOLUTION_SAVE_FAILED": "The solution could not be saved.",
     "USER_NOT_FOUND": "User not found.",
     "RANKING_FETCH_FAILED": "The leaderboard could not be loaded.",
+    "HOME_FETCH_FAILED": "The start page could not be loaded.",
     "RATING_INVALID": "The rating must be between 1 and 5.",
     "RATING_LIST_FAILED": "The ratings could not be loaded.",
     "RATING_FETCH_FAILED": "The rating could not be loaded.",

@@ -2,6 +2,10 @@ import Api from '@/services/Api';
 
 // One service for every puzzle type (see shared/puzzles for the types).
 export default {
+  // Start page: { counts, daily, popular, topPlayers } (summaries only)
+  home () {
+    return Api().get('home');
+  },
   // type: 'nonogram' | 'linelog' | 'logical'; omit for all types
   index (type) {
     return Api().get('puzzles', { params: type ? { type } : {} });

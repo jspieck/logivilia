@@ -1,127 +1,216 @@
 <template>
   <div class="login-dropdown-container">
-    <o-dropdown 
-      v-model:active="isActive"
-      position="bottom-left"
-      aria-role="menu"
-      trap-focus
-      class="enhanced-dropdown"
-      :append-to-body="true"
-      :mobile-modal="true"
-      :close-on-click="false"
+    <a
+      ref="triggerRef"
+      class="navbar-item login-button"
+      role="button"
+      aria-haspopup="dialog"
+      :aria-expanded="isOpen ? 'true' : 'false'"
+      @click="toggle"
     >
-      <template #trigger>
-        <a class="navbar-item login-button" role="button">
-          <span>Login</span>
-          <o-icon icon="chevron-down"></o-icon>
-        </a>
-      </template>
+      <span>Login</span>
+      <o-icon :icon="isOpen ? 'chevron-up' : 'chevron-down'"></o-icon>
+    </a>
 
-      <div class="login-card">
-        <div class="login-header">
-          <h3>Willkommen zurück!</h3>
-          <p>Melden Sie sich an, um fortzufahren</p>
-          <button class="close-button" @click="closeDropdown">
-            <o-icon icon="times"></o-icon>
-          </button>
-        </div>
-        
-        <div class="login-form">
-          <div class="form-group">
-            <label for="email">E-Mail</label>
-            <div class="input-wrapper">
-              <input 
-                id="email"
-                type="email" 
-                v-model="loginForm.email"
-                placeholder="Ihre E-Mail-Adresse"
-              />
-              <span class="icon-wrapper">
-                <o-icon icon="email"></o-icon>
-              </span>
+    <!-- Rendered at the end of <body>, so the navbar's stacking and overflow
+         rules cannot hide or cover it (Oruga's dropdown did, on mobile). -->
+    <Teleport to="body">
+      <div
+        v-if="isOpen"
+        class="login-backdrop"
+        @pointerdown.self="backdropPressed = true"
+        @click.self="onBackdropClick"
+      ></div>
+      <div
+        v-if="isOpen"
+        ref="panelRef"
+        class="login-panel"
+        :class="{ 'login-panel--anchored': !isMobile }"
+        :style="panelStyle"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-title"
+      >
+        <form class="login-card" novalidate @submit.prevent="handleLogin">
+          <div class="login-header">
+            <h3 id="login-title">Willkommen zurück!</h3>
+            <p>Melden Sie sich an, um fortzufahren</p>
+            <button type="button" class="close-button" aria-label="Schließen" @click="close">
+              <o-icon icon="close"></o-icon>
+            </button>
+          </div>
+
+          <div class="login-form">
+            <div class="form-group">
+              <label for="login-email">E-Mail</label>
+              <div class="input-wrapper">
+                <input
+                  id="login-email"
+                  ref="emailRef"
+                  v-model="loginForm.email"
+                  type="email"
+                  name="email"
+                  autocomplete="username"
+                  placeholder="Ihre E-Mail-Adresse"
+                  required
+                />
+                <span class="icon-wrapper">
+                  <o-icon icon="email"></o-icon>
+                </span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="login-password">Passwort</label>
+              <div class="input-wrapper">
+                <input
+                  id="login-password"
+                  v-model="loginForm.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  name="password"
+                  autocomplete="current-password"
+                  placeholder="Ihr Passwort"
+                  required
+                />
+                <span class="icon-wrapper">
+                  <o-icon icon="lock"></o-icon>
+                </span>
+                <button
+                  type="button"
+                  class="toggle-password"
+                  :aria-label="showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'"
+                  @click="showPassword = !showPassword"
+                >
+                  <o-icon :icon="showPassword ? 'eye-off' : 'eye'"></o-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="forgot-password">
+              <router-link :to="{ path: '/forgot' }">
+                Passwort vergessen?
+              </router-link>
+            </div>
+
+            <button type="submit" class="login-submit-button" :disabled="isLoading">
+              <span v-if="!isLoading">Login</span>
+              <span v-else class="spinner"></span>
+            </button>
+
+            <div v-if="error" class="error-message" role="alert">{{ error }}</div>
+
+            <div class="register-link">
+              Noch kein Konto?
+              <router-link :to="{ path: '/register' }">
+                Registrieren
+              </router-link>
             </div>
           </div>
-
-          <div class="form-group">
-            <label for="password">Passwort</label>
-            <div class="input-wrapper">
-              <input 
-                id="password"
-                :type="showPassword ? 'text' : 'password'" 
-                v-model="loginForm.password"
-                placeholder="Ihr Passwort"
-              />
-              <span class="icon-wrapper">
-                <o-icon icon="lock"></o-icon>
-              </span>
-              <span 
-                class="toggle-password" 
-                @click="showPassword = !showPassword"
-              >
-                <o-icon :icon="showPassword ? 'eye-off' : 'eye'"></o-icon>
-              </span>
-            </div>
-          </div>
-
-          <div class="forgot-password">
-            <router-link :to="{ path: '/forgot' }">
-              Passwort vergessen?
-            </router-link>
-          </div>
-
-          <button 
-            class="login-submit-button"
-            @click="handleLogin"
-            :disabled="isLoading"
-          >
-            <span v-if="!isLoading">Login</span>
-            <span v-else class="spinner"></span>
-            <span class="button-glow"></span>
-          </button>
-
-          <div v-if="error" class="error-message">{{ error }}</div>
-          
-          <div class="register-link">
-            Noch kein Konto? 
-            <router-link :to="{ path: '/register' }">
-              Registrieren
-            </router-link>
-          </div>
-        </div>
+        </form>
       </div>
-    </o-dropdown>
-    <div class="dropdown-overlay" v-if="isActive" @click="closeDropdown"></div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { useMainStore } from '@/store/store'
 import { useNotification } from '@/composables/useNotification'
 import AuthenticationService from '@/services/AuthenticationService'
 import { apiErrorMessage } from '@/i18n'
 
-// Router and store setup
+// The panel closes only on purpose: the X button, Escape, a click that both
+// starts and ends on the backdrop, a page change, or a successful login.
+// Selecting text in a field and releasing the mouse outside the panel, or
+// picking a password-manager suggestion, must not close it (it did with
+// Oruga's dropdown, which treated every "outside" click as a close).
+
+const MOBILE_BREAKPOINT = 768
 
 const mainStore = useMainStore()
+const route = useRoute()
 const { showNotification } = useNotification()
 
-// Reactive state
-const loginForm = ref({
-  email: '',
-  password: ''
-})
+const loginForm = ref({ email: '', password: '' })
 const error = ref(null)
 const isLoading = ref(false)
 const showPassword = ref(false)
-const isActive = ref(false)
+const isOpen = ref(false)
+const backdropPressed = ref(false)
 
-// Methods
+const triggerRef = ref(null)
+const panelRef = ref(null)
+const emailRef = ref(null)
+
+const viewportWidth = ref(window.innerWidth)
+const isMobile = computed(() => viewportWidth.value <= MOBILE_BREAKPOINT)
+
+// Desktop: below the Login link, right edges aligned. Mobile: centred (CSS).
+const anchor = ref({ top: 0, right: 0 })
+const panelStyle = computed(() => isMobile.value
+  ? {}
+  : { top: `${anchor.value.top}px`, right: `${anchor.value.right}px` })
+
+function updateAnchor () {
+  viewportWidth.value = window.innerWidth
+  const rect = triggerRef.value?.getBoundingClientRect()
+  if (!rect) return
+  anchor.value = {
+    top: Math.round(rect.bottom + 8),
+    right: Math.max(8, Math.round(window.innerWidth - rect.right))
+  }
+}
+
+async function open () {
+  updateAnchor()
+  error.value = null
+  isOpen.value = true
+  await nextTick()
+  emailRef.value?.focus()
+}
+
+function close () {
+  isOpen.value = false
+  backdropPressed.value = false
+}
+
+function toggle () {
+  if (isOpen.value) close()
+  else open()
+}
+
+function onBackdropClick () {
+  if (backdropPressed.value) close()
+  backdropPressed.value = false
+}
+
+function onDocumentKeydown (event) {
+  if (isOpen.value && event.key === 'Escape') close()
+}
+
+onMounted(() => {
+  window.addEventListener('resize', updateAnchor)
+  document.addEventListener('keydown', onDocumentKeydown)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateAnchor)
+  document.removeEventListener('keydown', onDocumentKeydown)
+})
+
+// "Passwort vergessen?" and "Registrieren" navigate away.
+watch(() => route.fullPath, close)
+
 const handleLogin = async () => {
+  if (isLoading.value) return
+  if (!loginForm.value.email || !loginForm.value.password) {
+    error.value = 'Bitte E-Mail und Passwort eingeben.'
+    return
+  }
   try {
     isLoading.value = true
     error.value = null
-    
+
     const response = await AuthenticationService.login({
       email: loginForm.value.email,
       password: loginForm.value.password
@@ -129,24 +218,18 @@ const handleLogin = async () => {
 
     mainStore.setToken(response.data.token)
     mainStore.setUser(response.data.user)
-    
+
     loginForm.value = { email: '', password: '' }
     showNotification({
       message: 'Erfolgreich eingeloggt',
       type: 'success'
     })
-    
-    // Close dropdown after successful login
-    closeDropdown()
+    close()
   } catch (err) {
     error.value = apiErrorMessage(err)
   } finally {
     isLoading.value = false
   }
-}
-
-const closeDropdown = () => {
-  isActive.value = false
 }
 </script>
 
@@ -155,48 +238,39 @@ const closeDropdown = () => {
   position: relative;
 }
 
-.dropdown-content {
-  background-color: transparent!important;
+.login-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1000;
 }
 
-.enhanced-dropdown {
-  height: 100%;
+.login-panel {
+  position: fixed;
+  z-index: 1001;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 
-  :deep(.o-drop__menu) {
-    padding: 0;
-    border-radius: 12px;
-    border: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    overflow: visible;
-    flex-grow: 0;
-    flex-shrink: 0;
-    height: auto;
-    z-index: 1001 !important;
-    width: auto!important;
-    
-    @media (max-width: 768px) {
-      position: fixed !important;
-      top: 50% !important;
-      left: 50% !important;
-      transform: translate(-50%, -50%) !important;
-      width: auto !important;
-      max-width: 320px;
-      margin: 0 !important;
-    }
+  // Mobile: centred dialog.
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100vw - 32px);
+  max-width: 340px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+
+  &--anchored {
+    left: auto;
+    transform: none;
+    width: 320px;
   }
 }
 
 .login-card {
-  width: 300px;
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  
-  @media (max-width: 768px) {
-    width: 100%;
-    max-width: 320px;
-    margin: 0 auto;
-  }
 }
 
 .login-header {
@@ -205,20 +279,20 @@ const closeDropdown = () => {
   padding: 1.5rem;
   text-align: center;
   position: relative;
-  
+
   h3 {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 600;
     color: white;
   }
-  
+
   p {
     margin: 0.5rem 0 0;
     opacity: 0.9;
     font-size: 0.9rem;
   }
-  
+
   .close-button {
     position: absolute;
     top: 10px;
@@ -226,21 +300,19 @@ const closeDropdown = () => {
     background: transparent;
     border: none;
     color: white;
-    font-size: 1.2rem;
     cursor: pointer;
     width: 30px;
     height: 30px;
+    padding: 0;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background-color 0.3s;
-    
-    &:hover {
+
+    &:hover,
+    &:focus-visible {
       background-color: rgba(255, 255, 255, 0.2);
-    }
-    
-    &:focus {
       outline: none;
     }
   }
@@ -248,10 +320,10 @@ const closeDropdown = () => {
 
 .login-form {
   padding: 1.5rem;
-  
+
   .form-group {
     margin-bottom: 1.2rem;
-    
+
     label {
       display: block;
       margin-bottom: 0.5rem;
@@ -260,25 +332,28 @@ const closeDropdown = () => {
       font-size: 0.9rem;
     }
   }
-  
+
   .input-wrapper {
     position: relative;
-    
+
     input {
       width: 100%;
-      padding: 20px 20px 20px 40px;
+      margin: 0;
+      padding: 12px 40px 12px 40px;
       border: 1px solid #ddd;
       border-radius: 8px;
-      font-size: 0.9rem;
-      transition: all 0.3s;
-      
+      background: #fafafa;
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+
       &:focus {
+        background: #fff;
         border-color: #6e8efb;
         box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.2);
         outline: none;
       }
     }
-    
+
     .icon-wrapper {
       position: absolute;
       left: 12px;
@@ -290,23 +365,29 @@ const closeDropdown = () => {
       justify-content: center;
       width: 16px;
       height: 16px;
+      pointer-events: none;
     }
-    
+
     .toggle-password {
       position: absolute;
-      right: 12px;
+      right: 8px;
       top: 50%;
       transform: translateY(-50%);
       color: #aaa;
+      background: transparent;
+      border: none;
+      padding: 0;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 16px;
-      height: 16px;
-      
-      &:hover {
+      width: 28px;
+      height: 28px;
+
+      &:hover,
+      &:focus-visible {
         color: #6e8efb;
+        outline: none;
       }
     }
   }
@@ -315,12 +396,12 @@ const closeDropdown = () => {
 .forgot-password {
   text-align: right;
   margin-bottom: 1.2rem;
-  
+
   a {
     color: #6e8efb;
     font-size: 0.8rem;
     text-decoration: none;
-    
+
     &:hover {
       text-decoration: underline;
     }
@@ -329,6 +410,7 @@ const closeDropdown = () => {
 
 .login-submit-button {
   width: 100%;
+  min-height: 42px;
   padding: 10px;
   background: linear-gradient(135deg, #6e8efb, #a777e3);
   color: white;
@@ -337,26 +419,22 @@ const closeDropdown = () => {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
-  
+  transition: box-shadow 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   &:hover {
     box-shadow: 0 5px 15px rgba(110, 142, 251, 0.4);
     background: linear-gradient(135deg, #4e6ecb, #a777e3);
   }
-  
-  &:active {
-    transform: translateY(0);
-  }
-  
+
   &:disabled {
     background: #ccc;
     cursor: not-allowed;
-    transform: none;
     box-shadow: none;
   }
-  
+
   .spinner {
     display: inline-block;
     width: 20px;
@@ -365,22 +443,6 @@ const closeDropdown = () => {
     border-radius: 50%;
     border-top-color: white;
     animation: spin 1s ease-in-out infinite;
-  }
-  
-  .button-glow {
-    position: absolute;
-    width: 50px;
-    height: 100%;
-    top: 0;
-    left: -100px;
-    background: linear-gradient(
-      to right,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.3) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    animation: glow 2s infinite;
-    pointer-events: none;
   }
 }
 
@@ -396,43 +458,25 @@ const closeDropdown = () => {
   margin-top: 1.5rem;
   font-size: 0.9rem;
   color: #666;
-  
+
   a {
     color: #6e8efb;
     font-weight: 500;
     text-decoration: none;
-    
+
     &:hover {
       text-decoration: underline;
     }
   }
 }
 
-.dropdown-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-}
-
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-@keyframes glow {
-  0% { left: -100px; }
-  100% { left: 100%; }
-}
-
-// Mobile responsiveness
 @media (max-width: 768px) {
-  .login-form {
-    .input-wrapper input {
-      font-size: 16px; /* Prevents iOS zoom on input focus */
-    }
+  .login-form .input-wrapper input {
+    font-size: 16px; /* Prevents iOS zoom on input focus */
   }
 }
-</style> 
+</style>

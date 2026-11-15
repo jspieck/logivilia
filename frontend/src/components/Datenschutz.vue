@@ -20,8 +20,8 @@
       </li>
       <li>
         <strong>Im Browser:</strong> Ihre Anmeldung (ein Token und Ihr Benutzerprofil) liegt im <em>sessionStorage</em> und wird beim
-        Schließen des Tabs gelöscht. Im <em>localStorage</em> merken wir uns, ob Sie den Cookie-Hinweis bestätigt haben, und Ihre
-        Sprache. Logivilia setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analysedienste.
+        Schließen des Tabs gelöscht. Im <em>localStorage</em> merken wir uns, ob Sie den Cookie-Hinweis bestätigt haben, Ihre
+        Sprache und das zuletzt geöffnete Rätsel (Nummer, Art und Name, für „Weiterspielen“ auf der Startseite). Logivilia setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analysedienste.
       </li>
     </ul>
 

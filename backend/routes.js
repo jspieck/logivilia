@@ -8,6 +8,7 @@ const CommentUpvoteController = require('./controllers/CommentUpvoteController')
 const isAuthenticated = require('./policies/isAuthenticated');
 const isVerified = require('./policies/isVerified');
 const RankingController = require('./controllers/RankingController');
+const HomeController = require('./controllers/HomeController');
 const rateLimit = require('./policies/rateLimit');
 const AdminController = require('./controllers/AdminController');
 
@@ -135,6 +136,10 @@ module.exports = () => {
   router.delete('/puzzles/:puzzleId/rating',
     isAuthenticated,
     PuzzleController.unrate);
+
+  // Start page: counts, puzzle of the day, popular puzzles, top players
+  router.get('/home',
+    HomeController.index);
 
   // Rankings Route
   router.get('/rankings',

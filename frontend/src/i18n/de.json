@@ -25,6 +25,7 @@
     "SOLUTION_SAVE_FAILED": "Die Lösung konnte nicht gespeichert werden.",
     "USER_NOT_FOUND": "Benutzer nicht gefunden.",
     "RANKING_FETCH_FAILED": "Die Bestenliste konnte nicht geladen werden.",
+    "HOME_FETCH_FAILED": "Die Startseite konnte nicht geladen werden.",
     "RATING_INVALID": "Die Bewertung muss zwischen 1 und 5 liegen.",
     "RATING_LIST_FAILED": "Die Bewertungen konnten nicht geladen werden.",
     "RATING_FETCH_FAILED": "Die Bewertung konnte nicht geladen werden.",
