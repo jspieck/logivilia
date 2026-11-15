@@ -6,3 +6,46 @@ h3 {
     font-size: 18px;
     margin-bottom: 5px;
 }
+/* Overview pages (nonogram, linelog, logical) fill the content column.
+   .bodyContainer is a flex row, so without this the table shrinks to its
+   content. */
+.overviewPage {
+  width: 100%;
+}
+
+/* Oruga theme: use the old Buefy purple instead of the theme's olive green
+   (current page in table pagination, primary buttons, ...). */
+:root {
+  --oruga-primary: #7957d5;
+  --oruga-variant-primary: #7957d5;
+}
+
+/* Oruga 0.9 renders the pagination links as <button>, which the theme does
+   not reset: without this they get the browser's grey background and 13px
+   system font. Styled like the Bulma pagination the Buefy tables had. */
+.o-pag__btn {
+  font: inherit;
+  font-size: 0.9rem;
+  background-color: #fff;
+  color: #363636;
+  min-width: 2.5em;
+  height: 2.5em;
+}
+.o-pag__btn:hover {
+  border-color: #b5b5b5;
+}
+.o-pag__btn--current {
+  background-color: #7957d5;
+  border-color: #7957d5;
+  color: #fff;
+}
+.o-pag__btn--disabled {
+  background-color: #dbdbdb;
+  border-color: #dbdbdb;
+  color: #7a7a7a;
+  opacity: 0.5;
+  box-shadow: none;
+}
+.o-pag__ellipsis {
+  color: #b5b5b5;
+}

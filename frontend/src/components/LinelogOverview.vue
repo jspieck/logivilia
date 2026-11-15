@@ -128,10 +128,6 @@ watch(() => route.query.search, (value) => {
 </script>
 
 <style lang="scss">
-.overviewPage {
-  width: 100%;
-}
-
 .navLink {
   color: inherit;
   text-decoration: none;
@@ -141,17 +137,4 @@ watch(() => route.query.search, (value) => {
   }
 }
 
-.autocomplete-input {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-  
-  &:focus {
-    outline: none;
-    border-color: #3273dc;
-  }
-}
 </style>
