@@ -322,7 +322,21 @@
     "clueHelp": "Click a clue to cross it off.",
     "clueDoneTitle": "Mark as done",
     "showRelations": "Show relations",
-    "relationsHelp": "Hover over a clue to highlight its values in the helper grid."
+    "relationsHelp": "Hover over a clue to highlight its values in the helper grid.",
+    "scale": "Scale",
+    "scaleShow": "Show scale",
+    "scaleHelp": "Drag values onto a slot – or tap a value, then a slot. Values on the same slot belong together. Drag back to the tray to remove. Only a scratch pad: the grid and the answer stay as they are.",
+    "scaleUnplaced": "Not placed yet",
+    "scaleAllPlaced": "Everything is placed.",
+    "scaleClear": "Clear scale",
+    "scaleClearConfirm": "Take all values off the scale?",
+    "scaleNotToScale": "Spacing not to scale (values are too close).",
+    "scalePlaceOn": "Put the selected value on {value}",
+    "scaleState": {
+      "ok": "holds",
+      "bad": "broken",
+      "open": "open"
+    }
   },
   "nonogram": {
     "colour": "Colour",

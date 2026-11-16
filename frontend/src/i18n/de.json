@@ -322,7 +322,21 @@
     "clueHelp": "Klick auf einen Hinweis streicht ihn ab.",
     "clueDoneTitle": "Als erledigt markieren",
     "showRelations": "Beziehungen anzeigen",
-    "relationsHelp": "Maus über einen Hinweis hebt seine Werte im Hilfsraster hervor."
+    "relationsHelp": "Maus über einen Hinweis hebt seine Werte im Hilfsraster hervor.",
+    "scale": "Skala",
+    "scaleShow": "Skala anzeigen",
+    "scaleHelp": "Einträge auf einen Wert ziehen – oder antippen und dann den Wert wählen. Was auf demselben Wert liegt, gehört zusammen. Zurück in die Ablage ziehen entfernt einen Eintrag. Nur ein Notizblock: Raster und Lösung bleiben unverändert.",
+    "scaleUnplaced": "Noch nicht platziert",
+    "scaleAllPlaced": "Alles platziert.",
+    "scaleClear": "Skala leeren",
+    "scaleClearConfirm": "Alle Einträge von der Skala nehmen?",
+    "scaleNotToScale": "Abstände nicht maßstäblich (Werte liegen zu dicht).",
+    "scalePlaceOn": "Ausgewählten Eintrag auf {value} legen",
+    "scaleState": {
+      "ok": "erfüllt",
+      "bad": "verletzt",
+      "open": "offen"
+    }
   },
   "nonogram": {
     "colour": "Farbe",

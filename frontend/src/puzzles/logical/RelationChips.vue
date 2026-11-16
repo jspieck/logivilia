@@ -123,7 +123,7 @@ const op = computed(() => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .relation {
   display: flex;
   align-items: center;

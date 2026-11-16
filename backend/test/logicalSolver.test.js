@@ -360,3 +360,51 @@ describe('seed formalisations (seed/logicalRules.js)', () => {
     assert.equal(Object.values(statuses).filter(s => s === 'unique').length, 42);
   });
 });
+
+describe('scale scratch pad (shared/puzzles/logicalScale.js)', () => {
+  let scale;
+  before(async () => {
+    scale = await import('../../shared/puzzles/logicalScale.js');
+  });
+  // Seiten: 80 85 100 105 120 (numeric, uneven gaps).
+  const attributes = [
+    { name: 'Titel', values: ['Inseln', 'Seen', 'Qi', 'Thai', 'Zen'] },
+    { name: 'Autor', values: ['Isso', 'Nguyen', 'Suzuki', 'Takeda', 'Umabe'] },
+    { name: 'Seiten', values: ['80', '85', '100', '105', '120'], ordered: 'numeric' }
+  ];
+  const takedaPlus5 = { clue: 1, type: 'differsBy', a: ref(1, 'Takeda'), b: ref(1, 'Suzuki'), by: 2, offset: 5 };
+  const zenAbs5 = { clue: 0, type: 'differsBy', a: ref(0, 'Zen'), b: ref(1, 'Nguyen'), by: 2, offset: 5, abs: true };
+  const thaiAfter100 = { clue: 4, type: 'after', a: ref(0, 'Thai'), b: ref(2, '100'), by: 2 };
+  const relations = [takedaPlus5, zenAbs5, thaiAfter100, { clue: 2, type: 'same', a: ref(0, 'Qi'), b: ref(1, 'Isso') }];
+
+  test('picks the relations along the category', () => {
+    assert.deepEqual(scale.scaleRelations(relations, 2), [takedaPlus5, zenAbs5, thaiAfter100]);
+    assert.deepEqual(scale.scaleRelations(relations, 1), []);
+  });
+
+  test('state follows the placement', () => {
+    assert.equal(scale.relationState(takedaPlus5, attributes, 2, {}), 'open');
+    assert.equal(scale.relationState(takedaPlus5, attributes, 2, { '1:Takeda': 3, '1:Suzuki': 2 }), 'ok');
+    assert.equal(scale.relationState(takedaPlus5, attributes, 2, { '1:Takeda': 4, '1:Suzuki': 2 }), 'bad');
+    // A value of the scale's own category is always placed.
+    assert.equal(scale.relationState(thaiAfter100, attributes, 2, { '0:Thai': 4 }), 'ok');
+    assert.equal(scale.relationState(thaiAfter100, attributes, 2, { '0:Thai': 0 }), 'bad');
+  });
+
+  test('possible slots: no partner 5 away rules out 120', () => {
+    assert.deepEqual(scale.possibleSlots(ref(0, 'Zen'), relations, attributes, 2, {}), [true, true, true, true, false]);
+    // Nguyen on 100: Zen must be on 105 (95 does not exist).
+    assert.deepEqual(scale.possibleSlots(ref(0, 'Zen'), relations, attributes, 2, { '1:Nguyen': 2 }), [false, false, false, true, false]);
+    assert.deepEqual(scale.possibleSlots(ref(0, 'Thai'), relations, attributes, 2, {}), [false, false, false, true, true]);
+    // No relation: anywhere.
+    assert.deepEqual(scale.possibleSlots(ref(0, 'Qi'), relations, attributes, 2, {}), [true, true, true, true, true]);
+  });
+
+  test('slot positions keep numeric gaps unless too tight', () => {
+    assert.deepEqual(scale.slotPositions(attributes[2]).positions, [0, 0.125, 0.5, 0.625, 1]);
+    assert.equal(scale.slotPositions(attributes[2]).toScale, true);
+    assert.deepEqual(scale.slotPositions(attributes[2], 0.2), { positions: [0, 0.25, 0.5, 0.75, 1], toScale: false });
+    const list = { name: 'Platz', values: ['b', 'a', 'c'], ordered: 'alpha' };
+    assert.deepEqual(scale.slotPositions(list).positions, [0.5, 0, 1]);
+  });
+});

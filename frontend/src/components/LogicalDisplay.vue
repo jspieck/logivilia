@@ -16,6 +16,7 @@ import DifficultyIndicator from './DifficultyIndicator.vue'
 import { useGridPointer } from '@/puzzles/engine/useGridPointer'
 import { useHistory } from '@/puzzles/engine/useHistory'
 import RelationChips from '@/puzzles/logical/RelationChips.vue'
+import RelationScale from '@/puzzles/logical/RelationScale.vue'
 import { categoryColor } from '@/puzzles/logical/categoryColors'
 
 const { t } = useI18n()
@@ -53,6 +54,11 @@ watch(showRelations, (on) => {
 })
 const focusClue = ref(null)
 
+// Skala scratch pad: one per ordered category, placement per category index.
+const scaleVisible = ref(true)
+const scaleCat = ref(null)
+const scalePlacements = ref({})
+
 const attributes = computed(() => props.logical.attributes || [])
 const n = computed(() => attributes.value.length)
 const m = computed(() => attributes.value[0]?.values.length || 0)
@@ -86,6 +92,14 @@ const hotValues = computed(() => {
   if (showRelations.value && focusClue.value !== null) relationsOf(focusClue.value).forEach(add)
   return keys
 })
+const orderedCats = computed(() => attributes.value
+  .map((a, i) => (a.ordered ? i : -1))
+  .filter(i => i >= 0))
+const activeScaleCat = computed(() => (orderedCats.value.includes(scaleCat.value) ? scaleCat.value : orderedCats.value[0]))
+const clearScale = () => {
+  if (!window.confirm(t('logical.scaleClearConfirm'))) return
+  scalePlacements.value = { ...scalePlacements.value, [activeScaleCat.value]: {} }
+}
 const isHotValue = (attrIndex, value) => hotValues.value.has(`${attrIndex}:${value}`)
 const attributeChipStyle = (attrIndex) => {
   if (!hasRelations.value) return null
@@ -159,6 +173,8 @@ const reset = () => {
   }
   attrInputs.value = inputs
   doneClues.value = new Set()
+  scalePlacements.value = {}
+  scaleCat.value = null
   measure()
 }
 
@@ -564,6 +580,49 @@ defineExpose({ checkSolution, tableVisible, attrInputs })
       </template>
     </section>
 
+    <section v-if="orderedCats.length" class="scale-section">
+      <div class="section-head">
+        <h3>{{ t('logical.scale') }}</h3>
+        <label class="toggle-container">
+          <span>{{ t('logical.scaleShow') }}</span>
+          <Toggle v-model="scaleVisible" />
+        </label>
+      </div>
+      <template v-if="scaleVisible">
+        <div class="scale-toolbar">
+          <div v-if="orderedCats.length > 1" class="tool-group" role="tablist">
+            <button
+              v-for="c in orderedCats"
+              :key="c"
+              class="tool labelled"
+              :class="{ active: activeScaleCat === c }"
+              role="tab"
+              :aria-selected="activeScaleCat === c"
+              @click="scaleCat = c"
+            >
+              <span class="scale-dot" :style="{ background: categoryColor(c).dot }" /><span>{{ attributes[c].name }}</span>
+            </button>
+          </div>
+          <div v-if="!solved" class="tool-group">
+            <button class="tool" :title="t('logical.scaleClear')" :aria-label="t('logical.scaleClear')" @click="clearScale">
+              <ion-icon name="refresh-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+        <RelationScale
+          :key="activeScaleCat"
+          :attributes="attributes"
+          :relations="logical.relations || []"
+          :cat="activeScaleCat"
+          :placement="scalePlacements[activeScaleCat] || {}"
+          :hot="hotValues"
+          :disabled="solved"
+          @update:placement="scalePlacements = { ...scalePlacements, [activeScaleCat]: $event }"
+        />
+        <p v-if="!solved" class="hint-text">{{ t('logical.scaleHelp') }}</p>
+      </template>
+    </section>
+
     <section class="solution-section">
       <h3>{{ t('logical.solution') }}</h3>
       <div class="solution-table">
@@ -784,6 +843,23 @@ h3 {
 
 .grid-section {
   margin-bottom: 28px;
+}
+
+.scale-section {
+  margin-bottom: 28px;
+}
+
+.scale-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+
+  .scale-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
 }
 
 .tool {

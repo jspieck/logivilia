@@ -102,8 +102,8 @@ export function orderKeys (attribute) {
   return keys.map((key, i) => ({ key, rank: rank[i] }));
 }
 
-/** Does the pair of ordered values (a, b) satisfy the relation? */
-function orderHolds (type, a, b, offset, abs, factor) {
+/** Does the pair of ordered values (a, b) satisfy the relation? ({ key, rank } from orderKeys) */
+export function orderHolds (type, a, b, offset, abs, factor) {
   switch (type) {
     case 'before': return a.key < b.key - EPS;
     case 'after': return a.key > b.key + EPS;
