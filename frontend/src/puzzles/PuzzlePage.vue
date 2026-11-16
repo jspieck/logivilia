@@ -17,6 +17,8 @@
           @solved="solvedNow = true"
         />
 
+        <component :is="puzzleType.adminPanel" v-if="puzzleType.adminPanel && canSeeSource" :puzzle-id="puzzle.id" />
+
         <div class="rating-section">
           <h3>{{ t('overview.rating') }}</h3>
           <StarRating v-if="store.isUserLoggedIn" :model-value="rating" :max="5" @update:model-value="saveRating" />
@@ -70,6 +72,9 @@ const alreadySolved = ref(false)
 const solvedNow = ref(false)
 
 const puzzleType = computed(() => getPuzzleType(puzzle.value.type))
+// Admins and the author may see the stored data (e.g. a logic puzzle's rules).
+const canSeeSource = computed(() => !!store.user &&
+  (store.user.role === 'Admin' || (puzzle.value.UserId != null && puzzle.value.UserId === store.user.id)))
 
 const notify = (message, variant = 'success') =>
   oruga.notification.open({ message, duration: 3000, variant, position: 'top-right' })

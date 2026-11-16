@@ -7,6 +7,8 @@
 //                     logged-in player, or only checks it for guests
 //   emits:  solved  - the player solved the puzzle
 // PuzzlePage.vue provides the rest of the page (title, rating, comments).
+// An optional adminPanel component (prop puzzleId) is shown below the board
+// to Admins and the puzzle's author.
 // Boards share pointer input, zoom and undo/redo via ./engine.
 
 import { defineAsyncComponent } from 'vue'
@@ -31,7 +33,8 @@ const ui = {
     overviewPath: '/logical-overview',
     legacyPath: '/logicalSolve/:id',
     // LogicalDisplay shows the title and intro itself.
-    showHeader: false
+    showHeader: false,
+    adminPanel: () => import('./logical/LogicalRulesPanel.vue')
   }
 }
 
@@ -39,7 +42,8 @@ export const puzzleTypes = Object.fromEntries(
   Object.entries(plugins).map(([type, plugin]) => [type, {
     ...plugin,
     ...ui[type],
-    component: defineAsyncComponent(ui[type].board)
+    component: defineAsyncComponent(ui[type].board),
+    adminPanel: ui[type].adminPanel ? defineAsyncComponent(ui[type].adminPanel) : null
   }])
 )
 

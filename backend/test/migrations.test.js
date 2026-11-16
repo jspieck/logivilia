@@ -187,3 +187,40 @@ test('new seed nonograms are added to an existing database once, owned by the Ad
   await User.destroy({ where: { id: [admin.id] } });
   await User.destroy({ where: { username: 'player' } });
 });
+
+test('seed logic puzzles get their formal rules once, edited ones stay', async () => {
+  const migration = require('../migrations/20261116-01-logical-rules');
+  const logicals = require('../seed/logicals.json');
+  const now = new Date();
+  const seed = name => {
+    const { name: _n, difficulty, date, UserId, ...data } = logicals.find(l => l.name === name);
+    return data;
+  };
+  const edited = seed('Masternix');
+  edited.clues = [...edited.clues, 'Ein neuer Hinweis, den es im Seed nicht gibt.'];
+  const rows = [
+    ['Kongress der Wissenschaft', seed('Kongress der Wissenschaft')],
+    ['Masternix', edited], // clue count differs: left alone
+    ['Asiatische Lektüre', seed('Asiatische Lektüre')] // data error: no rules
+  ];
+  await qi.bulkInsert('Puzzles', rows.map(([name, data]) => ({
+    type: 'logical', name, data: JSON.stringify(data), createdAt: now, updatedAt: now
+  })));
+  const read = async () => (await sequelize.query(
+    `SELECT name, data FROM Puzzles WHERE type = 'logical' AND name IN ('Kongress der Wissenschaft', 'Masternix', 'Asiatische Lektüre') ORDER BY id`,
+    { type: sequelize.QueryTypes.SELECT })).map(r => ({ name: r.name, data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data }));
+
+  await migration.up(qi);
+  await migration.up(qi); // idempotent
+  let [kongress, masternix, lektuere] = await read();
+  assert.equal(kongress.data.rules.length, 4);
+  assert.equal(kongress.data.attributes[2].ordered, 'numeric');
+  assert.equal(masternix.data.rules, undefined);
+  assert.equal(lektuere.data.rules, undefined);
+
+  await migration.down(qi);
+  [kongress] = await read();
+  assert.equal(kongress.data.rules, undefined);
+  assert.equal(kongress.data.attributes[2].ordered, undefined);
+  await qi.bulkDelete('Puzzles', { name: rows.map(([name]) => name) });
+});

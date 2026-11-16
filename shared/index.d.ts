@@ -59,7 +59,50 @@ export interface PuzzleBase {
 
 export interface LogicalAttribute {
   name: string;
+  /** Unordered categories: sorted alphabetically. Ordered: in their order. */
   values: string[];
+  /**
+   * Values have an order clues can use: 'numeric' (first number in the
+   * value), 'list' (the stored order, i.e. the author's row order) or
+   * 'alpha' (alphabetical).
+   */
+  ordered?: 'numeric' | 'list' | 'alpha' | boolean;
+}
+
+/** A value of a logic puzzle: category index and value text. */
+export interface LogicalRef {
+  attr: number;
+  value: string;
+}
+
+/** Inside an `exists` rule: the entity it is about. */
+export interface LogicalVarRef {
+  var: string;
+}
+
+/** A clue in formal form (shared/puzzles/logicalSolver.js). */
+export interface LogicalRule {
+  /** Index of the clue in `clues` this rule formalises (top-level rules only). */
+  clue?: number;
+  type: 'same' | 'notSame' | 'eitherOr' | 'note' |
+    'before' | 'after' | 'directlyBefore' | 'directlyAfter' | 'nextTo' | 'differsBy' | 'times' | 'sum' |
+    'anyOf' | 'allOf' | 'exists' | 'not';
+  a?: LogicalRef | LogicalVarRef;
+  b?: LogicalRef | LogicalVarRef;
+  /** eitherOr: a belongs to b or to c, not both. sum: a + b = c. */
+  c?: LogicalRef | LogicalVarRef;
+  /** Ordered relations: index of the ordered category compared. */
+  by?: number;
+  /** differsBy: a's value = b's value + offset. */
+  offset?: number;
+  /** differsBy: the difference may go either way. */
+  abs?: boolean;
+  /** times: a's value = b's value x factor. */
+  factor?: number;
+  /** Groups: anyOf, allOf, exists (all must hold for X), not (one rule). */
+  rules?: LogicalRule[];
+  /** exists: the name used in { var } references. */
+  var?: string;
 }
 
 /** Stored `data` of each type (what creators send, including the solution). */
@@ -89,6 +132,8 @@ export interface PuzzleData {
     /** One row per value of the first attribute, that value in column 0. */
     solution: string[][];
     image?: string | null;
+    /** Formal clues (optional, not sent to players). */
+    rules?: LogicalRule[];
   };
 }
 
@@ -104,7 +149,7 @@ export interface PublicPuzzleData {
     /** Colour of every numbered cell (stored encoding), 0 elsewhere. */
     informationColors: ColorGrid;
   };
-  logical: Omit<PuzzleData['logical'], 'solution'>;
+  logical: Omit<PuzzleData['logical'], 'solution' | 'rules'>;
 }
 
 /** What each type accepts as an answer (`{ answer }` in the request body). */
@@ -176,10 +221,11 @@ export interface PuzzleTypePlugin<T extends PuzzleType> {
 
 /**
  * How hard a puzzle is to solve: 'line' = each row and column alone,
+ * 'elimination' = logic puzzles: plain elimination from the rules,
  * 'contradiction' = assume one cell and follow the lines until a clash,
  * 'search' = needs guessing (or has no or several solutions).
  */
-export type SolveTechnique = 'line' | 'contradiction' | 'search';
+export type SolveTechnique = 'line' | 'elimination' | 'contradiction' | 'search';
 
 export interface SolveResult<T extends PuzzleType> {
   solutions: PuzzleAnswer[T][];

@@ -93,8 +93,8 @@
                     class="avatarImg"
                     src="@/assets/bear.svg"
                   >
-                  <p>
-                    {{ t('nav.welcome', { name: currentUser?.username }) }}
+                  <p :title="t('nav.welcome', { name: currentUser?.username })">
+                    {{ currentUser?.username }}
                   </p>
                 </router-link>
 
@@ -111,7 +111,7 @@
           </nav>
         </div>
       </div>
-      <div class="body">
+      <div ref="bodyRef" class="body">
         <div v-if="needsVerification" class="verify-banner" role="status">
           {{ t('banner.verify') }}
           <button class="button is-primary is-small" :disabled="resendBusy" @click="resendVerification">{{ t('banner.resend') }}</button>
@@ -191,8 +191,21 @@ const onNavClick = (event) => {
 const onDocumentClick = (event) => {
   if (menuOpen.value && navRef.value && !navRef.value.contains(event.target)) menuOpen.value = false
 }
-onMounted(() => document.addEventListener('click', onDocumentClick))
-onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
+// Width of .body's scrollbar (0 for overlay scrollbars); see .header.
+const bodyRef = ref(null)
+const measureScrollbar = () => {
+  const el = bodyRef.value
+  if (el) document.documentElement.style.setProperty('--scrollbar-width', `${el.offsetWidth - el.clientWidth}px`)
+}
+onMounted(() => {
+  document.addEventListener('click', onDocumentClick)
+  window.addEventListener('resize', measureScrollbar)
+  measureScrollbar()
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocumentClick)
+  window.removeEventListener('resize', measureScrollbar)
+})
 watch(() => route.fullPath, () => { menuOpen.value = false })
 
 const mainStore = useMainStore()
@@ -292,19 +305,28 @@ h2 {
   flex-grow: 1;
   flex-shrink: 1;
   overflow-y: scroll; /* Only this element should scroll */
+  scrollbar-gutter: stable;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='%23f1f1f1' stroke-width='1'%3E%3Cpath d='M769 229L1037 260.9M927 880L731 737 520 660 309 538 40 599 295 764 126.5 879.5 40 599-197 493 102 382-31 229 126.5 79.5-69-63'/%3E%3Cpath d='M-31 229L237 261 390 382 603 493 308.5 537.5 101.5 381.5M370 905L295 764'/%3E%3Cpath d='M520 660L578 842 731 737 840 599 603 493 520 660 295 764 309 538 390 382 539 269 769 229 577.5 41.5 370 105 295 -36 126.5 79.5 237 261 102 382 40 599 -69 737 127 880'/%3E%3Cpath d='M520-140L578.5 42.5 731-63M603 493L539 269 237 261 370 105M902 382L539 269M390 382L102 382'/%3E%3Cpath d='M-222 42L126.5 79.5 370 105 539 269 577.5 41.5 927 80 769 229 902 382 603 493 731 737M295-36L577.5 41.5M578 842L295 764M40-201L127 80M102 382L-261 269'/%3E%3C/g%3E%3Cg fill='%23b3d2f4'%3E%3Ccircle cx='769' cy='229' r='5'/%3E%3Ccircle cx='539' cy='269' r='5'/%3E%3Ccircle cx='603' cy='493' r='5'/%3E%3Ccircle cx='731' cy='737' r='5'/%3E%3Ccircle cx='520' cy='660' r='5'/%3E%3Ccircle cx='309' cy='538' r='5'/%3E%3Ccircle cx='295' cy='764' r='5'/%3E%3Ccircle cx='40' cy='599' r='5'/%3E%3Ccircle cx='102' cy='382' r='5'/%3E%3Ccircle cx='127' cy='80' r='5'/%3E%3Ccircle cx='370' cy='105' r='5'/%3E%3Ccircle cx='578' cy='42' r='5'/%3E%3Ccircle cx='237' cy='261' r='5'/%3E%3Ccircle cx='390' cy='382' r='5'/%3E%3C/g%3E%3C/svg%3E");
-  width: 100vw;
+  width: 100%;
 }
 
 .header {
+  // The page below scrolls inside .body, whose scrollbar takes width from
+  // its content. The same room is left free here so header and page line up.
+  padding-right: var(--scrollbar-width, 0px);
   background: #fff;
   flex-grow: 0;
   flex-shrink: 0; /* Prevent header from shrinking */
 }
 
+// Header, banner and page share one width so they line up.
+:root {
+  --page-width: 1200px;
+}
+
 .headerContainer, .bodyContainer {
-  max-width: 1000px;
-  width: 90%;
+  max-width: var(--page-width);
+  width: calc(100% - 48px);
   padding: 0;
   margin: auto;
 }
@@ -421,8 +443,9 @@ input:focus {
 }
 
 .verify-banner {
-  max-width: 1000px;
-  width: 90%;
+  max-width: var(--page-width);
+  width: calc(100% - 48px);
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 0.6rem 1rem;
   background: #fff8e1;
@@ -611,6 +634,35 @@ html {
   p {
     margin: 0;
     font-weight: 500;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// Between the burger breakpoint and the full page width the desktop navbar
+// has to squeeze into less room.
+@media (min-width: 1024px) and (max-width: 1250px) {
+  .navbar .navbar-item, .navbar .navbar-link {
+    padding-left: 0.45rem;
+    padding-right: 0.45rem;
+  }
+
+  .navbar .navbar-link:not(.is-arrowless) {
+    padding-right: 1.9em;
+  }
+
+  .navbar .navbar-item.has-dropdown {
+    padding: 0;
+  }
+
+  .user-profile-link p {
+    max-width: 100px;
+  }
+
+  .language-switch > ion-icon {
+    display: none;
   }
 }
 

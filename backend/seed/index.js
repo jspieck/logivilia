@@ -22,7 +22,10 @@ const { importLegacy } = require('../utils/legacyPuzzles');
 
 // The seed files keep the old per-type shape; importLegacy converts them the
 // same way scripts/migrateToPuzzles.js converts a live database.
-const logicals = require('./logicals.json');
+const { formalize } = require('./logicalRules');
+// Seed logicals with their formal rules (seed/logicalRules.js), as migration
+// 20261116-01 adds them to an existing database.
+const logicals = require('./logicals.json').map(l => (formalize(l.name, l) || { data: l }).data);
 const nonograms = require('./nonograms.json');
 const linelogs = require('./linelogs.json');
 const users = require('./users.json');

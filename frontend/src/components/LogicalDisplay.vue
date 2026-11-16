@@ -1,190 +1,271 @@
 <script setup>
+// Logic grid puzzle: story, clues, the helper grid and the answer table.
+//
+// Helper grid layout (n categories, m values each, B = n - 1 blocks):
+//   columns: categories 1 .. n-1, left to right
+//   rows:    category 0, then n-1, n-2, ..., 2 (top to bottom)
+// so every pair of categories meets in exactly one block, and the blocks
+// form a staircase: block row r has B - r blocks.
+// The grid is only a scratch pad for the player; the answer is the table.
+
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Toggle from './Toggle.vue'
 import MySelect from './MySelect.vue'
 import DifficultyIndicator from './DifficultyIndicator.vue'
+import { useGridPointer } from '@/puzzles/engine/useGridPointer'
+import { useHistory } from '@/puzzles/engine/useHistory'
 
 const { t } = useI18n()
 const props = defineProps({
-    logical: {
-        type: Object,
-        required: true
-    },
-    isPreview: {
-        type: Boolean,
-        default: false
-    },
-    solved: {
-        type: Boolean,
-        default: false
-    }
+  logical: { type: Object, required: true },
+  isPreview: { type: Boolean, default: false },
+  solved: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['update:solution', 'solution-check', 'solution-update'])
+const emit = defineEmits(['solution-check', 'solution-update'])
+
+const EMPTY = 0
+const NO = 1
+const YES = 2
 
 const tableVisible = ref(true)
-const selectedColor = ref(0)
-const colors = ref(["#fff", "#777", "#fff"])
+const tool = ref(YES)
+const autoCross = ref(true)
 const attrInputs = ref({})
+const doneClues = ref(new Set())
+const cellSize = ref(28)
+const grid = ref([])
+const hover = ref(null)
+const history = useHistory()
 
-const horizontalLabelsRef = ref(null);
-const verticalLabelsRef = ref(null);
+const attributes = computed(() => props.logical.attributes || [])
+const n = computed(() => attributes.value.length)
+const m = computed(() => attributes.value[0]?.values.length || 0)
+const blocks = computed(() => Math.max(n.value - 1, 0))
+const size = computed(() => blocks.value * m.value)
+const blockPx = computed(() => m.value * cellSize.value)
 
-const revertHistory = ref([]);
-const revertIndex = ref(0);
-const gridState = ref([]);
-const gridStateCopy = ref([]);
-const cellWidth = ref(25);
-const paddingLeft = ref(100);
-const paddingTop = ref(80);
-const isSolved = ref(false);
+// Category shown in block column c / block row r.
+const colAttr = c => c + 1
+const rowAttr = r => (r === 0 ? 0 : n.value - r)
+const columnAttributes = computed(() => Array.from({ length: blocks.value }, (_, c) => attributes.value[colAttr(c)]))
+const rowAttributes = computed(() => Array.from({ length: blocks.value }, (_, r) => attributes.value[rowAttr(r)]))
 
-const startMouseDown = ref([0, 0]);
-const lastMouseOver = ref([0, 0]);
-const isMouseDown = ref(false);
+const isValid = (x, y) => Math.floor(x / m.value) + Math.floor(y / m.value) < blocks.value
+const idx = (x, y) => y * size.value + x
+// Number of cells in grid row y / column x (the staircase).
+const rowLength = y => (blocks.value - Math.floor(y / m.value)) * m.value
+const colLength = x => (blocks.value - Math.floor(x / m.value)) * m.value
 
-const numAttrValues = computed(() => props.logical.attributes[0].values.length);
-const numAttributes = computed(() => props.logical.attributes.length);
-const blockWidth = computed(() => numAttrValues.value * cellWidth.value);
-const svgWidth = computed(() => paddingLeft.value + 20 + (numAttributes.value - 1) * blockWidth.value);
-const svgHeight = computed(() => paddingTop.value + 20 + (numAttributes.value - 1) * blockWidth.value);
+const validCells = computed(() => {
+  const cells = []
+  for (let y = 0; y < size.value; y++) {
+    for (let x = 0; x < rowLength(y); x++) cells.push({ x, y, i: idx(x, y) })
+  }
+  return cells
+})
 
-const setPadding = () => {
-    nextTick(() => {
-    if (!horizontalLabelsRef.value || !verticalLabelsRef.value) {
-        console.log("Refs not available yet");
-        return;
-    }
+// --- Label measurement -------------------------------------------------
+const NAME_BAND = 22
+const LABEL_GAP = 8
+const leftLabelRefs = ref([])
+const topLabelRefs = ref([])
+const leftLabelWidth = ref(70)
+const topLabelHeight = ref(60)
+const padLeft = computed(() => NAME_BAND + leftLabelWidth.value + LABEL_GAP)
+const padTop = computed(() => NAME_BAND + topLabelHeight.value + LABEL_GAP)
+const svgWidth = computed(() => padLeft.value + size.value * cellSize.value + 2)
+const svgHeight = computed(() => padTop.value + size.value * cellSize.value + 2)
 
-    // Calculate maximum width of horizontal labels
-    let maxHorizontalWidth = 0;
-    horizontalLabelsRef.value.forEach(label => {
-        if (label) {
-        const bbox = label.getBBox();
-        maxHorizontalWidth = Math.max(maxHorizontalWidth, bbox.width);
-        }
-    });
+const measure = () => nextTick(() => {
+  const widest = list => list.reduce((w, el) => (el ? Math.max(w, el.getBBox().width) : w), 0)
+  leftLabelWidth.value = Math.max(Math.ceil(widest(leftLabelRefs.value)), 30)
+  topLabelHeight.value = Math.max(Math.ceil(widest(topLabelRefs.value)), 30)
+})
 
-    // Calculate maximum width of vertical labels
-    let maxVerticalWidth = 0;
-    verticalLabelsRef.value.forEach(label => {
-        if (label) {
-        const bbox = label.getBBox();
-        maxVerticalWidth = Math.max(maxVerticalWidth, bbox.height);
-        }
-    });
-
-    // Add padding with larger buffer space
-    paddingLeft.value = Math.max(maxHorizontalWidth + 20, 80);
-    paddingTop.value = Math.max(maxVerticalWidth + 20, 80);
-    });
-};
-
-// Initialize grid state with empty cells (white)
-const initializeGridState = () => {
-    if (!props.logical?.attributes?.length) {
-        console.log("Logical data not ready yet")
-        return
-    }
-
-    const totalCells = computed(() => {
-        let total = 0
-        const numAttributes = props.logical.attributes.length
-        const numAttrValues = props.logical.attributes[0].values.length
-        
-        for (let i = 0; i < numAttributes - 1; i++) {
-            total += (numAttributes - 1 - i) * numAttrValues * numAttrValues
-        }
-        return total
-    })
-    
-    gridState.value = new Array(totalCells.value).fill(2) // 2 represents white/empty cell
-    gridStateCopy.value = [...gridState.value]
-    console.log("Initialized gridState with size:", totalCells.value)
+// --- State ---------------------------------------------------------------
+const reset = () => {
+  grid.value = new Array(size.value * size.value).fill(EMPTY)
+  history.reset(grid.value)
+  const inputs = {}
+  for (let i = 0; i < m.value; i++) {
+    for (let j = 0; j < n.value - 1; j++) inputs[`${i}_${j}`] = null
+  }
+  attrInputs.value = inputs
+  doneClues.value = new Set()
+  measure()
 }
 
-// Initialize attribute inputs
-const initializeAttrInputs = () => {
-  if (!props.logical?.attributes?.length) {
-    console.log("Logical data not ready for attrInputs initialization")
-    return
-  }
+watch(() => props.logical, (value) => {
+  if (value?.attributes?.length) reset()
+}, { immediate: true })
 
-  const numValues = props.logical.attributes[0].values.length
-  const numAttributes = props.logical.attributes.length
+watch(tableVisible, visible => { if (visible) measure() })
 
-  // Initialize all possible combinations
-  for (let i = 0; i < numValues; i++) {
-    for (let j = 0; j < numAttributes - 1; j++) {
-      attrInputs.value[`${i}_${j}`] = null
-    }
+watch([grid, attrInputs], () => {
+  emit('solution-update', { gridState: grid.value, attrInputs: attrInputs.value })
+}, { deep: true })
+
+// --- Painting ------------------------------------------------------------
+let snapshot = null
+let start = null
+let paint = YES
+
+const setCell = (cells, x, y, value) => {
+  if (!isValid(x, y)) return
+  cells[idx(x, y)] = value
+  if (value !== YES || !autoCross.value) return
+  // A "yes" rules out every other value of both categories in this block.
+  const bx = Math.floor(x / m.value) * m.value
+  const by = Math.floor(y / m.value) * m.value
+  for (let k = 0; k < m.value; k++) {
+    if (bx + k !== x && cells[idx(bx + k, y)] === EMPTY) cells[idx(bx + k, y)] = NO
+    if (by + k !== y && cells[idx(x, by + k)] === EMPTY) cells[idx(x, by + k)] = NO
   }
-  console.log("Initialized attrInputs:", attrInputs.value)
 }
 
-// Update the watch to include attrInputs initialization
-watch(() => props.logical, (newValue) => {
-  if (newValue && newValue.attributes && newValue.attributes.length > 0) {
-    console.log("Logical data updated, reinitializing states")
-    nextTick(() => {
-      initializeGridState()
-      initializeAttrInputs()
-      setPadding()
-    })
+const paintRect = (to) => {
+  const cells = [...snapshot]
+  for (let y = Math.min(start.y, to.y); y <= Math.max(start.y, to.y); y++) {
+    for (let x = Math.min(start.x, to.x); x <= Math.max(start.x, to.x); x++) {
+      setCell(cells, x, y, paint)
+    }
   }
-}, { deep: true, immediate: true })
+  grid.value = cells
+}
 
-const getCellIndex = (i, j, k) => {
-    let index = 0;
-    for (let c = 0; c < i - 1; c++) {
-    index += numAttributes.value - 1 - c;
+// Grid "yes" marks in the top block row fill the answer table.
+const syncTable = () => {
+  for (let i = 0; i < m.value; i++) {
+    for (let x = 0; x < size.value; x++) {
+      const before = snapshot[idx(x, i)]
+      const now = grid.value[idx(x, i)]
+      if (before === now) continue
+      const key = `${i}_${Math.floor(x / m.value)}`
+      const value = attributes.value[colAttr(Math.floor(x / m.value))].values[x % m.value]
+      if (now === YES) attrInputs.value[key] = value
+      else if (before === YES && attrInputs.value[key] === value) attrInputs.value[key] = null
     }
-    return (index + j - 1) * numAttrValues.value * numAttrValues.value + (k - 1);
-};
+  }
+}
 
-const revertState = () => {
-    if (revertIndex.value > 0) {
-    revertIndex.value -= 1;
-    const state = revertHistory.value[revertIndex.value];
-    for (let b = state['x0']; b <= state['x1']; b++) {
-        for (let a = state['y0']; a <= state['y1']; a++) {
-        const [i, j, k] = toIJK(b, a);
-        if (i !== -1) {
-            const idx = getCellIndex(i, j, k);
-            gridState.value[idx] = state['colorsBefore'][b - state['x0']][a - state['y0']];
-        }
-        }
+const pointer = useGridPointer({
+  cellSize,
+  width: size,
+  height: size,
+  enabled: () => !props.solved,
+  onStart (cell, event) {
+    if (!isValid(cell.x, cell.y)) {
+      start = null
+      return
     }
-    }
-};
+    snapshot = [...grid.value]
+    start = cell
+    const wanted = event.button === 2 ? NO : tool.value
+    // Clicking a cell that already shows the tool's mark takes it back.
+    paint = wanted !== EMPTY && grid.value[idx(cell.x, cell.y)] === wanted ? EMPTY : wanted
+    paintRect(cell)
+  },
+  onMove (cell) {
+    if (start) paintRect(cell)
+  },
+  onEnd () {
+    if (!start) return
+    syncTable()
+    history.push(grid.value)
+    start = null
+    snapshot = null
+  }
+})
 
-const restoreState = () => {
-    if (revertIndex.value < revertHistory.value.length) {
-    const state = revertHistory.value[revertIndex.value];
-    for (let b = state['x0']; b <= state['x1']; b++) {
-        for (let a = state['y0']; a <= state['y1']; a++) {
-        const [i, j, k] = toIJK(b, a);
-        if (i !== -1) {
-            const idx = getCellIndex(i, j, k);
-            gridState.value[idx] = state['colorAfter'];
-        }
-        }
-    }
-    revertIndex.value += 1;
-    }
-};
+const gridHandlers = {
+  ...pointer.handlers,
+  pointermove (event) {
+    pointer.handlers.pointermove(event)
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = Math.floor((event.clientX - rect.left) / cellSize.value)
+    const y = Math.floor((event.clientY - rect.top) / cellSize.value)
+    hover.value = x >= 0 && y >= 0 && x < size.value && y < size.value && isValid(x, y) ? { x, y } : null
+  },
+  pointerleave () {
+    hover.value = null
+  }
+}
+
+const undo = () => {
+  const state = history.undo()
+  if (state) grid.value = state
+}
+const redo = () => {
+  const state = history.redo()
+  if (state) grid.value = state
+}
+const restart = () => {
+  if (!window.confirm(t('logical.restartConfirm'))) return
+  grid.value = new Array(size.value * size.value).fill(EMPTY)
+  history.push(grid.value)
+}
+
+const onKey = (event) => {
+  if (props.solved || !tableVisible.value) return
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target?.tagName)) return
+  if (!(event.ctrlKey || event.metaKey)) return
+  const key = event.key.toLowerCase()
+  if (key === 'z' && !event.shiftKey) { event.preventDefault(); undo() }
+  else if (key === 'y' || (key === 'z' && event.shiftKey)) { event.preventDefault(); redo() }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  measure()
+})
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+
+// --- Drawing -------------------------------------------------------------
+const thinPath = computed(() => {
+  const cs = cellSize.value
+  let d = ''
+  for (let y = 1; y < size.value; y++) {
+    if (y % m.value) d += `M0 ${y * cs}H${rowLength(y) * cs}`
+  }
+  for (let x = 1; x < size.value; x++) {
+    if (x % m.value) d += `M${x * cs} 0V${colLength(x) * cs}`
+  }
+  return d
+})
+
+const thickPath = computed(() => {
+  const b = blockPx.value
+  let d = ''
+  for (let r = 0; r <= blocks.value; r++) d += `M0 ${r * b}H${(blocks.value - Math.max(r - 1, 0)) * b}`
+  for (let c = 0; c <= blocks.value; c++) d += `M${c * b} 0V${(blocks.value - Math.max(c - 1, 0)) * b}`
+  return d
+})
+
+const crossPath = computed(() => {
+  const p = Math.round(cellSize.value * 0.28)
+  const q = cellSize.value - p
+  return `M${p} ${p}L${q} ${q}M${p} ${q}L${q} ${p}`
+})
+
+// --- Clues & answer ------------------------------------------------------
+const toggleClue = (i) => {
+  const next = new Set(doneClues.value)
+  next.has(i) ? next.delete(i) : next.add(i)
+  doneClues.value = next
+}
 
 // The player's table: one row per value of the first attribute (that value
 // in column 0), then the chosen value of each other attribute. The solution
 // is not sent to the browser; the server checks the table.
 const submittedTable = () =>
-  props.logical.attributes[0].values.map((label, i) => [
+  attributes.value[0].values.map((label, i) => [
     label,
-    ...props.logical.attributes.slice(1).map((_, j) => attrInputs.value[`${i}_${j}`])
+    ...attributes.value.slice(1).map((_, j) => attrInputs.value[`${i}_${j}`])
   ])
 
-const isTableComplete = (table) =>
+const isTableComplete = table =>
   table.every(row => row.every(cell => cell !== null && cell !== undefined && cell !== ''))
 
 // Emits ('solution-check', complete, table). The parent asks the server
@@ -194,597 +275,558 @@ const checkSolution = () => {
   emit('solution-check', isTableComplete(table), table)
 }
 
-const toXY = (i, j, k) => {
-    const x = (j - 1) * numAttrValues.value + Math.floor((k - 1) / numAttrValues.value);
-    const y = (i - 1) * numAttrValues.value + (k - 1) % numAttrValues.value;
-    return [x, y];
-};
+const tools = computed(() => [
+  { value: YES, icon: 'ellipse', label: t('logical.toolYes') },
+  { value: NO, icon: 'close', label: t('logical.toolNo') },
+  { value: EMPTY, icon: 'backspace-outline', label: t('logical.toolErase') }
+])
 
-const toIJK = (x, y) => {
-    const i = Math.floor(y / numAttrValues.value);
-    const j = Math.floor(x / numAttrValues.value);
-    if (j >= numAttributes.value - 1 - i) {
-    return [-1, -1, -1];
-    }
-    const k = (x % numAttrValues.value) * numAttrValues.value + (y % numAttrValues.value);
-    return [i + 1, j + 1, k + 1];
-};
-
-const mouseDown = (i, j, k) => {
-    if (!isSolved.value) {
-        isMouseDown.value = true;
-        const [x, y] = toXY(i, j, k);
-        startMouseDown.value = [x, y];
-        lastMouseOver.value = [x, y];
-        gridStateCopy.value = [...gridState.value];
-        gridState.value[cellIndex(i, j, k)] = selectedColor.value;
-    }
-};
-
-const mouseEnter = (i, j, k) => {
-    if (isMouseDown.value) {
-    const [i1, j1] = toXY(i, j, k);
-    const [i2, j2] = startMouseDown.value;
-    const [i3, j3] = lastMouseOver.value;
-
-    if (i1 !== i3) {
-        for (let x = Math.min(i1, i3); x <= Math.max(i1, i3); x++) {
-        for (let y = Math.min(j2, j3); y <= Math.max(j2, j3); y++) {
-            const [ni, nj, nk] = toIJK(x, y);
-            if (ni !== -1) {
-            const idx = cellIndex(ni, nj, nk);
-            gridState.value[idx] = gridStateCopy.value[idx];
-            }
-        }
-        }
-    }
-    if (j1 !== j3) {
-        for (let y = Math.min(j1, j3); y <= Math.max(j1, j3); y++) {
-        for (let x = Math.min(i2, i3); x <= Math.max(i2, i3); x++) {
-            const [ni, nj, nk] = toIJK(x, y);
-            if (ni !== -1) {
-            const idx = cellIndex(ni, nj, nk);
-            gridState.value[idx] = gridStateCopy.value[idx];
-            }
-        }
-        }
-    }
-
-    for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
-        for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
-        const [ni, nj, nk] = toIJK(a, b);
-        if (ni !== -1) {
-            gridState.value[cellIndex(ni, nj, nk)] = selectedColor.value;
-        }
-        }
-    }
-    lastMouseOver.value = [i1, j1];
-    }
-};
-
-const mainGridMouseUp = () => {
-    if (isMouseDown.value) {
-    const [i1, j1] = startMouseDown.value;
-    const [i2, j2] = lastMouseOver.value;
-    const stateBefore = [];
-    for (let a = Math.min(i1, i2); a <= Math.max(i1, i2); a++) {
-        const stateBeforeRow = [];
-        for (let b = Math.min(j1, j2); b <= Math.max(j1, j2); b++) {
-        const [ni, nj, nk] = toIJK(a, b);
-        if (ni !== -1) {
-            const idx = getCellIndex(ni, nj, nk);
-            stateBeforeRow.push(gridStateCopy.value[idx]);
-        }
-        }
-        stateBefore.push(stateBeforeRow);
-    }
-
-    const revertObj = {
-        'x0': Math.min(i1, i2),
-        'x1': Math.max(i1, i2),
-        'y0': Math.min(j1, j2),
-        'y1': Math.max(j1, j2),
-        'colorAfter': selectedColor.value,
-        'colorsBefore': stateBefore
-    };
-
-    if (revertIndex.value < revertHistory.value.length) {
-        revertHistory.value = revertHistory.value.slice(0, revertIndex.value);
-    }
-    revertHistory.value.push(revertObj);
-    revertIndex.value = revertHistory.value.length;
-    isMouseDown.value = false;
-    }
-};
-
-const drawOutline = () => {
-    let pathStr = `M0 0H${blockWidth.value * (numAttributes.value - 1)}`;
-    for (let i = 0; i < numAttributes.value - 1; i++) {
-    pathStr += `M0 ${blockWidth.value * (i + 1)}H${blockWidth.value * (numAttributes.value - 1 - i)}`;
-    }
-    pathStr += `M0 0V${blockWidth.value * (numAttributes.value - 1)}`;
-    for (let i = 0; i < numAttributes.value - 1; i++) {
-    pathStr += `M${blockWidth.value * (i + 1)} 0V${blockWidth.value * (numAttributes.value - 1 - i)}`;
-    }
-    return pathStr;
-};
-
-const cellIndex = (i, j, k) => {
-    let index = 0;
-    for (let c = 0; c < i - 1; c++) {
-    index += numAttributes.value - 1 - c;
-    }
-    return (index + j - 1) * numAttrValues.value * numAttrValues.value + (k - 1);
-};
-
-const selectColor = (i) => {
-    selectedColor.value = i;
-};
-
-onMounted(() => {
-    tableVisible.value = true;
-    document.addEventListener("mouseup", mainGridMouseUp);
-    window.ondragstart = () => false;
-    setPadding();
-    initializeGridState();
-    window.onbeforeunload = () => t('puzzle.leaveConfirm');
-});
-
-onBeforeUnmount(() => {
-    document.removeEventListener("mouseup", mainGridMouseUp);
-});
-
-// Add solution update watcher
-watch([gridState, attrInputs], () => {
-    const currentState = {
-        gridState: gridState.value,
-        attrInputs: attrInputs.value
-    }
-    emit('solution-update', currentState)
-}, { deep: true })
-
-// Expose necessary methods and state
-defineExpose({
-    tableVisible,
-    selectedColor,
-    colors,
-    attrInputs,
-    // ... other necessary state
-    checkSolution,
-})
+defineExpose({ checkSolution, tableVisible, attrInputs })
 </script>
 
 <template>
-    <div class="puzzle-display">
-        <!-- Header -->
-        <div class="puzzle-header" v-if="logical != null">
-            <h1 class="puzzle-title">{{ logical.name }}</h1>
-            <DifficultyIndicator 
-                :difficulty="logical.difficulty"
-                :maxDifficulty="5"
-            />
-        </div>
-
-        <!-- Main Puzzle Area -->
-        <div class="puzzle-body" v-if="logical != null">
-            <!-- Image and Description -->
-            <div class="puzzle-intro">
-                <img v-if="logical.image" class="header-image" :src="logical.image" :alt="t('logical.headerImage')" width="320" />
-                <div class="description-section">
-                    <h3>{{ t('logical.description') }}</h3>
-                    <p>{{ logical.description }}</p>
-                    <div class="question">
-                        <strong>{{ logical.question }}</strong>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Clues Section -->
-            <div class="clues-section">
-                <h3>{{ t('logical.clues') }}</h3>
-                <ol class="clues-list">
-                    <li v-for="(clue, i) in logical.clues" :key="`clueActual${i}`" class="clue">
-                        {{ clue }}
-                    </li>
-                </ol>
-            </div>
-
-            <!-- Attributes Section -->
-            <div class="attributes-section">
-                <h3>{{ t('logical.attributes') }}</h3>
-                <ul class="attributes-list">
-                    <li v-for="(attr, i) in logical.attributes" :key="`realAtr${i}`">
-                        <div class="attribute-row">
-                            <strong>{{ attr.name }}: </strong>
-                            <span v-for="(v, j) in attr.values" :key="`realAt${j}`">
-                                {{ v }}<span v-if="j != attr.values.length - 1">, </span>
-                            </span>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Solution Section -->
-            <div class="solution-section">
-                <h3>{{ t('logical.solution') }}</h3>
-                <div class="solution-container">
-                    <!-- Toggle for Extended Table -->
-                    <div class="toggle-container">
-                        <label>{{ t('logical.showTable') }}</label>
-                        <Toggle class="solution-toggle" v-model="tableVisible" />
-                    </div>
-
-                    <!-- Extended Table -->
-                    <div v-if="tableVisible" class="extended-table">
-                        <!-- Color Controls -->
-                        <div class="color-controls">
-                            <svg id="colors" height="50" width="150">
-                                <g v-for="(color, i) in colors" :key="`color${i}`"
-                                    :transform="`translate(${5 + i * (cellWidth + 10)}, 5)`">
-                                    <rect :fill="color" stroke="black" :width="cellWidth" :height="cellWidth"
-                                        @click="selectColor(i)" />
-                                    <path v-if="i == 0" class="cross-path"
-                                        :d="`M5 5L${cellWidth - 5} ${cellWidth - 5}M5 ${cellWidth - 5}L${cellWidth - 5} 5`"
-                                        stroke="#565656" />
-                                    <rect v-if="selectedColor == i" fill="#f55656" :width="cellWidth" height="3"
-                                        :y="cellWidth + 4" />
-                                </g>
-                            </svg>
-                            <div class="control-buttons">
-                                <button class="control-button" @click="revertState">
-                                    <ion-icon class="rotate" v-pre name="return-up-back-outline"></ion-icon>
-                                </button>
-                                <button class="control-button" @click="restoreState">
-                                    <ion-icon v-pre name="refresh"></ion-icon>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Grid -->
-                        <div class="grid-container">
-                            <div class="solution-grid">
-                                <svg :width="svgWidth" :height="svgHeight">
-                                    <!-- Horizontal Labels -->
-                                    <g v-for="(attr, i) in logical.attributes.slice(0, 1).concat(logical.attributes.slice(2))"
-                                        :key="`hgroup${i}`" class="horizontal-text-group"
-                                        :transform="`translate(${paddingLeft - 15}, ${paddingTop + i * numAttrValues * cellWidth})`">
-                                        <text v-for="(val, j) in attr.values" :key="`htext${i}_${j}`"
-                                            ref="horizontalLabelsRef" x="0" :y="j * cellWidth + cellWidth / 2"
-                                            class="horizontal-label">{{ val }}</text>
-                                    </g>
-
-                                    <!-- Vertical Labels -->
-                                    <g v-for="(attr, i) in logical.attributes.slice(1)" :key="`vgroup${i}`"
-                                        class="vertical-text-group">
-                                        <text v-for="(val, j) in attr.values" :key="`vtext${i}_${j}`"
-                                            ref="verticalLabelsRef"
-                                            :x="paddingLeft + (i * numAttrValues + j) * cellWidth + cellWidth / 2"
-                                            :y="paddingTop - 15" style="writing-mode: tb;" class="vertical-label">{{ val
-                                            }}</text>
-                                    </g>
-                                    <g id="blockArea" :transform="`translate(${paddingLeft}, ${paddingTop})`">
-                                        <template v-for="i in numAttributes">
-                                            <g v-for="j in numAttributes - i" :key="`cblock${i}_${j}`"
-                                                :transform="`translate(${(j - 1) * blockWidth}, ${(i - 1) * blockWidth})`">
-                                                <g v-for="k in numAttrValues * numAttrValues" :key="`cell${k}`"
-                                                    :transform="`translate(${Math.floor((k - 1) / numAttrValues) * cellWidth}, ${((k - 1) % numAttrValues) * cellWidth})`">
-                                                    <rect :width="cellWidth" :height="cellWidth" class="blockGroups"
-                                                        :fill="colors[gridState[cellIndex(i, j, k)]]" stroke="#c5c5c5"
-                                                        @mousedown="mouseDown(i, j, k)"
-                                                        @mouseenter="mouseEnter(i, j, k)" />
-                                                    <path v-if="gridState[cellIndex(i, j, k)] == 0" class="crossPath"
-                                                        :d="`M5 5L${cellWidth - 5} ${cellWidth - 5}M5 ${cellWidth - 5}L${cellWidth - 5} 5`"
-                                                        stroke="#565656" />
-                                                </g>
-                                            </g>
-                                        </template>
-                                        <path stroke="black" stroke-width="1" :d="drawOutline()" />
-                                    </g>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Solution Table -->
-                    <div class="solution-table">
-                        <table class="data-table sortable">
-                            <thead>
-                                <tr>
-                                    <th v-for="attr in logical.attributes" :key="attr.name" scope="col">{{ attr.name }}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(v, i) in logical.attributes[0].values" :key="i">
-                                    <td scope="row">{{ v }}</td>
-                                    <td v-for="(attr, j) in logical.attributes.slice(1)" :key="j"
-                                        :data-title="attr.name">
-                                        <MySelect :options="logical.attributes[j + 1].values"
-                                            v-model="attrInputs[i + '_' + j]" />
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="logical" v-if="logical">
+    <div class="puzzle-header">
+      <h1 class="puzzle-title">{{ logical.name }}</h1>
+      <DifficultyIndicator :difficulty="logical.difficulty" :maxDifficulty="5" />
     </div>
+
+    <section class="puzzle-intro">
+      <img v-if="logical.image" class="header-image" :src="logical.image" :alt="t('logical.headerImage')" />
+      <div class="description-section">
+        <p class="description">{{ logical.description }}</p>
+        <p v-if="logical.question" class="question">{{ logical.question }}</p>
+      </div>
+    </section>
+
+    <div class="info-columns">
+      <section class="card clues-section">
+        <h3>{{ t('logical.clues') }}</h3>
+        <ol class="clues-list">
+          <li
+            v-for="(clue, i) in logical.clues"
+            :key="`clue${i}`"
+            class="clue"
+            :class="{ done: doneClues.has(i) }"
+            :title="t('logical.clueDoneTitle')"
+            @click="toggleClue(i)"
+          >
+            <span class="clue-number">{{ i + 1 }}</span>
+            <span class="clue-text">{{ clue }}</span>
+          </li>
+        </ol>
+        <p class="hint-text">{{ t('logical.clueHelp') }}</p>
+      </section>
+
+      <section class="card attributes-section">
+        <h3>{{ t('logical.attributes') }}</h3>
+        <dl class="attributes-list">
+          <template v-for="(attr, i) in attributes" :key="`attr${i}`">
+            <dt>{{ attr.name }}</dt>
+            <dd>
+              <span v-for="(v, j) in attr.values" :key="`attr${i}_${j}`" class="chip">{{ v }}</span>
+            </dd>
+          </template>
+        </dl>
+      </section>
+    </div>
+
+    <section class="grid-section">
+      <div class="section-head">
+        <h3>{{ t('logical.grid') }}</h3>
+        <label class="toggle-container">
+          <span>{{ t('logical.showTable') }}</span>
+          <Toggle v-model="tableVisible" />
+        </label>
+      </div>
+
+      <template v-if="tableVisible">
+        <div v-if="!solved" class="toolbar">
+          <div class="tool-group" role="radiogroup" :aria-label="t('logical.tool')">
+            <button
+              v-for="entry in tools"
+              :key="entry.value"
+              class="tool labelled"
+              :class="{ active: tool === entry.value, [`tool-${entry.value}`]: true }"
+              role="radio"
+              :aria-checked="tool === entry.value"
+              @click="tool = entry.value"
+            >
+              <ion-icon :name="entry.icon"></ion-icon><span>{{ entry.label }}</span>
+            </button>
+          </div>
+          <div class="tool-group">
+            <button class="tool" :title="t('logical.undo')" :disabled="!history.canUndo.value" @click="undo">
+              <ion-icon name="return-up-back-outline"></ion-icon>
+            </button>
+            <button class="tool" :title="t('logical.redo')" :disabled="!history.canRedo.value" @click="redo">
+              <ion-icon name="return-up-forward-outline"></ion-icon>
+            </button>
+            <button class="tool" :title="t('logical.restart')" @click="restart">
+              <ion-icon name="refresh-outline"></ion-icon>
+            </button>
+          </div>
+          <label class="tool-group auto-cross" :title="t('logical.autoCrossTitle')">
+            <input v-model="autoCross" type="checkbox" />
+            <span>{{ t('logical.autoCross') }}</span>
+          </label>
+        </div>
+
+        <div class="grid-area">
+          <svg class="logic-grid" :width="svgWidth" :height="svgHeight">
+            <!-- Category names -->
+            <g class="category-names">
+              <text
+                v-for="(attr, c) in columnAttributes"
+                :key="`cname${c}`"
+                :x="padLeft + c * blockPx + blockPx / 2"
+                :y="NAME_BAND / 2"
+                class="category-name"
+              >{{ attr.name }}</text>
+              <text
+                v-for="(attr, r) in rowAttributes"
+                :key="`rname${r}`"
+                class="category-name"
+                :transform="`translate(${NAME_BAND / 2}, ${padTop + r * blockPx + blockPx / 2}) rotate(-90)`"
+              >{{ attr.name }}</text>
+            </g>
+
+            <!-- Value labels: columns (rotated) and rows -->
+            <g class="value-labels">
+              <template v-for="(attr, c) in columnAttributes" :key="`cvals${c}`">
+                <text
+                  v-for="(val, j) in attr.values"
+                  :key="`cval${c}_${j}`"
+                  ref="topLabelRefs"
+                  class="top-label"
+                  :class="{ highlight: hover && hover.x === c * m + j }"
+                  :transform="`translate(${padLeft + (c * m + j) * cellSize + cellSize / 2}, ${padTop - LABEL_GAP}) rotate(-90)`"
+                >{{ val }}</text>
+              </template>
+              <template v-for="(attr, r) in rowAttributes" :key="`rvals${r}`">
+                <text
+                  v-for="(val, j) in attr.values"
+                  :key="`rval${r}_${j}`"
+                  ref="leftLabelRefs"
+                  class="left-label"
+                  :class="{ highlight: hover && hover.y === r * m + j }"
+                  :x="padLeft - LABEL_GAP"
+                  :y="padTop + (r * m + j) * cellSize + cellSize / 2"
+                >{{ val }}</text>
+              </template>
+            </g>
+
+            <g :transform="`translate(${padLeft + 1}, ${padTop + 1})`">
+              <!-- Block backgrounds, alternating -->
+              <template v-for="r in blocks" :key="`brow${r}`">
+                <rect
+                  v-for="c in blocks - r + 1"
+                  :key="`bg${r}_${c}`"
+                  class="block-bg"
+                  :class="{ alt: (r + c) % 2 === 1 }"
+                  :x="(c - 1) * blockPx"
+                  :y="(r - 1) * blockPx"
+                  :width="blockPx"
+                  :height="blockPx"
+                />
+              </template>
+
+              <!-- Hover crosshair -->
+              <g v-if="hover && !solved" class="hover-lines">
+                <rect :x="0" :y="hover.y * cellSize" :width="rowLength(hover.y) * cellSize" :height="cellSize" />
+                <rect :x="hover.x * cellSize" :y="0" :width="cellSize" :height="colLength(hover.x) * cellSize" />
+              </g>
+
+              <!-- Marks -->
+              <g class="marks">
+                <template v-for="cell in validCells" :key="`m${cell.i}`">
+                  <g v-if="grid[cell.i] !== EMPTY" :transform="`translate(${cell.x * cellSize}, ${cell.y * cellSize})`">
+                    <template v-if="grid[cell.i] === YES">
+                      <rect class="yes-bg" :width="cellSize" :height="cellSize" />
+                      <circle class="yes-dot" :cx="cellSize / 2" :cy="cellSize / 2" :r="cellSize * 0.24" />
+                    </template>
+                    <path v-else class="no-cross" :d="crossPath" />
+                  </g>
+                </template>
+              </g>
+
+              <path class="grid-thin" :d="thinPath" />
+              <path class="grid-thick" :d="thickPath" />
+
+              <!-- Input surface -->
+              <rect
+                class="input-surface"
+                :class="{ disabled: solved }"
+                :width="size * cellSize"
+                :height="size * cellSize"
+                v-on="gridHandlers"
+              />
+            </g>
+          </svg>
+        </div>
+        <p v-if="!solved" class="hint-text">{{ t('logical.help') }}</p>
+      </template>
+    </section>
+
+    <section class="solution-section">
+      <h3>{{ t('logical.solution') }}</h3>
+      <div class="solution-table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th v-for="attr in attributes" :key="attr.name" scope="col">{{ attr.name }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(v, i) in attributes[0].values" :key="i">
+              <th scope="row">{{ v }}</th>
+              <td v-for="(attr, j) in attributes.slice(1)" :key="j" :data-title="attr.name">
+                <MySelect
+                  :options="attr.values"
+                  :is-disabled="solved"
+                  v-model="attrInputs[i + '_' + j]"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.puzzle-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+@import '../puzzles/engine/board.scss';
+
+.logical {
+  --accent: #2563eb;
+  --line: #d4d8de;
+  --line-strong: #1f2937;
+  --hover: rgba(37, 99, 235, 0.1);
+  padding-top: 4px;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px;
 }
 
 .puzzle-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 18px;
 
   .puzzle-title {
-    font-size: 24px;
+    font-size: 26px;
+    font-weight: 600;
     margin: 0;
   }
-
-  .difficulty {
-    font-size: 18px;
-  }
-}
-
-.puzzle-body {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px;
 }
 
 .puzzle-intro {
   display: flex;
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 24px;
 
   .header-image {
-    border-radius: 8px;
+    width: 280px;
+    max-width: 40%;
+    border-radius: 10px;
     object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   }
 
   .description-section {
     flex: 1;
+    min-width: 0;
+  }
 
-    h3 {
-      margin-top: 0;
-    }
+  .description {
+    margin: 0 0 12px;
+    line-height: 1.6;
+  }
 
-    .question {
-      margin-top: 15px;
-      font-size: 1.1em;
-    }
+  .question {
+    margin: 0;
+    padding: 10px 14px;
+    border-left: 4px solid var(--accent);
+    background: #eff6ff;
+    border-radius: 0 8px 8px 0;
+    font-weight: 600;
+    color: #1e3a8a;
   }
 }
 
-.clues-section, 
-.attributes-section {
-  margin-bottom: 30px;
-
-  h3 {
-    margin-bottom: 15px;
-  }
+.info-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 20px;
+  margin-bottom: 28px;
 }
 
-.clues-section {
-  background-color: #f3f3f3;
-  padding: 15px;
+.card {
+  padding: 16px 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafbfc;
 }
 
 .clues-list {
-  padding-left: 20px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: none;
+}
 
-  .clue {
-    margin-bottom: 8px;
+.clue {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 8px;
+  margin: 0 -8px 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s, color 0.15s;
+
+  &:hover { background: #eef2f7; }
+
+  .clue-number {
+    flex: none;
+    min-width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 11px;
+    background: #e0e7ff;
+    color: #3730a3;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  &.done {
+    color: #9ca3af;
+
+    .clue-text { text-decoration: line-through; }
+    .clue-number { background: #e5e7eb; color: #9ca3af; }
   }
 }
 
 .attributes-list {
-  list-style: none;
-  padding: 0;
+  margin: 0;
 
-  .attribute-row {
-    margin-bottom: 8px;
+  dt {
+    font-weight: 600;
+    color: #374151;
+    margin-top: 8px;
+
+    &:first-child { margin-top: 0; }
+  }
+
+  dd {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 4px 0 0;
+  }
+
+  .chip {
+    padding: 1px 9px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #dfe3e8;
+    font-size: 13px;
   }
 }
 
-.solution-section {
-  .toggle-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .color-controls {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-  }
+.hint-text {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #6b7280;
 }
 
-.control-buttons {
+.section-head {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+
+  h3 { margin: 0; }
 }
 
-.control-button {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 50%;
-  background: #f5f5f5;
-  cursor: pointer;
+.toggle-container {
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
+  gap: 10px;
+  font-size: 14px;
+  color: #4b5563;
+  cursor: pointer;
+}
 
-  &:hover {
-    background: #e9ecef;
+.grid-section {
+  margin-bottom: 28px;
+}
+
+.tool {
+  &.active {
+    background: #e0e7ff;
+    color: #1e3a8a;
+    box-shadow: inset 0 0 0 1px #a5b4fc;
   }
 
-  ion-icon {
-    font-size: 20px;
-  }
+  &.tool-2 ion-icon { color: var(--accent); font-size: 14px; }
+  &.tool-1 ion-icon { color: #4b5563; }
+}
 
-  &.rotate ion-icon {
-    transform: scaleX(-1);
+.auto-cross {
+  padding: 4px 10px;
+  height: 42px;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+
+  input {
+    margin: 0;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    display: inline-block;
   }
 }
 
-.grid-container {
-  margin: 20px 0;
-  overflow: visible;
+.grid-area {
+  padding: 4px 0;
+}
+
+.logic-grid {
+  display: block;
+  font-family: inherit;
+}
+
+.category-name {
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-size: 13px;
+  font-weight: 700;
+  fill: #262664;
+}
+
+.top-label,
+.left-label {
+  font-size: 13px;
+  fill: #374151;
+  dominant-baseline: central;
+  text-anchor: end;
+  transition: fill 0.1s;
+
+  &.highlight {
+    fill: var(--accent);
+    font-weight: 700;
+  }
+}
+
+.top-label {
+  text-anchor: start;
+}
+
+.block-bg {
+  fill: #fff;
+
+  &.alt { fill: #f8fafc; }
+}
+
+.hover-lines rect {
+  fill: var(--hover);
+  pointer-events: none;
+}
+
+.marks {
+  pointer-events: none;
+}
+
+.yes-bg {
+  fill: #dbeafe;
+}
+
+.yes-dot {
+  fill: var(--accent);
+}
+
+.no-cross {
+  stroke: #6b7280;
+  stroke-width: 2;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.input-surface {
+  fill: transparent;
+  cursor: pointer;
+  touch-action: none;
+
+  &.disabled { cursor: default; }
 }
 
 .solution-table {
-  margin-top: 20px;
   overflow-x: auto;
 
   table {
-    width: 100%;
-    border-collapse: collapse;
-    
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-    }
-
-    th {
-      background: #f5f5f5;
-    }
-  }
-}
-
-.check-solution {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-top: 20px;
-
-  .check-button {
-    padding: 10px 20px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.2s;
-
-    &:hover {
-      background: #45a049;
-    }
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
   }
 
-  .success-icon {
-    margin: 0 10px;
+  th, td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eef0f3;
+    text-align: left;
+    vertical-align: middle;
   }
 
-  .solution-message {
-    margin: 0;
-    font-size: 16px;
-  }
-}
+  tbody tr:last-child th,
+  tbody tr:last-child td { border-bottom: none; }
 
-.rating-section {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-
-  h2 {
-    margin-bottom: 15px;
+  thead th {
+    background: #f3f4f6;
+    color: #262664;
+    font-weight: 600;
   }
 
-  .login-message {
-    color: #666;
-  }
-
-  .already-solved {
-    margin-top: 10px;
-    color: #666;
-    font-style: italic;
+  tbody th {
+    font-weight: 600;
+    background: #fafbfc;
+    white-space: nowrap;
   }
 }
 
 @media (max-width: 768px) {
-  .puzzle-container {
-    padding: 10px;
-  }
-
   .puzzle-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
   }
 
   .puzzle-intro {
     flex-direction: column;
+
+    .header-image {
+      width: 100%;
+      max-width: 100%;
+    }
   }
 
-  .header-image {
-    width: 100%;
-    height: auto;
-  }
-}
-
-.puzzle-display {
-    padding-top: 10px;
-}
-
-.horizontal-text-group {
-  .horizontal-label {
-    text-anchor: end;
-    dominant-baseline: middle;
-    font-size: 12px;
-    fill: #333;
-    white-space: nowrap;
-  }
-}
-
-.vertical-text-group {
-  .vertical-label {
-    text-anchor: end;
-    dominant-baseline: central;
-    font-size: 12px;
-    fill: #333;
-    white-space: nowrap;
-  }
-}
-
-.solution-grid {
-  position: relative;
-  margin: 20px 0;
-  
-  svg {
-    overflow: visible;
-  }
-}
-
-.status-section {
-  margin: 20px 0;
-
-  .success-message {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #2e7d32;
-  }
-
-  .already-solved {
-    color: #666;
-    font-style: italic;
+  .info-columns {
+    grid-template-columns: 1fr;
   }
 }
 </style>
