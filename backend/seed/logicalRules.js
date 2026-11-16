@@ -51,7 +51,14 @@ const len = s => s.trim().length;
 /* eslint-disable quote-props */
 const FORMALIZATIONS = {
   'Asiatische Lektüre': {
-    dataError: 'The stored solution contradicts the clues (Asiens Inseln has 105 pages there, the clue says 100; Zen Buddhismus costs 2€ less than Qi there, the clue says 2€ more).'
+    ordered: { Seiten: 'numeric', Kosten: 'numeric' },
+    clues: [
+      [diff('Zen Buddhismus', 'Qi', 'Kosten', 2), absDiff('Zen Buddhismus', 'Nguyen', 'Seiten', 5), not('Nguyen', 'Qi')],
+      [same('Takeda', '5€'), diff('Takeda', 'Suzuki', 'Seiten', 5)],
+      [diff('Asiens Seen', '120', 'Kosten', -1)],
+      [diff('Isso', 'Thai Food', 'Seiten', -5), diff('Isso', 'Umabe', 'Kosten', 2)],
+      [after('Thai Food', 'Asiens Inseln', 'Kosten'), same('Asiens Inseln', '100')]
+    ]
   },
 
   'Aufgeregte Studenten': {
@@ -176,7 +183,9 @@ const FORMALIZATIONS = {
   },
 
   'Kunstfertige Tiere': {
-    dataError: 'The grades repeat (4, 4, 5, 5, 6, 6); a category needs distinct values.'
+    // With clue 8 (Andreas better than Theodor) the clues have exactly one
+    // solution (checked by brute force over the repeated grades).
+    dataError: 'The grades repeat (4, 4, 5, 5, 6, 6); the solver needs distinct values in a category.'
   },
 
   'Kuriose Spezialitäten': {
@@ -232,7 +241,16 @@ const FORMALIZATIONS = {
   },
 
   'Werdende Köche': {
-    dataError: 'The stored solution names Mal and Rat twice and Sun and Tre not at all.'
+    // Grades: 1 is the best, so "worse" means a larger number.
+    ordered: { Note: 'numeric' },
+    clues: [
+      [times('Schokoladenparfait', 'Zitronentarte', 'Note', 2)],
+      [absDiff('Tre', 'Rat', 'Note', 1), diff('Rat', 'Karamelleis', 'Note', 1)],
+      [oneOf('Apfelstrudel', ['1', '3', '5']), absDiff('Apfelstrudel', 'Soufflé', 'Note', 2),
+        diff('Soufflé', 'Schokoladenparfait', 'Note', 1)],
+      [diff('Crêpes', 'Sun', 'Note', 1), absDiff('Sun', 'Lek', 'Note', 2)],
+      [not('Hof', '4')]
+    ]
   },
 
   'Wohltätiges Schwimmen': {

@@ -149,7 +149,10 @@ export interface PublicPuzzleData {
     /** Colour of every numbered cell (stored encoding), 0 elsewhere. */
     informationColors: ColorGrid;
   };
-  logical: Omit<PuzzleData['logical'], 'solution' | 'rules'>;
+  logical: Omit<PuzzleData['logical'], 'solution' | 'rules'> & {
+    /** The plain rules shown as relations under the clues (logical.js publicRelations). */
+    relations?: LogicalRule[];
+  };
 }
 
 /** What each type accepts as an answer (`{ answer }` in the request body). */

@@ -201,26 +201,67 @@ test('seed logic puzzles get their formal rules once, edited ones stay', async (
   const rows = [
     ['Kongress der Wissenschaft', seed('Kongress der Wissenschaft')],
     ['Masternix', edited], // clue count differs: left alone
-    ['Asiatische Lektüre', seed('Asiatische Lektüre')] // data error: no rules
+    ['Kunstfertige Tiere', seed('Kunstfertige Tiere')] // data error: no rules
   ];
   await qi.bulkInsert('Puzzles', rows.map(([name, data]) => ({
     type: 'logical', name, data: JSON.stringify(data), createdAt: now, updatedAt: now
   })));
   const read = async () => (await sequelize.query(
-    `SELECT name, data FROM Puzzles WHERE type = 'logical' AND name IN ('Kongress der Wissenschaft', 'Masternix', 'Asiatische Lektüre') ORDER BY id`,
+    `SELECT name, data FROM Puzzles WHERE type = 'logical' AND name IN ('Kongress der Wissenschaft', 'Masternix', 'Kunstfertige Tiere') ORDER BY id`,
     { type: sequelize.QueryTypes.SELECT })).map(r => ({ name: r.name, data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data }));
 
   await migration.up(qi);
   await migration.up(qi); // idempotent
-  let [kongress, masternix, lektuere] = await read();
+  let [kongress, masternix, tiere] = await read();
   assert.equal(kongress.data.rules.length, 4);
   assert.equal(kongress.data.attributes[2].ordered, 'numeric');
   assert.equal(masternix.data.rules, undefined);
-  assert.equal(lektuere.data.rules, undefined);
+  assert.equal(tiere.data.rules, undefined);
 
   await migration.down(qi);
   [kongress] = await read();
   assert.equal(kongress.data.rules, undefined);
   assert.equal(kongress.data.attributes[2].ordered, undefined);
   await qi.bulkDelete('Puzzles', { name: rows.map(([name]) => name) });
+});
+
+test('the three broken seed logic puzzles get their fixed clues and solutions', async () => {
+  const migration = require('../migrations/20261116-02-fix-logicals');
+  const logicals = require('../seed/logicals.json');
+  const now = new Date();
+  const parse = r => (typeof r.data === 'string' ? JSON.parse(r.data) : r.data);
+  // The seed is already fixed; undo the fix to get the live (old) data.
+  const before = migration.FIXES.map(fix => {
+    const { name, difficulty, date, UserId, ...data } = logicals.find(l => l.name === fix.name);
+    return migration.applyFix(fix, data, { reverse: true });
+  });
+  const rows = migration.FIXES.map((fix, i) => ({
+    type: 'logical', name: fix.name, data: JSON.stringify(before[i]), createdAt: now, updatedAt: now
+  }));
+  // Same name, edited clues: must not be touched.
+  const other = { ...before[2], clues: [...before[2].clues, 'Ein eigener Hinweis.'] };
+  rows.push({ type: 'logical', name: 'Werdende Köche', data: JSON.stringify(other), createdAt: now, updatedAt: now });
+  await qi.bulkInsert('Puzzles', rows);
+  const names = migration.FIXES.map(f => f.name);
+  const read = async () => (await sequelize.query(
+    `SELECT data FROM Puzzles WHERE type = 'logical' AND name IN (${names.map(() => '?').join(',')}) ORDER BY id`,
+    { replacements: names, type: sequelize.QueryTypes.SELECT })).map(parse);
+
+  await migration.up(qi);
+  await migration.up(qi); // idempotent
+
+  let stored = await read();
+  migration.FIXES.forEach((fix, i) => {
+    assert.deepEqual(stored[i].clues, fix.to.clues, fix.name);
+    assert.deepEqual(stored[i].solution, fix.to.solution, fix.name);
+  });
+  assert.ok(stored[0].rules.length, 'Asiatische Lektüre gets its rules');
+  assert.equal(stored[1].rules, undefined); // Kunstfertige Tiere: repeated grades, no rules
+  assert.ok(stored[2].rules.length, 'Werdende Köche gets its rules');
+  assert.deepEqual(stored[3], other);
+
+  await migration.down(qi);
+  stored = await read();
+  migration.FIXES.forEach((fix, i) => assert.deepEqual(stored[i], before[i], fix.name));
+  await qi.bulkDelete('Puzzles', { name: names });
 });

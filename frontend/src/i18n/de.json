@@ -320,7 +320,9 @@
     "autoCrossTitle": "Ein „Ja“ setzt in seiner Zeile und Spalte des Blocks überall „Nein“",
     "help": "Klicken oder ziehen setzt die gewählte Markierung · Rechtsklick: Nein · nochmal klicken nimmt sie zurück · „Ja“ in den obersten Blöcken trägt den Wert in die Lösungstabelle ein",
     "clueHelp": "Klick auf einen Hinweis streicht ihn ab.",
-    "clueDoneTitle": "Als erledigt markieren"
+    "clueDoneTitle": "Als erledigt markieren",
+    "showRelations": "Beziehungen anzeigen",
+    "relationsHelp": "Maus über einen Hinweis hebt seine Werte im Hilfsraster hervor."
   },
   "nonogram": {
     "colour": "Farbe",
@@ -559,6 +561,14 @@
     "note": "keine Bedingung (nur Rahmenhandlung)",
     "or": "oder",
     "and": "und"
+  },
+  "relations": {
+    "same": "gehört zu",
+    "notSame": "nicht",
+    "directly": "direkt",
+    "nextTo": "Nachbar",
+    "or": "oder",
+    "oneOf": "eins davon"
   },
   "rulesPanel": {
     "title": "Formale Regeln (nur für Admins)",

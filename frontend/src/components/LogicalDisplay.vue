@@ -15,6 +15,8 @@ import MySelect from './MySelect.vue'
 import DifficultyIndicator from './DifficultyIndicator.vue'
 import { useGridPointer } from '@/puzzles/engine/useGridPointer'
 import { useHistory } from '@/puzzles/engine/useHistory'
+import RelationChips from '@/puzzles/logical/RelationChips.vue'
+import { categoryColor } from '@/puzzles/logical/categoryColors'
 
 const { t } = useI18n()
 const props = defineProps({
@@ -39,6 +41,18 @@ const grid = ref([])
 const hover = ref(null)
 const history = useHistory()
 
+// Relation chips under the clues (logical.relations, the plain formal rules
+// the server shares, see shared/puzzles/logical.js publicRelations).
+const RELATIONS_KEY = 'logivilia.logical.showRelations'
+const readShowRelations = () => {
+  try { return window.localStorage.getItem(RELATIONS_KEY) !== '0' } catch { return true }
+}
+const showRelations = ref(readShowRelations())
+watch(showRelations, (on) => {
+  try { window.localStorage.setItem(RELATIONS_KEY, on ? '1' : '0') } catch { /* private mode */ }
+})
+const focusClue = ref(null)
+
 const attributes = computed(() => props.logical.attributes || [])
 const n = computed(() => attributes.value.length)
 const m = computed(() => attributes.value[0]?.values.length || 0)
@@ -49,8 +63,59 @@ const blockPx = computed(() => m.value * cellSize.value)
 // Category shown in block column c / block row r.
 const colAttr = c => c + 1
 const rowAttr = r => (r === 0 ? 0 : n.value - r)
+const relationsByClue = computed(() => {
+  const map = new Map()
+  for (const relation of props.logical.relations || []) {
+    if (!map.has(relation.clue)) map.set(relation.clue, [])
+    map.get(relation.clue).push(relation)
+  }
+  return map
+})
+const hasRelations = computed(() => relationsByClue.value.size > 0)
+const relationsOf = i => relationsByClue.value.get(i) || []
+
+// Values of the clue under the mouse, as "attr:value" keys.
+const hotValues = computed(() => {
+  const keys = new Set()
+  const add = (relation) => {
+    if (relation.type === 'anyOf') return relation.rules.forEach(add)
+    for (const ref of [relation.a, relation.b, relation.c]) {
+      if (ref && Number.isInteger(ref.attr)) keys.add(`${ref.attr}:${ref.value}`)
+    }
+  }
+  if (showRelations.value && focusClue.value !== null) relationsOf(focusClue.value).forEach(add)
+  return keys
+})
+const isHotValue = (attrIndex, value) => hotValues.value.has(`${attrIndex}:${value}`)
+const attributeChipStyle = (attrIndex) => {
+  if (!hasRelations.value) return null
+  const c = categoryColor(attrIndex)
+  return { background: c.bg, color: c.fg, borderColor: 'transparent' }
+}
+const categoryStyle = attrIndex => (hasRelations.value ? { fill: categoryColor(attrIndex).fg } : null)
+
 const columnAttributes = computed(() => Array.from({ length: blocks.value }, (_, c) => attributes.value[colAttr(c)]))
 const rowAttributes = computed(() => Array.from({ length: blocks.value }, (_, r) => attributes.value[rowAttr(r)]))
+
+// Grid columns / rows whose value belongs to the clue under the mouse.
+const hotColumns = computed(() => {
+  if (!hotValues.value.size) return []
+  const list = []
+  for (let x = 0; x < size.value; x++) {
+    const c = Math.floor(x / m.value)
+    if (isHotValue(colAttr(c), attributes.value[colAttr(c)].values[x % m.value])) list.push(x)
+  }
+  return list
+})
+const hotRows = computed(() => {
+  if (!hotValues.value.size) return []
+  const list = []
+  for (let y = 0; y < size.value; y++) {
+    const r = Math.floor(y / m.value)
+    if (isHotValue(rowAttr(r), attributes.value[rowAttr(r)].values[y % m.value])) list.push(y)
+  }
+  return list
+})
 
 const isValid = (x, y) => Math.floor(x / m.value) + Math.floor(y / m.value) < blocks.value
 const idx = (x, y) => y * size.value + x
@@ -301,7 +366,13 @@ defineExpose({ checkSolution, tableVisible, attrInputs })
 
     <div class="info-columns">
       <section class="card clues-section">
-        <h3>{{ t('logical.clues') }}</h3>
+        <div class="section-head">
+          <h3>{{ t('logical.clues') }}</h3>
+          <label v-if="hasRelations" class="toggle-container">
+            <span>{{ t('logical.showRelations') }}</span>
+            <Toggle v-model="showRelations" />
+          </label>
+        </div>
         <ol class="clues-list">
           <li
             v-for="(clue, i) in logical.clues"
@@ -310,12 +381,27 @@ defineExpose({ checkSolution, tableVisible, attrInputs })
             :class="{ done: doneClues.has(i) }"
             :title="t('logical.clueDoneTitle')"
             @click="toggleClue(i)"
+            @mouseenter="focusClue = i"
+            @mouseleave="focusClue = null"
           >
             <span class="clue-number">{{ i + 1 }}</span>
-            <span class="clue-text">{{ clue }}</span>
+            <div class="clue-body">
+              <span class="clue-text">{{ clue }}</span>
+              <div v-if="showRelations && relationsOf(i).length" class="clue-relations" @click.stop>
+                <RelationChips
+                  v-for="(relation, k) in relationsOf(i)"
+                  :key="k"
+                  :relation="relation"
+                  :attributes="attributes"
+                />
+              </div>
+            </div>
           </li>
         </ol>
-        <p class="hint-text">{{ t('logical.clueHelp') }}</p>
+        <p class="hint-text">
+          {{ t('logical.clueHelp') }}
+          <template v-if="hasRelations && showRelations">{{ t('logical.relationsHelp') }}</template>
+        </p>
       </section>
 
       <section class="card attributes-section">
@@ -324,7 +410,7 @@ defineExpose({ checkSolution, tableVisible, attrInputs })
           <template v-for="(attr, i) in attributes" :key="`attr${i}`">
             <dt>{{ attr.name }}</dt>
             <dd>
-              <span v-for="(v, j) in attr.values" :key="`attr${i}_${j}`" class="chip">{{ v }}</span>
+              <span v-for="(v, j) in attr.values" :key="`attr${i}_${j}`" class="chip" :style="attributeChipStyle(i)">{{ v }}</span>
             </dd>
           </template>
         </dl>
@@ -382,11 +468,13 @@ defineExpose({ checkSolution, tableVisible, attrInputs })
                 :x="padLeft + c * blockPx + blockPx / 2"
                 :y="NAME_BAND / 2"
                 class="category-name"
+                :style="categoryStyle(colAttr(c))"
               >{{ attr.name }}</text>
               <text
                 v-for="(attr, r) in rowAttributes"
                 :key="`rname${r}`"
                 class="category-name"
+                :style="categoryStyle(rowAttr(r))"
                 :transform="`translate(${NAME_BAND / 2}, ${padTop + r * blockPx + blockPx / 2}) rotate(-90)`"
               >{{ attr.name }}</text>
             </g>
@@ -399,7 +487,8 @@ defineExpose({ checkSolution, tableVisible, attrInputs })
                   :key="`cval${c}_${j}`"
                   ref="topLabelRefs"
                   class="top-label"
-                  :class="{ highlight: hover && hover.x === c * m + j }"
+                  :class="{ highlight: hover && hover.x === c * m + j, 'clue-hot': isHotValue(colAttr(c), val) }"
+                  :style="isHotValue(colAttr(c), val) ? { fill: categoryColor(colAttr(c)).fg } : null"
                   :transform="`translate(${padLeft + (c * m + j) * cellSize + cellSize / 2}, ${padTop - LABEL_GAP}) rotate(-90)`"
                 >{{ val }}</text>
               </template>
@@ -409,7 +498,8 @@ defineExpose({ checkSolution, tableVisible, attrInputs })
                   :key="`rval${r}_${j}`"
                   ref="leftLabelRefs"
                   class="left-label"
-                  :class="{ highlight: hover && hover.y === r * m + j }"
+                  :class="{ highlight: hover && hover.y === r * m + j, 'clue-hot': isHotValue(rowAttr(r), val) }"
+                  :style="isHotValue(rowAttr(r), val) ? { fill: categoryColor(rowAttr(r)).fg } : null"
                   :x="padLeft - LABEL_GAP"
                   :y="padTop + (r * m + j) * cellSize + cellSize / 2"
                 >{{ val }}</text>
@@ -430,6 +520,12 @@ defineExpose({ checkSolution, tableVisible, attrInputs })
                   :height="blockPx"
                 />
               </template>
+
+              <!-- Values of the clue under the mouse -->
+              <g v-if="hotValues.size" class="clue-lines">
+                <rect v-for="y in hotRows" :key="`hr${y}`" :x="0" :y="y * cellSize" :width="rowLength(y) * cellSize" :height="cellSize" />
+                <rect v-for="x in hotColumns" :key="`hc${x}`" :x="x * cellSize" :y="0" :width="cellSize" :height="colLength(x) * cellSize" />
+              </g>
 
               <!-- Hover crosshair -->
               <g v-if="hover && !solved" class="hover-lines">
@@ -582,6 +678,22 @@ h3 {
   counter-reset: none;
 }
 
+.clue-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.clue-relations {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e4e0ef;
+  cursor: default;
+}
+
 .clue {
   display: flex;
   gap: 10px;
@@ -612,6 +724,7 @@ h3 {
     color: #9ca3af;
 
     .clue-text { text-decoration: line-through; }
+    .clue-relations { opacity: 0.55; }
     .clue-number { background: #e5e7eb; color: #9ca3af; }
   }
 }
@@ -741,6 +854,16 @@ h3 {
   fill: #fff;
 
   &.alt { fill: #f8fafc; }
+}
+
+.clue-lines rect {
+  fill: rgba(121, 87, 213, 0.12);
+  pointer-events: none;
+}
+
+.top-label.clue-hot,
+.left-label.clue-hot {
+  font-weight: 700;
 }
 
 .hover-lines rect {

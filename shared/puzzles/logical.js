@@ -25,6 +25,46 @@ export function fullyFormalized (data) {
   return clueCount > 0 && Array.from({ length: clueCount }, (_, i) => covered.has(i)).every(Boolean);
 }
 
+// Rules players may see as "relations" under the clues: the plain ones that
+// restate a clue. Left out: `exists`, `not`, nested groups and long `anyOf`
+// lists (pairs expanded from world knowledge such as name lengths), which
+// would say more than the clue's text or be unreadable as a picture.
+const SIMPLE_TYPES = ['same', 'notSame', 'eitherOr', 'before', 'after', 'directlyBefore', 'directlyAfter',
+  'nextTo', 'differsBy', 'times', 'sum'];
+const MAX_ANY_OF = 4;
+const isPlainRef = ref => !!ref && typeof ref === 'object' && Number.isInteger(ref.attr);
+
+function simpleRelation (rule) {
+  if (!rule || !SIMPLE_TYPES.includes(rule.type)) return null;
+  const refs = rule.type === 'eitherOr' || rule.type === 'sum' ? ['a', 'b', 'c'] : ['a', 'b'];
+  if (!refs.every(key => isPlainRef(rule[key]))) return null;
+  const out = { type: rule.type };
+  for (const key of refs) out[key] = { attr: rule[key].attr, value: String(rule[key].value) };
+  for (const key of ['by', 'offset', 'abs', 'factor']) {
+    if (rule[key] !== undefined) out[key] = rule[key];
+  }
+  return out;
+}
+
+/**
+ * The formal rules as players may see them (see SIMPLE_TYPES above), each
+ * with its `clue` index. Clues whose rules are all left out get none.
+ * @returns {import('../index').LogicalRule[]}
+ */
+export function publicRelations (data) {
+  const relations = [];
+  for (const rule of rulesOf(data)) {
+    if (!rule || !Number.isInteger(rule.clue)) continue;
+    let relation = simpleRelation(rule);
+    if (!relation && rule.type === 'anyOf' && Array.isArray(rule.rules) && rule.rules.length <= MAX_ANY_OF) {
+      const options = rule.rules.map(simpleRelation);
+      if (options.every(Boolean)) relation = { type: 'anyOf', rules: options };
+    }
+    if (relation) relations.push({ clue: rule.clue, ...relation });
+  }
+  return relations;
+}
+
 /** @type {import('../index').PuzzleTypePlugin<'logical'>} */
 const logical = {
   type: 'logical',
@@ -75,7 +115,8 @@ const logical = {
 
   computeClues (data) {
     const { solution, rules, ...rest } = data;
-    return rest;
+    const relations = publicRelations(data);
+    return relations.length ? { ...rest, relations } : rest;
   },
 
   // Rows in the same order, values compared as strings. Column 0 is the fixed

@@ -320,7 +320,9 @@
     "autoCrossTitle": "A “Yes” marks the rest of its row and column in the block as “No”",
     "help": "Click or drag to set the chosen mark · right-click: No · click again to take it back · “Yes” in the top blocks fills in the answer table",
     "clueHelp": "Click a clue to cross it off.",
-    "clueDoneTitle": "Mark as done"
+    "clueDoneTitle": "Mark as done",
+    "showRelations": "Show relations",
+    "relationsHelp": "Hover over a clue to highlight its values in the helper grid."
   },
   "nonogram": {
     "colour": "Colour",
@@ -559,6 +561,14 @@
     "note": "no condition (sets the scene)",
     "or": "or",
     "and": "and"
+  },
+  "relations": {
+    "same": "belongs to",
+    "notSame": "not",
+    "directly": "directly",
+    "nextTo": "next to",
+    "or": "or",
+    "oneOf": "one of these"
   },
   "rulesPanel": {
     "title": "Formal rules (admins only)",

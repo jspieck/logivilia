@@ -24,8 +24,7 @@ const seed = name => {
 const ref = (attr, value) => ({ attr, value });
 
 // Seed puzzles with every clue formalised. `ordered` marks categories the
-// clues compare. (Not 'Asiatische Lektüre': its stored solution contradicts
-// its clues, e.g. Asiens Inseln has 105 pages there, the clue says 100.)
+// clues compare.
 const FORMALIZED = [
   {
     name: 'Kongress der Wissenschaft',
@@ -212,6 +211,25 @@ describe('logical plugin with rules', () => {
     assert.equal(clues.attributes[2].ordered, 'numeric');
   });
 
+  test('players get the plain rules as relations', () => {
+    const data = formalized(FORMALIZED[0]);
+    const extra = [
+      // Shown: an anyOf of plain rules.
+      { clue: 0, type: 'anyOf', rules: [{ type: 'same', a: ref(0, 'Angela'), b: ref(1, 'Biologie') }, { type: 'same', a: ref(0, 'Angela'), b: ref(1, 'Geologie') }] },
+      // Left out: exists, not, nested groups, long anyOf lists.
+      { clue: 1, type: 'exists', var: 'X', rules: [{ type: 'same', a: { var: 'X' }, b: ref(1, 'Biologie') }] },
+      { clue: 1, type: 'not', rules: [{ type: 'same', a: ref(0, 'Angela'), b: ref(1, 'Biologie') }] },
+      { clue: 1, type: 'anyOf', rules: [{ type: 'allOf', rules: [{ type: 'same', a: ref(0, 'Angela'), b: ref(1, 'Biologie') }] }] },
+      { clue: 1, type: 'anyOf', rules: [...data.attributes[1].values, data.attributes[1].values[0]].map(v => ({ type: 'same', a: ref(0, 'Angela'), b: ref(1, v) })) }
+    ];
+    const relations = plugin.computeClues({ ...data, rules: [...data.rules, ...extra] }).relations;
+    assert.equal(relations.length, data.rules.length + 1);
+    assert.deepEqual(relations[0], { clue: 0, type: 'differsBy', a: ref(0, 'Franziska'), b: ref(1, 'Biologie'), by: 2, offset: 15 });
+    assert.equal(relations.at(-1).type, 'anyOf');
+    assert.equal(relations.at(-1).rules.length, 2);
+    assert.equal(plugin.computeClues(seed('Kongress der Wissenschaft')).relations, undefined);
+  });
+
   test('checkData rejects bad rules', () => {
     const data = formalized(FORMALIZED[1]);
     const withRule = rule => ({ ...data, rules: [rule] });
@@ -318,9 +336,7 @@ describe('seed formalisations (seed/logicalRules.js)', () => {
   // What `node scripts/checkLogicals.js` reports; a change here means a
   // formalisation or the solver changed.
   const NOT_UNIQUE = {
-    'Asiatische Lektüre': 'dataError',
     'Kunstfertige Tiere': 'dataError',
-    'Werdende Köche': 'dataError',
     'Baum des Jahres': 'conflict',
     'Erfreuliche Pilzsuche': 'conflict',
     'Kaninchenzucht': 'conflict',
@@ -341,6 +357,6 @@ describe('seed formalisations (seed/logicalRules.js)', () => {
     for (const r of results) {
       assert.equal(r.status, NOT_UNIQUE[r.name] || 'unique', `${r.name}: ${JSON.stringify(r)}`);
     }
-    assert.equal(Object.values(statuses).filter(s => s === 'unique').length, 40);
+    assert.equal(Object.values(statuses).filter(s => s === 'unique').length, 42);
   });
 });
