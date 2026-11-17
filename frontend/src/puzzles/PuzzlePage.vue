@@ -232,7 +232,13 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .puzzle-container {
-    padding: 10px;
+    padding: 8px 0;
+  }
+
+  .puzzle-body {
+    padding: 14px 10px;
+    border-radius: 6px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
   }
 
   .puzzle-header {

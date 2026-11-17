@@ -336,6 +336,20 @@
       "ok": "holds",
       "bad": "broken",
       "open": "open"
+    },
+    "pad": "Notepad",
+    "padShow": "Show notepad",
+    "padClear": "Clear notepad",
+    "padClearConfirm": "Take everything off the notepad?",
+    "padHelp": "Drag values onto the pad (on a phone: tap a value, then tap the pad). Values on one card belong together – drop a value or a card onto a card to join them. Pull a clue number onto the pad (or tap it) to add its values and draw it as arrows from smaller to bigger: green when the cards fit the clue, red when they cannot. Only a scratch pad: grid and answer stay as they are.",
+    "padHelpNoClues": "Drag values onto the pad (on a phone: tap a value, then tap the pad). Values on one card belong together – drop a value or a card onto a card to join them. Only a scratch pad: grid and answer stay as they are.",
+    "padEmpty": "Drop values or clue numbers here",
+    "padRemoveCard": "Remove card",
+    "padRemoveClue": "Remove clue from the notepad",
+    "padState": {
+      "ok": "fits",
+      "bad": "broken",
+      "open": "open"
     }
   },
   "nonogram": {

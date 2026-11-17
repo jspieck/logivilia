@@ -336,6 +336,13 @@ h2 {
   background: white;
 }
 
+// Phones: less empty room at the sides.
+@media (max-width: 768px) {
+  .headerContainer, .bodyContainer {
+    width: calc(100% - 16px);
+  }
+}
+
 input {
   margin: 10px 0;
   display: block;

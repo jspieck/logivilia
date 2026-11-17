@@ -20,6 +20,15 @@
     </template>
   </div>
 
+  <div v-else-if="oriented" class="relation" :title="sentence" :aria-label="sentence" role="img">
+    <span class="value-chip" :style="chipStyle(oriented.left)"><span class="dot" />{{ label(oriented.left) }}</span>
+    <span class="connector compact" :style="{ '--rel': op.color }">
+      <span class="op">{{ oriented.sym ? '↔' : '<' }}</span>
+      <span class="sub">{{ op.sub }}</span>
+    </span>
+    <span class="value-chip" :style="chipStyle(oriented.right)"><span class="dot" />{{ label(oriented.right) }}</span>
+  </div>
+
   <div v-else class="relation" :title="sentence" :aria-label="sentence" role="img">
     <span class="value-chip" :style="chipStyle(relation.a)"><span class="dot" />{{ label(relation.a) }}</span>
     <template v-if="relation.type === 'sum'">
@@ -45,15 +54,15 @@
 
 <script setup>
 // One formal relation of a Logikrätsel clue (logical.js publicRelations) as
-// chips: [value] —operator→ [value]. Chips take their category's colour
-// (categoryColor); the arrow points away from the value the clue is about,
-// so "A —+5→ B" reads "A has 5 more than B".
+// chips. Chips take their category's colour (categoryColor). Comparisons are
+// always written smaller-first, [A] < [B], with the gap or factor as a small
+// note under the "<" (orientRelation), so clues chain: A < B, B < C.
 
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { describeRule, valueLabel } from './describeRule'
 import { categoryColor } from './categoryColors'
-import { orderMode } from '@shared/puzzles/logicalSolver.js'
+import { orientRelation, orientDetail, unitOf } from './orientRelation'
 
 defineOptions({ name: 'RelationChips' })
 
@@ -84,40 +93,22 @@ const oneOf = computed(() => {
   return r.rules.every(sameA) ? { a: first.a, options: r.rules.map(rule => rule.b) } : null
 })
 
-// Unit after the numbers of a numeric category ("5€" -> "€"), if all agree.
-const unitOf = (attribute) => {
-  if (orderMode(attribute) !== 'numeric') return ''
-  const units = new Set(attribute.values.map(v => String(v).replace(/^[^\d-]*-?[\d.,]+\s*/, '').trim()))
-  const [unit] = units
-  return units.size === 1 && unit && unit.length <= 3 ? unit : ''
-}
-
-const format = n => String(n).replace('.', ',')
+const oriented = computed(() => orientRelation(props.relation))
 
 const op = computed(() => {
   const r = props.relation
   const by = props.attributes[r.by]
   const cat = by?.name?.trim() || ''
   const color = r.by != null ? categoryColor(r.by).dot : NEUTRAL
-  const unit = by ? unitOf(by) : ''
-  const withUnit = text => (unit ? `${text} ${unit}` : text)
-  const ordered = (text, extra = {}) => ({ text, sub: cat, color, head: true, tail: false, dashed: false, ...extra })
+  if (oriented.value) {
+    const detail = orientDetail(oriented.value, unitOf(by), t)
+    return { sub: detail ? `${cat} · ${detail}` : cat, color }
+  }
   switch (r.type) {
     case 'same': return { text: '=', sub: t('relations.same'), color: NEUTRAL, head: false, tail: false }
     case 'eitherOr': return { text: '=', sub: t('relations.same'), color: NEUTRAL, head: false, tail: false }
     case 'notSame': return { text: '≠', sub: t('relations.notSame'), color: DANGER, head: false, tail: false, dashed: true }
-    case 'before': return ordered('<')
-    case 'after': return ordered('>')
-    case 'directlyBefore': return ordered(`${t('relations.directly')} <`)
-    case 'directlyAfter': return ordered(`${t('relations.directly')} >`)
-    case 'nextTo': return ordered(t('relations.nextTo'), { tail: true })
-    case 'differsBy': {
-      const n = format(Math.abs(r.offset))
-      if (r.abs) return ordered(withUnit(`±${n}`), { tail: true })
-      return ordered(withUnit(`${r.offset > 0 ? '+' : '−'}${n}`))
-    }
-    case 'times': return ordered(`×${format(r.factor)}`)
-    case 'sum': return ordered('=', { head: false })
+    case 'sum': return { text: '=', sub: cat, color, head: false, tail: false }
     default: return { text: '?', sub: '', color: NEUTRAL }
   }
 })
@@ -173,6 +164,16 @@ const op = computed(() => {
     color: #6b6880;
     line-height: 1.1;
     white-space: nowrap;
+  }
+
+  &.compact {
+    min-width: 0;
+    padding: 0 2px;
+
+    .op {
+      font-size: 17px;
+      line-height: 1;
+    }
   }
 
   svg {

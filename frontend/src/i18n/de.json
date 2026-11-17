@@ -336,6 +336,20 @@
       "ok": "erfüllt",
       "bad": "verletzt",
       "open": "offen"
+    },
+    "pad": "Notizblock",
+    "padShow": "Notizblock anzeigen",
+    "padClear": "Notizblock leeren",
+    "padClearConfirm": "Alles vom Notizblock nehmen?",
+    "padHelp": "Werte auf den Block ziehen (am Handy: Wert antippen, dann auf den Block tippen). Werte auf einer Karte gehören zusammen – einen Wert oder eine Karte auf eine Karte ziehen verbindet sie. Eine Hinweisnummer auf den Block ziehen (oder antippen) legt ihre Werte dazu und zeichnet den Hinweis als Pfeil vom Kleineren zum Größeren: grün, wenn die Karten passen, rot, wenn nicht. Nur ein Notizblock: Raster und Lösung bleiben unverändert.",
+    "padHelpNoClues": "Werte auf den Block ziehen (am Handy: Wert antippen, dann auf den Block tippen). Werte auf einer Karte gehören zusammen – einen Wert oder eine Karte auf eine Karte ziehen verbindet sie. Nur ein Notizblock: Raster und Lösung bleiben unverändert.",
+    "padEmpty": "Werte oder Hinweisnummern hierher ziehen",
+    "padRemoveCard": "Karte entfernen",
+    "padRemoveClue": "Hinweis vom Notizblock nehmen",
+    "padState": {
+      "ok": "passt",
+      "bad": "verletzt",
+      "open": "offen"
     }
   },
   "nonogram": {

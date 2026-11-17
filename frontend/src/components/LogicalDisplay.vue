@@ -16,7 +16,8 @@ import DifficultyIndicator from './DifficultyIndicator.vue'
 import { useGridPointer } from '@/puzzles/engine/useGridPointer'
 import { useHistory } from '@/puzzles/engine/useHistory'
 import RelationChips from '@/puzzles/logical/RelationChips.vue'
-import RelationScale from '@/puzzles/logical/RelationScale.vue'
+import CluePad from '@/puzzles/logical/CluePad.vue'
+import { emptyPad } from '@/puzzles/logical/cluePad'
 import { categoryColor } from '@/puzzles/logical/categoryColors'
 
 const { t } = useI18n()
@@ -43,10 +44,11 @@ const hover = ref(null)
 const history = useHistory()
 
 // Relation chips under the clues (logical.relations, the plain formal rules
-// the server shares, see shared/puzzles/logical.js publicRelations).
-const RELATIONS_KEY = 'logivilia.logical.showRelations'
+// the server shares, see shared/puzzles/logical.js publicRelations). Hidden
+// until the player turns them on; the choice is remembered.
+const RELATIONS_KEY = 'logivilia.logical.relationsOn'
 const readShowRelations = () => {
-  try { return window.localStorage.getItem(RELATIONS_KEY) !== '0' } catch { return true }
+  try { return window.localStorage.getItem(RELATIONS_KEY) === '1' } catch { return false }
 }
 const showRelations = ref(readShowRelations())
 watch(showRelations, (on) => {
@@ -54,10 +56,9 @@ watch(showRelations, (on) => {
 })
 const focusClue = ref(null)
 
-// Skala scratch pad: one per ordered category, placement per category index.
-const scaleVisible = ref(true)
-const scaleCat = ref(null)
-const scalePlacements = ref({})
+// Notepad (CluePad): value cards and clues on one free board.
+const padVisible = ref(true)
+const pad = ref(emptyPad())
 
 const attributes = computed(() => props.logical.attributes || [])
 const n = computed(() => attributes.value.length)
@@ -92,13 +93,9 @@ const hotValues = computed(() => {
   if (showRelations.value && focusClue.value !== null) relationsOf(focusClue.value).forEach(add)
   return keys
 })
-const orderedCats = computed(() => attributes.value
-  .map((a, i) => (a.ordered ? i : -1))
-  .filter(i => i >= 0))
-const activeScaleCat = computed(() => (orderedCats.value.includes(scaleCat.value) ? scaleCat.value : orderedCats.value[0]))
-const clearScale = () => {
-  if (!window.confirm(t('logical.scaleClearConfirm'))) return
-  scalePlacements.value = { ...scalePlacements.value, [activeScaleCat.value]: {} }
+const clearPad = () => {
+  if (!window.confirm(t('logical.padClearConfirm'))) return
+  pad.value = emptyPad()
 }
 const isHotValue = (attrIndex, value) => hotValues.value.has(`${attrIndex}:${value}`)
 const attributeChipStyle = (attrIndex) => {
@@ -173,8 +170,7 @@ const reset = () => {
   }
   attrInputs.value = inputs
   doneClues.value = new Set()
-  scalePlacements.value = {}
-  scaleCat.value = null
+  pad.value = emptyPad()
   measure()
 }
 
@@ -231,11 +227,7 @@ const syncTable = () => {
   }
 }
 
-const pointer = useGridPointer({
-  cellSize,
-  width: size,
-  height: size,
-  enabled: () => !props.solved,
+const gridInput = {
   onStart (cell, event) {
     if (!isValid(cell.x, cell.y)) {
       start = null
@@ -258,10 +250,48 @@ const pointer = useGridPointer({
     start = null
     snapshot = null
   }
+}
+
+const pointer = useGridPointer({
+  cellSize,
+  width: size,
+  height: size,
+  enabled: () => !props.solved,
+  ...gridInput
 })
+
+// Phones and tablets: the grid lets a swipe scroll the page (touch-action in
+// the style), so a mark is set by a tap, never by a drag.
+const coarse = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
+let tap = null
+const cellAt = (event) => {
+  const rect = event.currentTarget.getBoundingClientRect()
+  const x = Math.floor((event.clientX - rect.left) / cellSize.value)
+  const y = Math.floor((event.clientY - rect.top) / cellSize.value)
+  return x >= 0 && y >= 0 && x < size.value && y < size.value ? { x, y } : null
+}
+const tapHandlers = {
+  pointerdown (event) {
+    if (props.solved) return
+    tap = { id: event.pointerId, x: event.clientX, y: event.clientY }
+  },
+  pointerup (event) {
+    const t0 = tap
+    tap = null
+    if (!t0 || t0.id !== event.pointerId || props.solved) return
+    if (Math.hypot(event.clientX - t0.x, event.clientY - t0.y) > 10) return
+    const cell = cellAt(event)
+    if (!cell || !isValid(cell.x, cell.y)) return
+    gridInput.onStart(cell, event)
+    gridInput.onEnd()
+  },
+  pointercancel () { tap = null },
+  contextmenu (event) { event.preventDefault() }
+}
 
 const gridHandlers = {
   ...pointer.handlers,
+  ...(coarse ? tapHandlers : {}),
   pointermove (event) {
     pointer.handlers.pointermove(event)
     const rect = event.currentTarget.getBoundingClientRect()
@@ -580,46 +610,29 @@ defineExpose({ checkSolution, tableVisible, attrInputs })
       </template>
     </section>
 
-    <section v-if="orderedCats.length" class="scale-section">
+    <section class="pad-section">
       <div class="section-head">
-        <h3>{{ t('logical.scale') }}</h3>
-        <label class="toggle-container">
-          <span>{{ t('logical.scaleShow') }}</span>
-          <Toggle v-model="scaleVisible" />
-        </label>
-      </div>
-      <template v-if="scaleVisible">
-        <div class="scale-toolbar">
-          <div v-if="orderedCats.length > 1" class="tool-group" role="tablist">
-            <button
-              v-for="c in orderedCats"
-              :key="c"
-              class="tool labelled"
-              :class="{ active: activeScaleCat === c }"
-              role="tab"
-              :aria-selected="activeScaleCat === c"
-              @click="scaleCat = c"
-            >
-              <span class="scale-dot" :style="{ background: categoryColor(c).dot }" /><span>{{ attributes[c].name }}</span>
-            </button>
-          </div>
-          <div v-if="!solved" class="tool-group">
-            <button class="tool" :title="t('logical.scaleClear')" :aria-label="t('logical.scaleClear')" @click="clearScale">
-              <ion-icon name="refresh-outline"></ion-icon>
-            </button>
-          </div>
+        <h3>{{ t('logical.pad') }}</h3>
+        <div class="pad-head-tools">
+          <button v-if="padVisible && !solved && (pad.cards.length || pad.clues.length)" class="tool" :title="t('logical.padClear')" :aria-label="t('logical.padClear')" @click="clearPad">
+            <ion-icon name="refresh-outline"></ion-icon>
+          </button>
+          <label class="toggle-container">
+            <span>{{ t('logical.padShow') }}</span>
+            <Toggle v-model="padVisible" />
+          </label>
         </div>
-        <RelationScale
-          :key="activeScaleCat"
+      </div>
+      <template v-if="padVisible">
+        <p v-if="!solved" class="hint-text pad-help">{{ t(hasRelations ? 'logical.padHelp' : 'logical.padHelpNoClues') }}</p>
+        <CluePad
+          v-model="pad"
           :attributes="attributes"
           :relations="logical.relations || []"
-          :cat="activeScaleCat"
-          :placement="scalePlacements[activeScaleCat] || {}"
+          :clues="logical.clues || []"
           :hot="hotValues"
           :disabled="solved"
-          @update:placement="scalePlacements = { ...scalePlacements, [activeScaleCat]: $event }"
         />
-        <p v-if="!solved" class="hint-text">{{ t('logical.scaleHelp') }}</p>
       </template>
     </section>
 
@@ -845,20 +858,17 @@ h3 {
   margin-bottom: 28px;
 }
 
-.scale-section {
+.pad-section {
   margin-bottom: 28px;
-}
 
-.scale-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 4px;
+  .pad-head-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
-  .scale-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
+  .pad-help {
+    margin: 0 0 10px;
   }
 }
 
@@ -893,6 +903,8 @@ h3 {
 
 .grid-area {
   padding: 4px 0;
+  // A grid wider than the screen scrolls sideways inside its own box.
+  overflow-x: auto;
 }
 
 .logic-grid {
@@ -974,6 +986,11 @@ h3 {
   &.disabled { cursor: default; }
 }
 
+// On touch screens a swipe over the grid scrolls the page; a tap sets a mark.
+@media (pointer: coarse) {
+  .input-surface { touch-action: pan-x pan-y pinch-zoom; }
+}
+
 .solution-table {
   overflow-x: auto;
 
@@ -1026,6 +1043,16 @@ h3 {
 
   .info-columns {
     grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .puzzle-header .puzzle-title {
+    font-size: 22px;
   }
 }
 </style>
