@@ -109,6 +109,8 @@ Compute clues on the server (nonogram row/column clues, linelog numbers already 
 - Consider TypeScript, at least for the shared puzzle types between frontend and backend.
 - Return error **codes** from the API, translate them in the frontend with `vue-i18n`, and remove `v-html` for errors. This opens the door to an English version.
 - **Effort:** M, can be done incrementally.
+- **Done (2026-11-21):** npm workspaces `shared`, `backend`, `frontend` with one root `package-lock.json` (no yarn). Oruga only (Buefy gone; `StarRating.vue` and the Bulma navbar replace its components). Every route except Home is lazy-loaded. `shared/index.d.ts` holds the puzzle and API types, checked by `npm run typecheck`. The API sends `{ code, params? }` (`backend/utils/apiError.js`, codes in `shared/errorCodes.json`); the frontend translates them with `vue-i18n` (German and English), with no `v-html`. Removed the unused `frontend/src/assets/biene.jpg` and the empty `backend/public/`. `do_not_check_in` was committed by mistake (the `.gitignore` entry only matched a folder); it is now untracked and ignored, but it is still in the pushed history.
+- **Still open:** the old copies outside the repo (`F:\Logivilia\logivilia-backend`, `logivilia-frontend`, `logiviliaBackend`) are not deleted. `POST /api/admin/test-mail` still returns raw SMTP error text on purpose (an admin diagnostic).
 
 ### Solver-powered features
 

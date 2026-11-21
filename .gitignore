@@ -20,7 +20,7 @@ playwright-report/
 .env.example
 
 # Local-only material (never commit)
-do_not_check_in/
+do_not_check_in
 # Nonogram drafts awaiting review (pictures, previews, build scripts)
 backend/seed/unchecked/
 
