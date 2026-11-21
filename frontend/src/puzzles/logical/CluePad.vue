@@ -386,7 +386,9 @@ const shownCards = computed(() => props.modelValue.cards.map((card) => {
 }))
 
 const BASE_HEIGHT = 300
-const padHeight = computed(() => Math.max(props.wide ? 480 : BASE_HEIGHT, ...shownCards.value.map(c => c.top + c.h + 60)))
+// (An open candidate panel hangs below its card: room for it too.)
+const padHeight = computed(() => Math.max(props.wide ? 480 : BASE_HEIGHT, ...shownCards.value.map(c =>
+  c.top + c.h + 60 + (c.notes ? 24 + 27 * c.candidates.length : 0))))
 
 // Room for a new card near (x, y): tries spots around it until none overlaps.
 const freeSpot = (pad, x, y) => {
@@ -956,7 +958,7 @@ function endDrag () {
   }
 
   // An open candidate list lies over the cards around it.
-  &.open { z-index: 4; box-shadow: 0 8px 22px rgba(31, 29, 43, 0.18); }
+  &.open { z-index: 4; border-color: #b9b2d3; }
   &.drop-ok { border-color: #1f9d6b; box-shadow: 0 0 0 3px rgba(31, 157, 107, 0.35); }
   &.drop-bad { border-color: #d14343; box-shadow: 0 0 0 3px rgba(209, 67, 67, 0.3); }
   &.drop-clue { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
@@ -1099,14 +1101,38 @@ function endDrag () {
 }
 
 // Candidates of a card: tap to cross off.
+// A panel under the card, so the card keeps its size and its arrows and
+// their labels stay in view.
 .notes {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -1px;
+  z-index: 6;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  margin-top: 3px;
-  padding-top: 5px;
-  border-top: 1px solid #eeebf5;
+  width: max-content;
+  max-width: 300px;
+  padding: 7px 8px;
+  border: 1px solid #ddd8ea;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(31, 29, 43, 0.18);
   cursor: default;
+
+  // Little tip pointing up at the card.
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 16px;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border-left: 1px solid #ddd8ea;
+    border-top: 1px solid #ddd8ea;
+    transform: rotate(45deg);
+  }
 }
 
 .note-row {
