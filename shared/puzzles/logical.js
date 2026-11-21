@@ -65,13 +65,21 @@ export function publicRelations (data) {
   return relations;
 }
 
+const LOCAL_IMAGE = /^\/images\/logicals\/[A-Za-z0-9._\/-]+\.(?:jpe?g|png|webp|gif|svg)$/i;
+
 /** @type {import('../index').PuzzleTypePlugin<'logical'>} */
 const logical = {
   type: 'logical',
   dataFields: ['description', 'question', 'clues', 'attributes', 'solution', 'image', 'rules'],
 
   checkData (data) {
-    const { attributes, solution, clues, rules } = data;
+    const { attributes, solution, clues, rules, image } = data;
+    // Header images ship with the frontend; links to other sites (tracking
+    // pixels, hot-linked pictures) are refused, and the CSP blocks them too.
+    if (image != null && image !== '' &&
+        (typeof image !== 'string' || image.length > 200 || !LOCAL_IMAGE.test(image) || image.includes('..'))) {
+      return 'image must be empty or a path under /images/logicals/';
+    }
     if (!Array.isArray(attributes) || attributes.length < 2) {
       return 'attributes must list at least two categories';
     }

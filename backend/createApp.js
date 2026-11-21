@@ -14,8 +14,9 @@ const FRONTEND_DIST = path.join(__dirname, '..', 'frontend', 'dist');
 
 // External origins the frontend uses (see frontend/index.html and sw.js):
 // ionicons (script + its SVGs) from unpkg, icon fonts from jsdelivr
-// (Material Design Icons) and Font Awesome, and one puzzle image that is
-// still hot-linked from pixabay. A new CDN or image host must be added here.
+// (Material Design Icons) and Font Awesome. Images are same-origin only
+// (puzzle images ship under frontend/public/images). A new CDN must be
+// added here.
 const ICON_CSS = ['https://cdn.jsdelivr.net', 'https://use.fontawesome.com'];
 const GOOGLE_FONTS = ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'];
 const UNPKG = 'https://unpkg.com';
@@ -28,7 +29,7 @@ function contentSecurityDirectives (env) {
     // styles, so styles cannot be restricted to files.
     styleSrc: ["'self'", "'unsafe-inline'", ...ICON_CSS, GOOGLE_FONTS[0]],
     fontSrc: ["'self'", 'data:', ...ICON_CSS, GOOGLE_FONTS[1]],
-    imgSrc: ["'self'", 'data:', 'blob:', 'https://cdn.pixabay.com'],
+    imgSrc: ["'self'", 'data:', 'blob:'],
     // ionicons fetches its SVGs; the service worker refreshes the CDN files.
     connectSrc: ["'self'", UNPKG, ...ICON_CSS, ...GOOGLE_FONTS],
     workerSrc: ["'self'"],

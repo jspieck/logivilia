@@ -202,6 +202,30 @@ describe('plugin contract', () => {
     assert.ok(plugins.logical.checkData({ attributes: [{ name: 'a', values: ['x', 'y'] }], clues: [], solution: [] }));
   });
 
+  test('logical images must be local files under /images/logicals/', () => {
+    const base = {
+      attributes: [{ name: 'a', values: ['x', 'y'] }, { name: 'b', values: ['1', '2'] }],
+      clues: [],
+      solution: [['x', '1'], ['y', '2']]
+    };
+    const check = image => plugins.logical.checkData({ ...base, image });
+    for (const ok of [undefined, null, '', '/images/logicals/2014/06/buecher-640x372.jpg',
+      '/images/logicals/pixabay/weimar-806851_960_720.jpg']) {
+      assert.equal(check(ok), null, String(ok));
+    }
+    for (const bad of ['https://evil.example/pixel.gif', '//evil.example/x.png', 'javascript:alert(1)',
+      '/images/logicals/../../api/users.png', '/images/logicals/x.html', '/api/x.png', 42, { src: 'x' },
+      `/images/logicals/${'a'.repeat(200)}.jpg`]) {
+      assert.ok(check(bad), String(bad));
+    }
+    // Every seed image passes.
+    for (const file of ['logicals.json', 'logicalsComplete.json']) {
+      for (const puzzle of require(`../seed/${file}`)) {
+        assert.equal(check(puzzle.image), null, `${file}: ${puzzle.name}`);
+      }
+    }
+  });
+
   test('every plugin declares the shared interface', () => {
     for (const type of puzzles.PUZZLE_TYPES) {
       const plugin = plugins[type];

@@ -22,7 +22,6 @@ Part A lists what is still open from the first audit. Part B ranks the next impr
 
 | # | Item | What is left |
 |---|---|---|
-| A7 | One hotlinked image | One logical image still loads from `cdn.pixabay.com` (`backend/seed/logicals.json`). Once it is local, drop pixabay from the CSP `img-src` in `backend/createApp.js`. |
 | A8 | `npm audit` | One moderate advisory (`uuid` inside Sequelize); needs a Sequelize upgrade. |
 | A9 | `LogicalDisplay.vue` | Still 1,100+ lines mixing input, rendering and checks; the other types are split into board components. |
 | A10 | Solver checks block the server | `checkSolvable` runs on the request thread for up to 3 s per save. Move it to a `worker_thread`. |
@@ -86,7 +85,8 @@ Upgrade Sequelize (A8) and keep Node ≥ 22 on Plesk for `vue-i18n` 11. Small bi
 | Security fixes | 2026-11-08 | JWT secret from env, id-only tokens, no hashes in responses, auth and ownership on puzzle writes, no IDOR on solves, rate limits, no account enumeration, one password rule, CORS allowlist, field whitelists, root `.gitignore`. |
 | Bug fixes | 2026-11-08 | Comment and rating deletes, upvote counting, ranking crash, linelog save path, rating bounds. |
 | Hardening | 2026-11-14 | `helmet` (without CSP), random seed passwords, seed refuses production, separate rate-limit budgets. |
-| Content Security Policy (A6) | 2026-11-21 | `helmet` CSP with an allowlist in `backend/createApp.js` (unpkg, jsdelivr, Font Awesome, pixabay, same-origin workers); `CSP_REPORT_ONLY=1` only logs. MDI stylesheet now linked from jsdelivr (the old CDN redirects there). |
+| Content Security Policy (A6) | 2026-11-21 | `helmet` CSP with an allowlist in `backend/createApp.js` (unpkg, jsdelivr, Font Awesome, same-origin images and workers); `CSP_REPORT_ONLY=1` only logs. MDI stylesheet now linked from jsdelivr (the old CDN redirects there). |
+| Last hotlinked image (A7) | 2026-11-21 | The pixabay Weimar photo ships under `frontend/public/images/logicals/pixabay/` (Pixabay Content License allows self-hosting); seeds updated, migration `20261121-03` rewrites the live row. |
 | One puzzle model (B1) | 2026-11-14 | `Puzzles`, `PuzzleRatings`, `PuzzleSolves`, comments by `PuzzleId`; old links redirect via `legacyId`; rankings counted in SQL. |
 | Plugin interface (B2) | 2026-11-14 | `shared/puzzles/<type>.js` used by backend and frontend; one `/puzzle/:id` page; shared grid engine with Pointer Events, zoom, undo/redo. |
 | No solutions in the browser (B3) | 2026-11-14 | Server sends clues, verifies every solve; public `check` endpoint. |

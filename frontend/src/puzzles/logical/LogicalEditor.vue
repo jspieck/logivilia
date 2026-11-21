@@ -279,6 +279,7 @@ const name = ref('')
 const difficulty = ref(2)
 const description = ref('')
 const question = ref('')
+const image = ref('')
 const categories = ref([newCategory(), newCategory(), newCategory()])
 const rows = ref(Array.from({ length: 3 }, () => ['', '', '']))
 const clues = ref([newClue()])
@@ -641,7 +642,8 @@ function buildData () {
     clues: kept.map(c => c.text.trim()),
     attributes,
     solution,
-    image: '',
+    // No image field in the editor yet; keep the one the puzzle already has.
+    image: image.value,
     rules
   }
 }
@@ -698,6 +700,7 @@ function apply (source) {
   difficulty.value = Number(source.difficulty) || 2
   description.value = source.description || ''
   question.value = source.question || ''
+  image.value = typeof source.image === 'string' ? source.image : ''
   // Categories as names (older drafts) or { name, ordered }.
   categories.value = source.categories.map(cat => (typeof cat === 'string'
     ? newCategory(cat)

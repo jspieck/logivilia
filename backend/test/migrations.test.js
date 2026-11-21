@@ -64,12 +64,37 @@ test('logic puzzle images move from logiklab.de to /images/logicals', async () =
   await qi.bulkDelete('Puzzles', { name: ['img-logical', 'img-nonogram'] });
 });
 
+test('the pixabay image moves to /images/logicals/pixabay, other images stay', async () => {
+  const migration = require('../migrations/20261121-03-local-pixabay-image');
+  const now = new Date();
+  const insert = (name, type, image) => qi.bulkInsert('Puzzles', [{
+    type, name, data: JSON.stringify({ image, keep: 1 }), createdAt: now, updatedAt: now
+  }]);
+  await insert('px-1', 'logical', migration.REMOTE);
+  await insert('px-2', 'logical', 'https://cdn.pixabay.com/photo/other.jpg');
+
+  await migration.up(qi);
+  await migration.up(qi); // idempotent
+
+  const read = async () => (await sequelize.query("SELECT data FROM Puzzles WHERE name LIKE 'px-%' ORDER BY id",
+    { type: sequelize.QueryTypes.SELECT })).map(r => typeof r.data === 'string' ? JSON.parse(r.data) : r.data);
+  let rows = await read();
+  assert.deepEqual(rows.map(d => d.image), [migration.LOCAL, 'https://cdn.pixabay.com/photo/other.jpg']);
+  assert.equal(rows[0].keep, 1);
+
+  await migration.down(qi);
+  rows = await read();
+  assert.equal(rows[0].image, migration.REMOTE);
+  await qi.bulkDelete('Puzzles', { name: ['px-1', 'px-2'] });
+});
+
 test('every seed logic puzzle image ships with the frontend', () => {
   const fs = require('fs');
   const path = require('path');
   for (const file of ['logicals.json', 'logicalsComplete.json']) {
     const text = fs.readFileSync(path.join(__dirname, '../seed', file), 'utf8');
     assert.ok(!text.includes('logiklab.de'), `${file} still links to logiklab.de`);
+    assert.ok(!/"image":\s*"https?:/.test(text), `${file} still hot-links an image (the CSP blocks it)`);
     for (const [, rel] of text.matchAll(/"\/images\/logicals\/([^"]+)"/g)) {
       const local = path.join(__dirname, '../../frontend/public/images/logicals', rel);
       assert.ok(fs.existsSync(local), `missing ${local}`);
