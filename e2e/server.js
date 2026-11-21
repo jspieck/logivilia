@@ -2,11 +2,12 @@
 // fresh in-memory SQLite database, plus the built frontend (frontend/dist,
 // so run `npm run build` first). Never touches a real database.
 //
-// Fixtures, in this order (so their IDs are 1, 2, 3):
-//   1 tiny nonogram, 2 tiny linelog, 3 the first seed logical
+// Fixtures, in this order (so their IDs are 1, 2, 3, 4):
+//   1 tiny nonogram, 2 tiny linelog, 3 the first seed logical,
+//   4 a second, larger nonogram (the "next puzzle" after 1)
 // and one user, e2e@example.com / e2e-pass1 (unverified).
 // With --with-seed (for trying the UI by hand) the seed nonograms follow
-// from ID 4 on, then the seed linelogs.
+// from ID 5 on, then the seed linelogs.
 
 process.env.NODE_ENV = 'test';
 process.env.TEST_DB_DIALECT = '';
@@ -35,6 +36,10 @@ async function fixtures () {
     data: { width: 3, height: 1, numColor: 1, colors: ['#e53935', '#ffffff'], information: [[3, 0, 3]], solution: [[1, 1, 1]] }
   });
   await Puzzle.create({ ...toPuzzleRow('logical', seedLogicals[0], null), UserId: null });
+  await Puzzle.create({
+    type: 'nonogram', name: 'E2E Nonogramm Gross', difficulty: 3,
+    data: { width: 12, height: 12, numColor: 1, colors: ['#000000', '#ffffff'], solution: Array.from({ length: 12 }, () => Array(12).fill(1)) }
+  });
   await User.create({ username: 'e2euser', email: 'e2e@example.com', password: 'e2e-pass1', role: 'Mitglied' });
   if (process.argv.includes('--with-seed')) {
     for (const row of require('../backend/seed/nonograms.json')) {

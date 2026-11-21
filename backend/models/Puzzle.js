@@ -19,8 +19,23 @@ module.exports = (sequelize, DataTypes) => {
     author: DataTypes.STRING,
     // ID in the old per-type table (Nonograms, Linelogs, Logicals), so old
     // links such as /nonogramSolve/12 can be redirected. Null for new puzzles.
-    legacyId: DataTypes.INTEGER
+    legacyId: DataTypes.INTEGER,
+    // Copies of data.width / data.height / data.numColor for filtering and
+    // sorting the overview in SQL; set by the hook below, null for logic
+    // puzzles.
+    width: DataTypes.INTEGER,
+    height: DataTypes.INTEGER,
+    numColor: DataTypes.INTEGER
   }, {
+    hooks: {
+      // Not run by bulkCreate (no individualHooks), so the copy-legacy
+      // migration never writes these columns before they exist; migration
+      // 20261121-02 fills them in.
+      beforeSave (puzzle) {
+        const { listColumns } = require('../utils/puzzleView');
+        Object.assign(puzzle, listColumns(puzzle));
+      }
+    },
     indexes: [
       { fields: ['type'] },
       { unique: true, fields: ['type', 'legacyId'] }

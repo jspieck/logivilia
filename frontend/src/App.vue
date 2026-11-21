@@ -111,7 +111,7 @@
           </nav>
         </div>
       </div>
-      <div ref="bodyRef" class="body">
+      <div class="body">
         <div v-if="needsVerification" class="verify-banner" role="status">
           {{ t('banner.verify') }}
           <button class="button is-primary is-small" :disabled="resendBusy" @click="resendVerification">{{ t('banner.resend') }}</button>
@@ -158,6 +158,7 @@ import CookieConsent from './components/CookieConsent.vue'
 import LoginDropdown from './components/LoginDropdown.vue'
 import AuthenticationService from '@/services/AuthenticationService'
 import { apiErrorMessage, setLocale, SUPPORTED_LOCALES, LOCALE_NAMES } from '@/i18n'
+import { flushPendingSolves, onSolveSynced } from '@/puzzles/engine/pendingSolves'
 import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n()
@@ -191,25 +192,33 @@ const onNavClick = (event) => {
 const onDocumentClick = (event) => {
   if (menuOpen.value && navRef.value && !navRef.value.contains(event.target)) menuOpen.value = false
 }
-// Width of .body's scrollbar (0 for overlay scrollbars); see .header.
-const bodyRef = ref(null)
-const measureScrollbar = () => {
-  const el = bodyRef.value
-  if (el) document.documentElement.style.setProperty('--scrollbar-width', `${el.offsetWidth - el.clientWidth}px`)
-}
-onMounted(() => {
-  document.addEventListener('click', onDocumentClick)
-  window.addEventListener('resize', measureScrollbar)
-  measureScrollbar()
-})
-onBeforeUnmount(() => {
-  document.removeEventListener('click', onDocumentClick)
-  window.removeEventListener('resize', measureScrollbar)
-})
+onMounted(() => document.addEventListener('click', onDocumentClick))
+onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
+
 watch(() => route.fullPath, () => { menuOpen.value = false })
 
 const mainStore = useMainStore()
 const { showNotification } = useNotification()
+
+// Solves made offline are sent on start, when the connection is back and
+// after login (puzzles/engine/pendingSolves.js); each result gets a message.
+const syncSolves = () => flushPendingSolves(mainStore.isUserLoggedIn ? mainStore.user?.id ?? null : null)
+const stopSolveMessages = onSolveSynced(({ entry, solved }) => {
+  showNotification({
+    message: t(solved ? 'puzzle.offlineSynced' : 'puzzle.offlineWrong', { name: entry.name || `#${entry.id}` }),
+    type: solved ? 'success' : 'warning',
+    duration: 6000
+  })
+})
+onMounted(() => {
+  window.addEventListener('online', syncSolves)
+  syncSolves()
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('online', syncSolves)
+  stopSolveMessages()
+})
+watch(() => mainStore.isUserLoggedIn, loggedIn => { if (loggedIn) syncSolves() })
 
 // Computed properties to replace authStore references
 const isLoggedIn = computed(() => mainStore.isUserLoggedIn)
@@ -248,11 +257,15 @@ const handleLogout = () => {
 </script>
 
 <style lang="scss">
-// Prevent any scrolling on html/body
+// The document itself scrolls (no inner scroll container): mobile browsers
+// then collapse their URL bar and never lock a swipe onto a page that cannot
+// move. The header stays on top with position: sticky.
 html, body {
-  height: 100%;
-  overflow: hidden; /* Prevent scrolling on both */
   margin: 0;
+}
+
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -278,7 +291,8 @@ h2 {
 #mainContainer {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .avatarImg {
@@ -298,22 +312,18 @@ h2 {
 #app {
   text-align: left;
   color: #2c3e50;
-  height: 100%;
 }
 
 .body {
-  flex-grow: 1;
-  flex-shrink: 1;
-  overflow-y: scroll; /* Only this element should scroll */
-  scrollbar-gutter: stable;
+  flex: 1 0 auto;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='%23f1f1f1' stroke-width='1'%3E%3Cpath d='M769 229L1037 260.9M927 880L731 737 520 660 309 538 40 599 295 764 126.5 879.5 40 599-197 493 102 382-31 229 126.5 79.5-69-63'/%3E%3Cpath d='M-31 229L237 261 390 382 603 493 308.5 537.5 101.5 381.5M370 905L295 764'/%3E%3Cpath d='M520 660L578 842 731 737 840 599 603 493 520 660 295 764 309 538 390 382 539 269 769 229 577.5 41.5 370 105 295 -36 126.5 79.5 237 261 102 382 40 599 -69 737 127 880'/%3E%3Cpath d='M520-140L578.5 42.5 731-63M603 493L539 269 237 261 370 105M902 382L539 269M390 382L102 382'/%3E%3Cpath d='M-222 42L126.5 79.5 370 105 539 269 577.5 41.5 927 80 769 229 902 382 603 493 731 737M295-36L577.5 41.5M578 842L295 764M40-201L127 80M102 382L-261 269'/%3E%3C/g%3E%3Cg fill='%23b3d2f4'%3E%3Ccircle cx='769' cy='229' r='5'/%3E%3Ccircle cx='539' cy='269' r='5'/%3E%3Ccircle cx='603' cy='493' r='5'/%3E%3Ccircle cx='731' cy='737' r='5'/%3E%3Ccircle cx='520' cy='660' r='5'/%3E%3Ccircle cx='309' cy='538' r='5'/%3E%3Ccircle cx='295' cy='764' r='5'/%3E%3Ccircle cx='40' cy='599' r='5'/%3E%3Ccircle cx='102' cy='382' r='5'/%3E%3Ccircle cx='127' cy='80' r='5'/%3E%3Ccircle cx='370' cy='105' r='5'/%3E%3Ccircle cx='578' cy='42' r='5'/%3E%3Ccircle cx='237' cy='261' r='5'/%3E%3Ccircle cx='390' cy='382' r='5'/%3E%3C/g%3E%3C/svg%3E");
   width: 100%;
 }
 
 .header {
-  // The page below scrolls inside .body, whose scrollbar takes width from
-  // its content. The same room is left free here so header and page line up.
-  padding-right: var(--scrollbar-width, 0px);
+  position: sticky;
+  top: 0;
+  z-index: 40;
   background: #fff;
   flex-grow: 0;
   flex-shrink: 0; /* Prevent header from shrinking */
@@ -336,10 +346,16 @@ h2 {
   background: white;
 }
 
-// Phones: less empty room at the sides.
+// Phones: less empty room at the sides; the footer text wraps.
 @media (max-width: 768px) {
   .headerContainer, .bodyContainer {
     width: calc(100% - 16px);
+  }
+
+  .logFooter {
+    height: auto;
+    line-height: 1.6;
+    padding: 12px 8px;
   }
 }
 
@@ -692,6 +708,16 @@ html {
 @keyframes glow {
   0% { left: -100px; }
   100% { left: 100%; }
+}
+
+// The open burger menu hangs below the sticky header; a long one scrolls
+// on its own instead of running off the screen.
+@media (max-width: 1023px) {
+  .navbar-menu.is-active {
+    max-height: calc(100dvh - 3.25rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 // Mobile responsiveness

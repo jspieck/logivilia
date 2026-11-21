@@ -54,6 +54,7 @@
 
 .tool-group {
   display: flex;
+  flex-wrap: wrap; // a long group breaks on phones instead of overflowing
   align-items: center;
   gap: 3px;
   padding: 3px;

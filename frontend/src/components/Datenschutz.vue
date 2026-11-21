@@ -24,7 +24,9 @@
           <strong>In your browser:</strong> Your login (a token and your user profile) is kept in <em>sessionStorage</em> and deleted when
           you close the tab. In <em>localStorage</em> we remember whether you have acknowledged the cookie notice, your
           language, the puzzle you opened last (number, type and name, for “Continue” on the start page), your unfinished
-          games with their time, and, without an account, your best time per puzzle. Logivilia sets no tracking or advertising cookies and uses no analytics services.
+          games with their time, and, without an account, your best time per puzzle. A puzzle solved without a connection
+          is kept there (answer, time and, if logged in, your user number) until it has been sent. For offline play the
+          browser also keeps a copy of the app and of the puzzles you opened (no personal data). Logivilia sets no tracking or advertising cookies and uses no analytics services.
         </li>
       </ul>
 
@@ -90,7 +92,10 @@
           <strong>Im Browser:</strong> Ihre Anmeldung (ein Token und Ihr Benutzerprofil) liegt im <em>sessionStorage</em> und wird beim
           Schließen des Tabs gelöscht. Im <em>localStorage</em> merken wir uns, ob Sie den Cookie-Hinweis bestätigt haben, Ihre
           Sprache, das zuletzt geöffnete Rätsel (Nummer, Art und Name, für „Weiterspielen“ auf der Startseite), Ihre
-          angefangenen Rätsel mit ihrer Zeit und, ohne Konto, Ihre Bestzeit je Rätsel. Logivilia setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analysedienste.
+          angefangenen Rätsel mit ihrer Zeit und, ohne Konto, Ihre Bestzeit je Rätsel. Ein ohne Verbindung gelöstes
+          Rätsel liegt dort (Lösung, Zeit und, wenn angemeldet, Ihre Benutzernummer), bis es übertragen ist. Für das
+          Spielen ohne Verbindung speichert der Browser außerdem eine Kopie der App und der geöffneten Rätsel (keine
+          personenbezogenen Daten). Logivilia setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analysedienste.
         </li>
       </ul>
 

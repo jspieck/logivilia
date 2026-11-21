@@ -12,15 +12,62 @@
       >
     </div>
 
+    <div class="overview-filters" role="group" :aria-label="t('overview.filters')">
+      <label v-if="showSize" class="filter">
+        <span>{{ t('overview.size') }}</span>
+        <select v-model="filters.size">
+          <option value="">{{ t('overview.any') }}</option>
+          <option v-for="s in SIZES" :key="s.value" :value="s.value">{{ s.label }}</option>
+        </select>
+      </label>
+      <label v-if="showSize" class="filter">
+        <span>{{ t('overview.colors') }}</span>
+        <select v-model="filters.colors">
+          <option value="">{{ t('overview.any') }}</option>
+          <option v-for="c in COLORS" :key="c" :value="c">{{ c === 4 ? '4+' : c }}</option>
+        </select>
+      </label>
+      <label class="filter">
+        <span>{{ t('overview.difficulty') }}</span>
+        <select v-model="filters.difficulty">
+          <option value="">{{ t('overview.any') }}</option>
+          <option v-for="d in 5" :key="d" :value="d">{{ d }}</option>
+        </select>
+      </label>
+      <label class="filter">
+        <span>{{ t('overview.rating') }}</span>
+        <select v-model="filters.rating">
+          <option value="">{{ t('overview.any') }}</option>
+          <option v-for="r in [2, 3, 4]" :key="r" :value="r">{{ t('overview.atLeastStars', { n: r }) }}</option>
+        </select>
+      </label>
+      <label class="filter">
+        <span>{{ t('overview.author') }}</span>
+        <input v-model="filters.author" type="search" spellcheck="false" class="author-input">
+      </label>
+      <label v-if="isUserLoggedIn" class="filter filter-check">
+        <input v-model="filters.unsolved" type="checkbox">
+        <span>{{ t('overview.unsolvedOnly') }}</span>
+      </label>
+      <button v-if="hasFilters" type="button" class="button is-small is-light" @click="resetFilters">
+        {{ t('overview.resetFilters') }}
+      </button>
+    </div>
+
     <o-table
       v-model:current-page="currentPage"
       :data="rows"
       paginated
+      backend-pagination
+      backend-sorting
+      :total="total"
       :per-page="perPage"
+      :class="{ 'is-stale': loading }"
       :aria-next-label="t('table.next')"
       :aria-previous-label="t('table.previous')"
       :aria-page-label="t('table.page')"
       :aria-current-label="t('table.current')"
+      @sort="onSort"
     >
       <o-table-column field="name" :label="t('overview.name')" v-slot="props" sortable>
         <router-link :to="`/puzzle/${props.row.id}`" class="navLink">{{ props.row.name }}</router-link>
@@ -45,13 +92,15 @@
       <o-table-column field="date" :label="t('overview.date')" v-slot="props" sortable>
         <span class="tag is-light">{{ new Date(props.row.date).toLocaleDateString(locale) }}</span>
       </o-table-column>
-      <o-table-column field="solved" :label="t('overview.status')" v-slot="props" sortable>
+      <o-table-column field="solved" :label="t('overview.status')" v-slot="props" :sortable="isUserLoggedIn">
         <span v-if="props.row.solved" class="tag is-success">{{ t('overview.solved') }}</span>
         <span v-else class="tag is-danger is-light">{{ t('overview.unsolved') }}</span>
       </o-table-column>
 
       <template #empty>
-        <p class="overview-empty">{{ loading ? t('overview.loading') : t('overview.empty') }}</p>
+        <p class="overview-empty">
+          {{ loading ? t('overview.loading') : failed ? t('overview.failed') : t('overview.empty') }}
+        </p>
       </template>
 
       <!-- Rendered on the left of Oruga's page buttons. -->
@@ -76,13 +125,17 @@
 </template>
 
 <script setup>
-// Shared table for the nonogram, linelog and logical overview pages:
-// search by name, sortable columns, page size (remembered per browser),
-// "x–y of n" and jump to page.
+// Shared table for the nonogram, linelog and logical overview pages. The
+// server filters, sorts and paginates (GET /puzzles?page=...); this page
+// only holds the controls: name search, filters (size, colours, difficulty,
+// rating, author, unsolved only), sortable columns, page size (remembered
+// per browser), "x–y of n" and jump to page.
 
-import { ref, computed, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
+import { useMainStore } from '@/store/store'
 import { usePuzzleList } from '@/puzzles/usePuzzleList'
 
 const props = defineProps({
@@ -93,10 +146,20 @@ const props = defineProps({
 
 const { t, locale } = useI18n()
 const route = useRoute()
-const { puzzles, isSolved, loading } = usePuzzleList(props.type)
+const { isUserLoggedIn } = storeToRefs(useMainStore())
 
 const PAGE_SIZES = [10, 25, 50, 100]
 const PAGE_SIZE_KEY = 'logivilia:pageSize'
+// Larger side of the grid.
+const SIZES = [
+  { value: '1-10', label: '≤ 10' },
+  { value: '11-15', label: '11–15' },
+  { value: '16-20', label: '16–20' },
+  { value: '21-30', label: '21–30' },
+  { value: '31-', label: '> 30' }
+]
+const COLORS = [1, 2, 3, 4]
+const TEXT_DELAY_MS = 300
 const jumpId = `jump-${props.type}`
 
 function storedPageSize () {
@@ -107,24 +170,70 @@ function storedPageSize () {
   return 10
 }
 
+const emptyFilters = () => ({ size: '', colors: '', difficulty: '', rating: '', author: '', unsolved: false })
+
 const search = ref('')
+const filters = reactive(emptyFilters())
 const currentPage = ref(1)
 const perPage = ref(storedPageSize())
+const sort = ref({ field: null, order: 'asc' })
 const jumpTo = ref(null)
 
-const rows = computed(() => {
-  const query = search.value.trim().toLowerCase()
-  return puzzles.value
-    .filter(p => !query || p.name.toLowerCase().includes(query))
-    .map(p => ({ ...p, solved: isSolved(p.id) }))
+// Typed text reaches the server only after a short pause.
+const debounced = reactive({ q: '', author: '' })
+let textTimer = null
+watch([search, () => filters.author], ([q, author]) => {
+  clearTimeout(textTimer)
+  textTimer = setTimeout(() => {
+    debounced.q = q.trim()
+    debounced.author = author.trim()
+  }, TEXT_DELAY_MS)
 })
 
-const pageCount = computed(() => Math.max(1, Math.ceil(rows.value.length / perPage.value)))
+const filterParams = computed(() => {
+  const [minSize, maxSize] = filters.size ? filters.size.split('-') : []
+  const colors = filters.colors === '' ? null : Number(filters.colors)
+  const difficulty = filters.difficulty === '' ? null : Number(filters.difficulty)
+  return {
+    q: debounced.q,
+    author: debounced.author,
+    minSize: minSize || null,
+    maxSize: maxSize || null,
+    minColors: colors,
+    maxColors: colors !== null && colors < 4 ? colors : null,
+    minDifficulty: difficulty,
+    maxDifficulty: difficulty,
+    minRating: filters.rating || null,
+    status: filters.unsolved && isUserLoggedIn.value ? 'unsolved' : null
+  }
+})
+
+const query = computed(() => ({
+  ...filterParams.value,
+  sort: sort.value.field,
+  order: sort.value.order,
+  page: currentPage.value,
+  perPage: perPage.value
+}))
+
+const { rows, total, loading, failed } = usePuzzleList(props.type, query)
+
+const hasFilters = computed(() => Object.entries(filters).some(([key, value]) => value !== emptyFilters()[key]))
+
+function resetFilters () {
+  Object.assign(filters, emptyFilters())
+}
+
+function onSort (column, direction) {
+  sort.value = { field: column.field, order: direction }
+  currentPage.value = 1
+}
+
+const pageCount = computed(() => Math.max(1, Math.ceil(total.value / perPage.value)))
 
 const range = computed(() => {
-  const total = rows.value.length
-  const from = total ? (currentPage.value - 1) * perPage.value + 1 : 0
-  return { from, to: Math.min(total, currentPage.value * perPage.value), total }
+  const from = total.value ? (currentPage.value - 1) * perPage.value + 1 : 0
+  return { from, to: Math.min(total.value, currentPage.value * perPage.value), total: total.value }
 })
 
 function jump () {
@@ -134,16 +243,22 @@ function jump () {
   jumpTo.value = null
 }
 
-watch(search, () => { currentPage.value = 1 })
+// New filters start again on page 1 (page and size changes are not
+// filters). 'sync', so the list loads once with page 1, not first with the
+// old page.
+watch(filterParams, () => { currentPage.value = 1 }, { deep: true, flush: 'sync' })
 watch(perPage, (n) => {
   currentPage.value = 1
   try { localStorage.setItem(PAGE_SIZE_KEY, String(n)) } catch { /* ignore */ }
 })
-watch(pageCount, (n) => { if (currentPage.value > n) currentPage.value = n })
+watch(pageCount, (n) => { if (!loading.value && currentPage.value > n) currentPage.value = n })
 
-// The home page links here with ?search=...
+// The home page links here with ?search=...; applied at once, not debounced.
 watch(() => route.query.search, (value) => {
-  if (typeof value === 'string') search.value = value
+  if (typeof value === 'string') {
+    search.value = value
+    debounced.q = value.trim()
+  }
 }, { immediate: true })
 </script>
 
@@ -158,7 +273,7 @@ watch(() => route.query.search, (value) => {
   align-items: center;
   justify-content: space-between;
   gap: 12px 24px;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .tableTitle {
@@ -168,6 +283,55 @@ watch(() => route.query.search, (value) => {
 .overview-search {
   margin: 0;
   max-width: 320px;
+}
+
+.overview-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+  color: #4b5563;
+
+  .filter {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 0;
+  }
+
+  .filter-check {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    height: 2.2em;
+    cursor: pointer;
+  }
+
+  select, .author-input {
+    height: 2.2em;
+    margin: 0;
+    padding: 0 6px;
+    border: 1px solid #dbdbdb;
+    border-radius: 6px;
+    background: #fff;
+    font: inherit;
+  }
+
+  .author-input {
+    width: 9em;
+  }
+
+  .button {
+    height: 2.2em;
+  }
+}
+
+// Keep the old rows visible while the next page loads, just dimmed.
+.is-stale :deep(tbody) {
+  opacity: 0.55;
+  transition: opacity 0.15s;
 }
 
 .overview-empty {
@@ -217,6 +381,32 @@ watch(() => route.query.search, (value) => {
 
   .overview-search {
     max-width: none;
+  }
+
+  .overview-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    select, .author-input {
+      width: 100%;
+    }
+  }
+
+  // Page size, range and "go to" above the page buttons instead of pushing
+  // them off the screen.
+  :deep(.o-table__pagination) {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  :deep(.o-table__pagination > *) {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .table-controls {
+    min-width: 0;
+    gap: 8px 12px;
   }
 }
 </style>

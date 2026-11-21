@@ -26,14 +26,16 @@
 // Grid, table, crossed-off clues, notepad and time are saved per puzzle
 // (localStorage, and the server for logged-in players; ../engine/progress.js).
 
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LogicalDisplay from '@/components/LogicalDisplay.vue'
 import { readProgress, saveProgress, clearProgress, formatTime } from '../engine/progress'
 
 const props = defineProps({
   puzzle: { type: Object, required: true },
-  submit: { type: Function, required: true }
+  submit: { type: Function, required: true },
+  // { solved } once an answer given offline was checked (see PuzzlePage).
+  offlineResult: { type: Object, default: null }
 })
 const emit = defineEmits(['solved'])
 
@@ -88,19 +90,29 @@ const check = async (isComplete, table) => {
   }
   checking.value = true
   try {
-    if (await props.submit(table, { seconds: elapsed.value })) {
-      solved.value = true
-      message.value = t('logical.solved')
-      clearTimeout(saveTimer)
-      save()
-      emit('solved')
-    } else {
-      message.value = t('logical.mistakes')
-    }
+    const result = await props.submit(table, { seconds: elapsed.value })
+    if (result === true) finish()
+    else if (result === 'offline') message.value = t('puzzle.offlineCheckLater')
+    else message.value = t('logical.mistakes')
   } finally {
     checking.value = false
   }
 }
+
+function finish () {
+  solved.value = true
+  message.value = t('logical.solved')
+  clearTimeout(saveTimer)
+  save()
+  emit('solved')
+}
+
+// The answer given offline has been checked by now.
+watch(() => props.offlineResult, (result) => {
+  if (!result || solved.value) return
+  if (result.solved) finish()
+  else message.value = t('logical.mistakes')
+})
 
 let timer = null
 function tick () {

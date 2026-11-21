@@ -101,7 +101,15 @@
     "solved": "Gelöst",
     "unsolved": "Ungelöst",
     "empty": "Keine Rätsel gefunden.",
-    "loading": "Lädt …"
+    "loading": "Lädt …",
+    "filters": "Filter",
+    "size": "Größe",
+    "any": "Alle",
+    "atLeastStars": "ab {n} Sternen",
+    "author": "Autor",
+    "unsolvedOnly": "Nur ungelöste",
+    "resetFilters": "Filter zurücksetzen",
+    "failed": "Die Rätsel konnten nicht geladen werden."
   },
   "table": {
     "perPage": "Pro Seite",
@@ -281,7 +289,15 @@
     "markedSolved": "Rätsel erfolgreich als gelöst markiert!",
     "ratingSaved": "Bewertung gespeichert",
     "bestTime": "Ihre Bestzeit: {time}",
-    "newBest": "Neue Bestzeit!"
+    "newBest": "Neue Bestzeit!",
+    "offlineSaved": "Offline gelöst. Die Lösung wird übertragen, sobald du wieder online bist.",
+    "offlineCheckLater": "Du bist offline. Deine Lösung wird geprüft, sobald du wieder online bist.",
+    "offlineWasRight": "Deine offline abgegebene Lösung war richtig und ist gespeichert.",
+    "offlineSynced": "Offline-Lösung für „{name}“ gespeichert.",
+    "offlineWrong": "Die offline abgegebene Lösung für „{name}“ stimmt leider nicht.",
+    "nextUnsolved": "Nächstes ungelöstes Rätsel",
+    "nextPuzzle": "Nächstes Rätsel",
+    "allSolved": "Du hast alle Rätsel dieser Art gelöst!"
   },
   "linelog": {
     "beta": "Dieser Rätseltyp befindet sich noch in der Testphase. Es kann zu Fehlern kommen.",
@@ -388,7 +404,11 @@
     "allFilled": "Alles ist eingetragen.",
     "checkUnavailable": "Die Prüfung ist für dieses Rätsel nicht verfügbar.",
     "mistakes": "{n} Feld ist falsch (rot markiert). | {n} Felder sind falsch (rot markiert).",
-    "allCorrect": "Bisher ist alles richtig."
+    "allCorrect": "Bisher ist alles richtig.",
+    "tapCycle": "Tippen wechselt",
+    "tapCycleTitle": "Jedes Tippen wechselt die Zelle: Farbe → Punkt → leer",
+    "helpTouch": "Tippen oder ziehen: Zelle füllen · erneut tippen: zurücknehmen · Punkt wählen, um leere Zellen zu markieren · zwei Finger: zoomen und verschieben",
+    "helpTouchCycle": "Jedes Tippen: Farbe → Punkt → leer · Ziehen überträgt die Markierung der ersten Zelle auf die Linie · zwei Finger: zoomen und verschieben"
   },
   "editor": {
     "titleEdit": "Nonogramm bearbeiten",

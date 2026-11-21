@@ -2,9 +2,10 @@
 // (data fields, input checks, clues, answer checks) comes from the type's
 // plugin in shared/puzzles.
 
+const { Op } = require('sequelize');
 const { Puzzle, PuzzleRating, PuzzleSolve, PuzzleProgress, sequelize } = require('../models');
 const { getPlugin, isPuzzleType } = require('../puzzles');
-const { publicPuzzle, puzzleData, pickFields, EDITABLE_COMMON_FIELDS } = require('../utils/puzzleView');
+const { publicPuzzle, listPuzzle, puzzleData, pickFields, EDITABLE_COMMON_FIELDS } = require('../utils/puzzleView');
 const { sendError } = require('../utils/apiError');
 
 const ADMIN_ROLE = 'Admin';
@@ -59,14 +60,171 @@ function isCorrect (puzzle, answer) {
   return getPlugin(puzzle.type).validate(puzzleData(puzzle), answer);
 }
 
+// --- Overview list (GET /puzzles?page=...) --------------------------------
+
+const MAX_PER_PAGE = 100;
+const SORTABLE = ['name', 'difficulty', 'width', 'height', 'numColor', 'avgRating', 'date', 'solved', 'id'];
+
+const qid = name => sequelize.getQueryInterface().quoteIdentifier(name);
+// Correlated subqueries on the outer "Puzzle" row. userId is the integer ID
+// of the verified token's user, never taken from the query string.
+const avgRatingSql = () =>
+  `(SELECT AVG(${qid('r')}.${qid('rating')}) FROM ${qid('PuzzleRatings')} AS ${qid('r')} ` +
+  `WHERE ${qid('r')}.${qid('PuzzleId')} = ${qid('Puzzle')}.${qid('id')})`;
+const solvedIdsSql = userId =>
+  `(SELECT ${qid('s')}.${qid('PuzzleId')} FROM ${qid('PuzzleSolves')} AS ${qid('s')} ` +
+  `WHERE ${qid('s')}.${qid('UserId')} = ${Number(userId)})`;
+const solvedSql = userId =>
+  `(CASE WHEN ${qid('Puzzle')}.${qid('id')} IN ${solvedIdsSql(userId)} THEN 1 ELSE 0 END)`;
+
+/** A non-negative integer from the query string, at most `max`, or null. */
+function queryInt (value, max = Infinity) {
+  if (value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 0 ? Math.min(n, max) : null;
+}
+
+/** Text filter from the query string (trimmed, at most 100 characters). */
+function queryText (value) {
+  return typeof value === 'string' ? value.trim().slice(0, 100) : '';
+}
+
+/**
+ * "column contains text", case-insensitive. INSTR instead of LIKE because
+ * MySQL and SQLite escape LIKE wildcards differently; both have INSTR.
+ */
+function contains (column, text) {
+  return sequelize.where(
+    sequelize.fn('INSTR', sequelize.fn('LOWER', sequelize.col(column)), text.toLowerCase()),
+    Op.gt, 0
+  );
+}
+
+/**
+ * WHERE conditions from the query string. Every filter is optional;
+ * malformed values are ignored rather than rejected, so an old bookmark
+ * never breaks the page.
+ */
+function listWhere (query, userId) {
+  const and = [];
+  if (query.type) and.push({ type: query.type });
+
+  const text = queryText(query.q);
+  if (text) and.push(contains('name', text));
+  const author = queryText(query.author);
+  if (author) and.push(contains('author', author));
+
+  const minDifficulty = queryInt(query.minDifficulty);
+  const maxDifficulty = queryInt(query.maxDifficulty);
+  if (minDifficulty !== null) and.push({ difficulty: { [Op.gte]: minDifficulty } });
+  if (maxDifficulty !== null) and.push({ difficulty: { [Op.lte]: maxDifficulty } });
+
+  // Size: the larger side of the grid lies in [minSize, maxSize].
+  const minSize = queryInt(query.minSize);
+  const maxSize = queryInt(query.maxSize);
+  if (minSize !== null) {
+    and.push({ [Op.or]: [{ width: { [Op.gte]: minSize } }, { height: { [Op.gte]: minSize } }] });
+  }
+  if (maxSize !== null) {
+    and.push({ width: { [Op.lte]: maxSize } }, { height: { [Op.lte]: maxSize } });
+  }
+
+  const minColors = queryInt(query.minColors);
+  const maxColors = queryInt(query.maxColors);
+  if (minColors !== null) and.push({ numColor: { [Op.gte]: minColors } });
+  if (maxColors !== null) and.push({ numColor: { [Op.lte]: maxColors } });
+
+  const minRating = queryInt(query.minRating, 5);
+  if (minRating) {
+    and.push(sequelize.where(sequelize.literal(avgRatingSql()), Op.gte, minRating));
+  }
+
+  // Solved / unsolved only mean something for a logged-in player.
+  if (userId && (query.status === 'solved' || query.status === 'unsolved')) {
+    const op = query.status === 'solved' ? Op.in : Op.notIn;
+    and.push({ id: { [op]: sequelize.literal(solvedIdsSql(userId)) } });
+  }
+  return { [Op.and]: and };
+}
+
+function listOrder (query, userId) {
+  const field = SORTABLE.includes(query.sort) ? query.sort : 'id';
+  const dir = query.order === 'desc' ? 'DESC' : 'ASC';
+  let first = [field, dir];
+  if (field === 'avgRating') {
+    first = [sequelize.literal(avgRatingSql()), dir];
+  } else if (field === 'solved') {
+    first = userId ? [sequelize.literal(solvedSql(userId)), dir] : null;
+  }
+  // id as the tie-breaker, so pages never overlap or skip rows.
+  return first && field !== 'id' ? [first, ['id', dir]] : [['id', dir]];
+}
+
+/** The logged-in user's ID if a valid token was sent, else null. */
+function optionalUserId (req) {
+  if (!req.headers.authorization) return Promise.resolve(null);
+  return new Promise(resolve => {
+    const passport = require('../passport');
+    passport.authenticate('jwt', { session: false }, (err, user) => {
+      resolve(!err && user ? user.id : null);
+    })(req, {}, () => resolve(null));
+  });
+}
+
+async function listPage (req, res) {
+  const userId = await optionalUserId(req);
+  const page = Math.max(1, queryInt(req.query.page) || 1);
+  const perPage = Math.max(1, queryInt(req.query.perPage, MAX_PER_PAGE) || 10);
+  const where = listWhere(req.query, userId);
+  const [total, rows] = await Promise.all([
+    Puzzle.count({ where }),
+    Puzzle.findAll({
+      attributes: ['id', 'type', 'name', 'difficulty', 'width', 'height', 'numColor', 'date', 'author'],
+      where,
+      order: listOrder(req.query, userId),
+      limit: perPage,
+      offset: (page - 1) * perPage
+    })
+  ]);
+  const ids = rows.map(p => p.id);
+  const [ratings, solves] = await Promise.all([
+    ratingSummary(ids),
+    userId && ids.length
+      ? PuzzleSolve.findAll({ attributes: ['PuzzleId'], where: { UserId: userId, PuzzleId: ids }, raw: true })
+      : []
+  ]);
+  const solved = new Set(solves.map(s => s.PuzzleId));
+  res.send({
+    items: rows.map(p => listPuzzle(p, {
+      ...(ratings.get(p.id) || { avgRating: null, ratingCount: 0 }),
+      solved: solved.has(p.id)
+    })),
+    total,
+    page,
+    perPage
+  });
+}
+
 module.exports = {
   // GET /puzzles?type=nonogram - every puzzle of a type (or all), without
   // solutions, with average rating.
+  //
+  // With ?page=N the overview's paged list instead. Optional: perPage
+  // (1-100), sort (name|difficulty|width|height|numColor|avgRating|date|
+  // solved), order (asc|desc), q (name contains), author (contains),
+  // minDifficulty, maxDifficulty, minSize, maxSize (larger grid side),
+  // minColors, maxColors, minRating (1-5), status (solved|unsolved; needs a
+  // login, ignored for guests).
+  // -> { items: [{ id, name, difficulty, width, height, numColor, date,
+  //      author, avgRating, ratingCount, solved }], total, page, perPage }
   async index (req, res) {
     try {
       const { type } = req.query;
       if (type !== undefined && !isPuzzleType(type)) {
         return sendError(res, 400, 'PUZZLE_TYPE_INVALID');
+      }
+      if (req.query.page !== undefined) {
+        return await listPage(req, res);
       }
       const puzzles = await Puzzle.findAll({
         where: type ? { type } : {},
@@ -79,6 +237,33 @@ module.exports = {
     } catch (err) {
       console.error(err);
       sendError(res, 500, 'PUZZLE_LIST_FAILED');
+    }
+  },
+
+  // GET /puzzles/:puzzleId/next - { id } of the next puzzle of the same type
+  // after this one (by ID, wrapping around) that the logged-in player has
+  // not solved; for guests simply the next one. { id: null } if none is left.
+  async next (req, res) {
+    try {
+      const puzzle = await findPuzzle(req, res);
+      if (!puzzle) {
+        return;
+      }
+      const userId = await optionalUserId(req);
+      const base = [{ type: puzzle.type }, { id: { [Op.ne]: puzzle.id } }];
+      if (userId) {
+        base.push({ id: { [Op.notIn]: sequelize.literal(solvedIdsSql(userId)) } });
+      }
+      const find = extra => Puzzle.findOne({
+        attributes: ['id'],
+        where: { [Op.and]: [...base, ...extra] },
+        order: [['id', 'ASC']]
+      });
+      const next = await find([{ id: { [Op.gt]: puzzle.id } }]) || await find([]);
+      res.send({ id: next ? next.id : null });
+    } catch (err) {
+      console.error(err);
+      sendError(res, 500, 'PUZZLE_FETCH_FAILED');
     }
   },
 

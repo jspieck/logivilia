@@ -38,8 +38,8 @@
       {{ message?.text }}
     </p>
 
-    <div class="grid-area">
-      <svg class="main-grid linelog" :class="{ solved }"
+    <div class="grid-area" v-on="pinch.handlers">
+      <svg ref="gridEl" class="main-grid linelog" :class="{ solved }"
            :width="width * cell + 2" :height="height * cell + 2"
            :style="{ cursor: gridCursor }" v-on="gridHandlers">
         <rect :width="width * cell" :height="height * cell" :fill="solved ? backgroundColour : '#ffffff'" />
@@ -119,12 +119,15 @@ import { useI18n } from 'vue-i18n'
 import { useGridPointer } from '../engine/useGridPointer'
 import { useHistory } from '../engine/useHistory'
 import { useZoom } from '../engine/useZoom'
+import { usePinchZoom } from '../engine/usePinchZoom'
 import { readProgress, saveProgress, clearProgress, formatTime } from '../engine/progress'
 import { textColorFor } from '../engine/colors'
 
 const props = defineProps({
   puzzle: { type: Object, required: true },
-  submit: { type: Function, required: true }
+  submit: { type: Function, required: true },
+  // { solved } once an answer given offline was checked (see PuzzlePage).
+  offlineResult: { type: Object, default: null }
 })
 const emit = defineEmits(['solved'])
 const { t } = useI18n()
@@ -308,17 +311,29 @@ const allConnected = () => connectedPairs.value === totalPairs.value
 
 async function checkSolved () {
   if (solved.value || !allConnected()) return
-  if (await props.submit(answer(), { seconds: elapsed.value })) {
-    solved.value = true
-    hover.value = null
-    if (expanded.value) toggleExpanded()
-    message.value = null
-    save()
-    emit('solved')
-  } else {
-    message.value = { kind: 'error', text: t('linelog.errors.wrongSolution') }
-  }
+  const result = await props.submit(answer(), { seconds: elapsed.value })
+  if (result === true) finish()
+  else if (result === 'offline') message.value = { kind: 'info', text: t('puzzle.offlineCheckLater') }
+  else message.value = { kind: 'error', text: t('linelog.errors.wrongSolution') }
 }
+
+function finish () {
+  solved.value = true
+  hover.value = null
+  if (expanded.value) toggleExpanded()
+  message.value = null
+  save()
+  emit('solved')
+}
+
+// The answer given offline has been checked. If the player has changed the
+// paths since, the board stays open (the solve is recorded all the same).
+watch(() => props.offlineResult, (result) => {
+  if (!result || solved.value) return
+  if (result.solved && allConnected()) finish()
+  else if (result.solved) message.value = { kind: 'success', text: t('puzzle.offlineWasRight') }
+  else message.value = { kind: 'error', text: t('linelog.errors.wrongSolution') }
+})
 
 function reset () {
   const saved = load()
@@ -471,7 +486,23 @@ const pointer = useGridPointer({
   enabled: () => !solved.value,
   onStart: startDrag,
   onMove: moveDrag,
-  onEnd: endDrag
+  onEnd: endDrag,
+  onCancel () {
+    current.value = null
+    paths.value = before
+    before = null
+  }
+})
+
+// Two fingers on the grid zoom and scroll it (phones, tablets).
+const gridEl = ref(null)
+const pinch = usePinchZoom({
+  cellSize: cell,
+  setCellSize: zoom.setCellSize,
+  min: 14,
+  max: 64,
+  grid: () => gridEl.value,
+  onPinchStart: () => { pointer.cancel(); hover.value = null }
 })
 
 const cellAt = (event) => {

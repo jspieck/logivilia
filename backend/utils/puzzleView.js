@@ -39,6 +39,42 @@ function publicPuzzle (puzzle, extra = {}) {
   return Object.assign(result, extra);
 }
 
+const toCount = value => {
+  const n = Number(value);
+  return Number.isInteger(n) && n > 0 ? n : null;
+};
+
+/**
+ * The list columns (width, height, numColor) a puzzle row should have:
+ * copies of its data fields, so the overview can filter and sort on them in
+ * SQL. Null for types without a grid (logic puzzles).
+ */
+function listColumns (puzzle) {
+  const row = plain(puzzle);
+  if (row.type === 'logical') {
+    return { width: null, height: null, numColor: null };
+  }
+  const data = puzzleData(row);
+  return { width: toCount(data.width), height: toCount(data.height), numColor: toCount(data.numColor) };
+}
+
+/** What the overview tables show of a puzzle: no clues, no solution. */
+function listPuzzle (puzzle, extra = {}) {
+  const row = plain(puzzle);
+  return {
+    id: row.id,
+    type: row.type,
+    name: row.name,
+    difficulty: row.difficulty,
+    width: row.width ?? null,
+    height: row.height ?? null,
+    numColor: row.numColor ?? null,
+    date: row.date,
+    author: row.author,
+    ...extra
+  };
+}
+
 function pickFields (source, fields) {
   const result = {};
   for (const field of fields) {
@@ -51,6 +87,8 @@ function pickFields (source, fields) {
 
 module.exports = {
   publicPuzzle,
+  listPuzzle,
+  listColumns,
   puzzleData,
   pickFields,
   EDITABLE_COMMON_FIELDS

@@ -13,6 +13,7 @@ import Autocomplete from '@trevoreyre/autocomplete-vue'
 import '@/styles/searchbar.css'
 import '@/styles/app.css'
 import StarRating from '@/components/StarRating.vue'
+import { registerServiceWorker } from './registerServiceWorker'
 
 const app = createApp(App)
 app.use(pinia)
@@ -28,3 +29,5 @@ app.use(Autocomplete)
 app.component('StarRating', StarRating)
 
 app.mount('#app')
+
+registerServiceWorker()

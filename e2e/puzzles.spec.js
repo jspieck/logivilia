@@ -34,6 +34,39 @@ test('nonogram: shows clues, not the solution, and accepts a correct grid', asyn
     await page.mouse.click(point.x, point.y);
   }
   await expect(page.locator('.success-message')).toContainText('Gratulation! Sie haben dieses Rätsel gelöst!');
+
+  // Success screen: on to the next nonogram (fixture 4).
+  const next = page.getByRole('link', { name: 'Nächstes Rätsel' });
+  await expect(next).toHaveAttribute('href', '/puzzle/4');
+  await next.click();
+  await expect(page.getByRole('heading', { name: 'E2E Nonogramm Gross' })).toBeVisible();
+});
+
+test('overview: filters, sorting and paging run on the server', async ({ page }) => {
+  await page.goto('/nonogram-overview');
+  const rows = page.locator('tbody tr');
+  await expect(rows).toHaveCount(2);
+  await expect(page.locator('.range')).toHaveText('1–2 von 2');
+
+  // Size "11–15" keeps only the 12x12 one; the request carries the filter.
+  const filtered = page.waitForResponse(r => r.url().includes('minSize=11') && r.url().includes('maxSize=15'));
+  await page.getByLabel('Größe').selectOption('11-15');
+  const body = await (await filtered).json();
+  expect(body.total).toBe(1);
+  expect(JSON.stringify(body)).not.toContain('solution');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('E2E Nonogramm Gross');
+
+  await page.getByRole('button', { name: 'Filter zurücksetzen' }).click();
+  await expect(rows).toHaveCount(2);
+
+  // Sorting by difficulty, descending on the second click.
+  const header = page.locator('th', { hasText: 'Schwierigkeit' });
+  await header.click();
+  const desc = page.waitForResponse(r => r.url().includes('sort=difficulty') && r.url().includes('order=desc'));
+  await header.click();
+  await desc;
+  await expect(rows.first()).toContainText('E2E Nonogramm Gross');
 });
 
 test('linelog: drawing the path between the two numbers solves it', async ({ page }) => {

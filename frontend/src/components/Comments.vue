@@ -498,14 +498,5 @@ export default {
   .reply-label {
     display: none;
   }
-  .bodyContainer {
-    overflow-y: scroll;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  }
-  .bodyContainer::-webkit-scrollbar { /* WebKit */
-      width: 0;
-      height: 0;
-  }
 }
 </style>

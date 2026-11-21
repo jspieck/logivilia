@@ -164,20 +164,21 @@ Save progress per puzzle (localStorage for guests, server for logged-in users) a
 - **Partly done:** rankings are computed in SQL from `PuzzleSolves` (B1).
 - **Still open:** weighting by difficulty or time, weekly and monthly boards.
 
-#### 13. 🎨 Mobile, touch and offline
+#### 13. 🎨 Mobile, touch and offline ✅
 - Switch to Pointer Events, add pinch-zoom and a "tap to cycle" mode for small screens, and make the layouts responsive.
 - Make it a PWA (installable, offline play of puzzles already loaded).
 - **Effort:** M.
-- **Partly done:** the grid boards use Pointer Events (mouse and touch in one path), fit the screen width and have a full-page view.
-- **Still open:** pinch-zoom, tap-to-cycle, a responsive check of the remaining pages, PWA (no manifest or service worker).
+- **Done (2026-11-21):** the grid boards use Pointer Events (mouse and touch in one path), fit the screen width and have a full-page view. Two-finger pinch zooms and scrolls the nonogram and linelog grids (`puzzles/engine/usePinchZoom.js`); the nonogram has a "Tippen wechselt" mode on touch screens (colour → dot → empty). The document scrolls instead of an inner `.body` box (that inner box made swipes on phones stall now and then); the header is sticky. Overview pagination, editor toolbars and the footer wrap at phone width. PWA: `manifest.webmanifest`, icons in `public/icons`, and a service worker (`frontend/sw.js`, built to `dist/sw.js` by a plugin in `vite.config.js`) that caches the app, public puzzle data and CDN icons, so puzzles opened before work offline.
+  Solves made offline are kept in localStorage and sent on app start, when the browser goes online and after login (`puzzles/engine/pendingSolves.js`); a nonogram counts as solved at once (the clues prove it), linelogs and logicals are checked by the server then and the open board finishes.
+- **Left out on purpose:** own pinch-zoom on the logical board. There one-finger swipes scroll the page, so the browser's own pinch-zoom already works; taking it over would need a non-passive touch listener, which can make scrolling stutter.
 
-#### 14. 🎨 Finding puzzles
+#### 14. 🎨 Finding puzzles ✅
 - Filters: size, number of colours, difficulty, rating, "unsolved only", author.
 - "Next unsolved puzzle" button on the success screen.
 - Server-side pagination and sorting (today the overview loads every puzzle at once).
 - **Effort:** S–M.
-- **Partly done:** the overview tables have a text search and sortable columns (name, difficulty, size, colours, rating, date, solved).
-- **Still open:** real filters (size range, colours, unsolved only, author), a "next unsolved puzzle" button, server-side pagination (the overview still loads every puzzle of a type).
+- **Done (2026-11-21):** the overview tables (`PuzzleOverview.vue`) filter by size (larger grid side), colours, difficulty, minimum rating, author and "Nur ungelöste" (logged-in players), plus the name search; filters, sorting and pagination run in SQL (`GET /api/puzzles?page=…`, see `PuzzleController.index`), and a page sends summaries only (no clues). `width`, `height` and `numColor` are now real columns on `Puzzles`, copied from `data` by a model hook and backfilled by migration `20261121-02`. The success screen links to the next puzzle of the same type the player has not solved (`GET /api/puzzles/:id/next`, by ID, wrapping around; guests get simply the next one). The unpaged `GET /api/puzzles?type=…` still works. Tests: `backend/test/puzzleList.test.js`, two e2e cases.
+- **Not done:** the filters are not kept in the URL (a filtered list cannot be bookmarked or shared); "next" follows ID order, not the overview's current filters.
 
 ### Engineering and trust
 

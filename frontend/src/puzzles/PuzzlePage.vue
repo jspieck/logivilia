@@ -14,6 +14,7 @@
           :key="puzzle.id"
           :puzzle="puzzle"
           :submit="submit"
+          :offline-result="offlineResult"
           @solved="solvedNow = true"
         />
 
@@ -37,6 +38,13 @@
             <ion-icon name="trophy-outline"></ion-icon>
             {{ t('puzzle.bestTime', { time: formatTime(bestSeconds) }) }}
             <strong v-if="newBest" class="new-best">{{ t('puzzle.newBest') }}</strong>
+          </div>
+          <div v-if="solvedNow || alreadySolved" class="next-puzzle">
+            <router-link v-if="nextId" :to="`/puzzle/${nextId}`" class="button is-primary">
+              {{ store.isUserLoggedIn ? t('puzzle.nextUnsolved') : t('puzzle.nextPuzzle') }}
+              <ion-icon name="arrow-forward-outline"></ion-icon>
+            </router-link>
+            <p v-else-if="nextId === null && store.isUserLoggedIn" class="all-solved">{{ t('puzzle.allSolved') }}</p>
           </div>
         </div>
       </div>
@@ -66,6 +74,7 @@ import StarRating from '@/components/StarRating.vue'
 import { getPuzzleType } from './index'
 import { rememberPuzzle, forgetPuzzle } from './recentPuzzle'
 import { trackProgress, flushAll, localBest, recordLocalBest, formatTime } from './engine/progress'
+import { queueSolve, isOfflineError, onSolveSynced } from './engine/pendingSolves'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -80,6 +89,12 @@ const solvedNow = ref(false)
 // Personal best time in seconds (server for logged-in players, else local).
 const bestSeconds = ref(null)
 const newBest = ref(false)
+// Set when a solve sent offline for this puzzle got its answer from the
+// server: { solved }. The board then finishes (or says it was wrong).
+const offlineResult = ref(null)
+// The next puzzle of this type the player has not solved, shown once this
+// one is solved: an ID, null (none left) or undefined (not known yet).
+const nextId = ref(undefined)
 
 const puzzleType = computed(() => getPuzzleType(puzzle.value.type))
 // Admins and the author may see the stored data (e.g. a logic puzzle's rules).
@@ -126,6 +141,8 @@ const load = async (id) => {
   loadError.value = ''
   solvedNow.value = false
   newBest.value = false
+  offlineResult.value = null
+  nextId.value = undefined
   let loaded
   let progress
   try {
@@ -142,15 +159,48 @@ const load = async (id) => {
   await loadUserState()
 }
 
-// Passed to the board: submit(answer, { seconds }). Logged-in players record
-// the solve and time (the server checks the answer first; solving again may
-// set a new best time); guests only ask whether the answer is correct and
-// keep their best time locally.
+// Passed to the board: submit(answer, { seconds, verified }). Logged-in
+// players record the solve and time (the server checks the answer first;
+// solving again may set a new best time); guests only ask whether the answer
+// is correct and keep their best time locally. `verified`: the board already
+// knows the answer is right (nonogram: the clues prove it).
+//
+// Returns true (solved), false (wrong) or 'offline': no connection, the
+// answer is kept and checked when the connection is back (see
+// engine/pendingSolves.js; the board hears the outcome via offlineResult).
+// A verified solve counts as solved right away, offline too.
 let inFlight = false
-const submit = async (answer, { seconds } = {}) => {
+const submit = async (answer, { seconds, verified = false } = {}) => {
   if (inFlight) return false
   inFlight = true
   const id = puzzle.value.id
+  try {
+    return await send(id, answer, seconds)
+  } catch (error) {
+    if (!isOfflineError(error)) throw error
+    return keepForLater(id, answer, seconds, verified)
+  } finally {
+    inFlight = false
+  }
+}
+
+function keepForLater (id, answer, seconds, verified) {
+  const userId = store.isUserLoggedIn ? store.user?.id ?? null : null
+  if (verified && userId === null) {
+    // A guest's verified solve needs no server at all.
+    forgetPuzzle(id)
+    const best = recordLocalBest(id, seconds)
+    bestSeconds.value = best.bestSeconds
+    newBest.value = best.newBest
+    return true
+  }
+  queueSolve({ id, name: puzzle.value.name, answer, seconds, userId })
+  // An unverified answer: the board itself says it is checked later.
+  if (verified) notify(t('puzzle.offlineSaved'), 'info')
+  return verified ? true : 'offline'
+}
+
+async function send (id, answer, seconds) {
   try {
     if (store.isUserLoggedIn) {
       let result
@@ -176,13 +226,23 @@ const submit = async (answer, { seconds } = {}) => {
     }
     return solved
   } catch (error) {
+    if (isOfflineError(error)) throw error
     console.error('Error checking solution:', error)
     notify(apiErrorMessage(error), 'danger')
     return false
-  } finally {
-    inFlight = false
   }
 }
+
+// A solve of this puzzle, kept while offline, reached the server.
+const stopSyncListener = onSolveSynced(({ entry, solved, result }) => {
+  if (!puzzle.value || entry.id !== puzzle.value.id) return
+  if (solved) {
+    if (entry.userId !== null) alreadySolved.value = true
+    bestSeconds.value = result?.bestSeconds ?? bestSeconds.value
+    newBest.value = result?.newBest === true
+  }
+  offlineResult.value = { solved }
+})
 
 const saveRating = async (value) => {
   const previous = rating.value
@@ -199,6 +259,20 @@ const saveRating = async (value) => {
 watch(() => route.params.id, id => { if (id) load(id) })
 watch(() => store.isUserLoggedIn, loadUserState)
 
+// Asked only after solving (the server then already counts this one as
+// solved). Offline, the button just stays away.
+const loadNext = async () => {
+  if (!puzzle.value || nextId.value !== undefined) return
+  const id = puzzle.value.id
+  try {
+    const { data } = await PuzzleService.next(id)
+    if (puzzle.value && puzzle.value.id === id) nextId.value = data.id
+  } catch (error) {
+    console.error('Error loading the next puzzle:', error)
+  }
+}
+watch([solvedNow, alreadySolved], ([now, before]) => { if (now || before) loadNext() })
+
 onMounted(() => {
   load(route.params.id)
   window.ondragstart = () => false
@@ -206,6 +280,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.ondragstart = null
+  stopSyncListener()
 })
 // After the board's own last save (children unmount first).
 onUnmounted(() => flushAll())
@@ -266,6 +341,20 @@ onUnmounted(() => flushAll())
   .already-solved {
     color: #666;
     font-style: italic;
+  }
+
+  .next-puzzle {
+    margin-top: 14px;
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .all-solved {
+      color: #2e7d32;
+    }
   }
 
   .best-time {

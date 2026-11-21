@@ -136,3 +136,19 @@
   font-weight: 600;
   color: #166534;
 }
+
+// Phones: one finger over the clues still scrolls the page, but the browser's
+// own pinch is off, so two fingers on the grid zoom the board instead
+// (usePinchZoom). The grid itself has touch-action: none.
+.grid-area {
+  touch-action: pan-x pan-y;
+}
+
+.board.expanded {
+  overscroll-behavior: contain;
+}
+
+.tool.active {
+  background: #e0e9fd;
+  color: var(--accent);
+}

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { createPinia } from 'pinia'
+import { clearOfflineData } from '../registerServiceWorker'
 
 // Create pinia instance
 const pinia = createPinia()
@@ -23,6 +24,7 @@ export const useMainStore = defineStore('main', {
       this.user = user;
     },
     logout() {
+      clearOfflineData()
       this.token = null
       this.user = null
       this.isUserLoggedIn = false

@@ -10,6 +10,19 @@ export default {
   index (type) {
     return Api().get('puzzles', { params: type ? { type } : {} });
   },
+  // One page of an overview: { type, page, perPage, sort, order, q, author,
+  // minSize, maxSize, minColors, maxColors, minDifficulty, maxDifficulty,
+  // minRating, status: 'solved' | 'unsolved' } (all but page optional)
+  // -> { items, total, page, perPage }
+  list (params) {
+    const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== null && v !== undefined && v !== ''));
+    return Api().get('puzzles', { params: clean });
+  },
+  // { id } of the next puzzle of the same type the player has not solved
+  // (for guests simply the next one), or { id: null }.
+  next (puzzleId) {
+    return Api().get(`puzzles/${puzzleId}/next`);
+  },
   show (puzzleId) {
     return Api().get(`puzzles/${puzzleId}`);
   },

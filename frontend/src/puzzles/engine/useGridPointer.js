@@ -18,9 +18,10 @@ import { ref, unref } from 'vue'
  * @param {(cell: {x: number, y: number}, event: PointerEvent) => void} [options.onStart]
  * @param {(cell: {x: number, y: number}, event: PointerEvent) => void} [options.onMove]
  * @param {(event: PointerEvent) => void} [options.onEnd]
+ * @param {() => void} [options.onCancel]  the stroke was dropped (see cancel())
  * @param {() => boolean} [options.enabled]  input is ignored while this returns false
  */
-export function useGridPointer ({ cellSize, width, height, onStart, onMove, onEnd, enabled = () => true }) {
+export function useGridPointer ({ cellSize, width, height, onStart, onMove, onEnd, onCancel, enabled = () => true }) {
   const active = ref(false)
   let pointerId = null
   let last = null
@@ -43,12 +44,22 @@ export function useGridPointer ({ cellSize, width, height, onStart, onMove, onEn
     onEnd && onEnd(event)
   }
 
+  // Drops the stroke in progress without onEnd, e.g. when a second finger
+  // turns it into a pinch. The finger still down does nothing more.
+  const cancel = () => {
+    if (!active.value) return
+    active.value = false
+    pointerId = null
+    last = null
+    onCancel && onCancel()
+  }
+
   const handlers = {
     pointerdown (event) {
       // One pointer at a time; ignore a second finger and middle clicks.
       if (active.value || !enabled() || event.button === 1) return
       event.preventDefault()
-      event.currentTarget.setPointerCapture?.(event.pointerId)
+      try { event.currentTarget.setPointerCapture(event.pointerId) } catch { /* pointer already gone */ }
       active.value = true
       pointerId = event.pointerId
       last = cellFromEvent(event)
@@ -70,5 +81,5 @@ export function useGridPointer ({ cellSize, width, height, onStart, onMove, onEn
     }
   }
 
-  return { handlers, active }
+  return { handlers, active, cancel }
 }

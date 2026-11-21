@@ -115,6 +115,9 @@ module.exports = () => {
     PuzzleController.legacy);
   router.get('/puzzles/:puzzleId',
     PuzzleController.show);
+  // Next puzzle of the same type the player has not solved (login optional).
+  router.get('/puzzles/:puzzleId/next',
+    PuzzleController.next);
   // The full puzzle including its solution, for editing: owner or Admin.
   router.get('/puzzles/:puzzleId/source',
     isAuthenticated,

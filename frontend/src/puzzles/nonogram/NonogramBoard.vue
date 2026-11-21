@@ -15,6 +15,14 @@
         ><span v-if="entry.value === DOT" class="swatch-dot"></span></button>
       </div>
 
+      <div v-if="touchScreen" class="tool-group">
+        <button class="tool labelled" :class="{ active: tapCycle }" :title="t('nonogram.tapCycleTitle')"
+                :aria-pressed="tapCycle" @click="tapCycle = !tapCycle">
+          <ion-icon name="repeat-outline"></ion-icon>
+          <span>{{ t('nonogram.tapCycle') }}</span>
+        </button>
+      </div>
+
       <div class="tool-group">
         <button class="tool" :title="t('nonogram.undo')" :disabled="!history.canUndo.value" @click="undo">
           <ion-icon name="return-up-back-outline"></ion-icon>
@@ -54,7 +62,7 @@
       {{ message?.text }}
     </p>
 
-    <div class="grid-area">
+    <div class="grid-area" v-on="pinch.handlers">
       <svg
         class="nonogram"
         :width="left + width * cell + 2"
@@ -99,7 +107,7 @@
         </g>
 
         <!-- Main grid -->
-        <svg :x="left" :y="top" :width="width * cell + 2" :height="height * cell + 2"
+        <svg ref="gridEl" :x="left" :y="top" :width="width * cell + 2" :height="height * cell + 2"
              class="main-grid" :class="{ solved }" v-on="gridHandlers">
           <rect :width="width * cell" :height="height * cell" :fill="solved ? backgroundColour : '#ffffff'" />
 
@@ -149,7 +157,7 @@
 
     <p v-if="solved" class="solved-time">{{ t('nonogram.solvedIn', { time: formatTime(elapsed) }) }}</p>
     <p v-else class="help">
-      {{ t('nonogram.help') }} ·
+      {{ touchScreen ? (tapCycle ? t('nonogram.helpTouchCycle') : t('nonogram.helpTouch')) : t('nonogram.help') }} ·
       {{ multiColour ? t('nonogram.helpClueMulti') : t('nonogram.helpClue') }} ·
       {{ t('nonogram.helpHint') }}
     </p>
@@ -180,12 +188,16 @@ import {
 import { useGridPointer } from '../engine/useGridPointer'
 import { useHistory } from '../engine/useHistory'
 import { useZoom } from '../engine/useZoom'
+import { usePinchZoom } from '../engine/usePinchZoom'
+import { useTouchScreen, useStoredFlag } from '../engine/useTouch'
 import { readProgress, saveProgress, clearProgress, formatTime } from '../engine/progress'
 import { textColorFor } from '../engine/colors'
 
 const props = defineProps({
   puzzle: { type: Object, required: true },
-  submit: { type: Function, required: true }
+  submit: { type: Function, required: true },
+  // Unused: the clues prove a nonogram solved, offline too (see PuzzlePage).
+  offlineResult: { type: Object, default: null }
 })
 const emit = defineEmits(['solved'])
 const { t } = useI18n()
@@ -360,7 +372,7 @@ function checkSolved () {
     save()
     emit('solved')
     // The clues prove it is solved; this records it for logged-in players.
-    props.submit(answer(), { seconds: elapsed.value })
+    props.submit(answer(), { seconds: elapsed.value, verified: true })
   }
 }
 
@@ -479,8 +491,16 @@ const pointer = useGridPointer({
     }
     dragStart = pos
     before = [...state.value]
-    const value = hinted ? hinted.value : event.button === 2 ? DOT : selected.value
-    action = dragAction(before[pos.y * width.value + pos.x], value)
+    const current = before[pos.y * width.value + pos.x]
+    if (tapCycle.value && touchScreen.value && !hinted && event.pointerType !== 'mouse') {
+      // Tap to cycle: unknown -> colour -> dot -> unknown; a drag carries the
+      // new value of the first cell along the line.
+      const next = cycleValue(current)
+      action = next === UNKNOWN ? { mode: 'clear', value: current } : { mode: 'set', value: next }
+    } else {
+      const value = hinted ? hinted.value : event.button === 2 ? DOT : selected.value
+      action = dragAction(current, value)
+    }
     drag(pos)
   },
   onMove (pos) {
@@ -493,7 +513,33 @@ const pointer = useGridPointer({
     dragCount.value = 0
     dragStart = null
     commit(next)
+  },
+  onCancel () {
+    state.value = before
+    dragCount.value = 0
+    dragStart = null
   }
+})
+
+// Phones and tablets: an optional mode where each tap steps a cell through
+// unknown -> selected colour -> dot -> unknown, so no colour/dot switching
+// is needed. Remembered per device.
+const touchScreen = useTouchScreen()
+const tapCycle = useStoredFlag('logivilia.nonogram.tapCycle', false)
+const cycleValue = (current) => {
+  if (current === UNKNOWN) return selected.value
+  if (current === DOT) return UNKNOWN
+  return DOT
+}
+
+const gridEl = ref(null)
+const pinch = usePinchZoom({
+  cellSize: cell,
+  setCellSize: zoom.setCellSize,
+  min: 12,
+  max: 64,
+  grid: () => gridEl.value,
+  onPinchStart: () => { pointer.cancel(); hover.value = null }
 })
 
 function drag (pos) {

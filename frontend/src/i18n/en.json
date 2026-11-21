@@ -101,7 +101,15 @@
     "solved": "Solved",
     "unsolved": "Unsolved",
     "empty": "No puzzles found.",
-    "loading": "Loading …"
+    "loading": "Loading …",
+    "filters": "Filters",
+    "size": "Size",
+    "any": "Any",
+    "atLeastStars": "{n}+ stars",
+    "author": "Author",
+    "unsolvedOnly": "Unsolved only",
+    "resetFilters": "Reset filters",
+    "failed": "The puzzles could not be loaded."
   },
   "table": {
     "perPage": "Per page",
@@ -281,7 +289,15 @@
     "markedSolved": "Puzzle marked as solved!",
     "ratingSaved": "Rating saved",
     "bestTime": "Your best time: {time}",
-    "newBest": "New best time!"
+    "newBest": "New best time!",
+    "offlineSaved": "Solved offline. The solve will be sent once you are back online.",
+    "offlineCheckLater": "You are offline. Your answer will be checked once you are back online.",
+    "offlineWasRight": "The answer you gave offline was right and has been saved.",
+    "offlineSynced": "Offline solve of “{name}” saved.",
+    "offlineWrong": "The answer you gave offline for “{name}” is not right.",
+    "nextUnsolved": "Next unsolved puzzle",
+    "nextPuzzle": "Next puzzle",
+    "allSolved": "You have solved every puzzle of this type!"
   },
   "linelog": {
     "beta": "This puzzle type is still in testing. Errors may occur.",
@@ -388,7 +404,11 @@
     "allFilled": "Everything is filled in.",
     "checkUnavailable": "Checking is not available for this puzzle.",
     "mistakes": "{n} cell is wrong (marked red). | {n} cells are wrong (marked red).",
-    "allCorrect": "Everything is correct so far."
+    "allCorrect": "Everything is correct so far.",
+    "tapCycle": "Tap cycles",
+    "tapCycleTitle": "Each tap steps a cell through: colour → dot → empty",
+    "helpTouch": "Tap or drag: fill cell · tap again: undo · choose the dot to mark empty cells · two fingers: zoom and scroll",
+    "helpTouchCycle": "Each tap: colour → dot → empty · dragging carries the first cell's mark along the line · two fingers: zoom and scroll"
   },
   "editor": {
     "titleEdit": "Edit nonogram",
