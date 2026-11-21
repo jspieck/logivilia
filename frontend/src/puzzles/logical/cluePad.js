@@ -338,11 +338,11 @@ export function addClue (pad, index, relations, x, y, freeSpot) {
   if (pad.clues.includes(index)) return pad
   let next = clone(pad)
   next.clues.push(index)
-  const STEP = 240
-  const place = (ref, near, dx) => {
+  const STEP_X = 240
+  const place = (ref, near, dx, dy = 0) => {
     if (cardOf(next, ref)) return
     const anchor = near && cardOf(next, near)
-    const spot = anchor ? freeSpot(next, anchor.x + dx, anchor.y) : freeSpot(next, x, y)
+    const spot = anchor ? freeSpot(next, anchor.x + dx, anchor.y + dy) : freeSpot(next, x, y)
     next = newCard(next, ref, spot.x, spot.y)
   }
   const visit = (r) => {
@@ -358,12 +358,135 @@ export function addClue (pad, index, relations, x, y, freeSpot) {
     }
     const o = orientRelation(r)
     if (o) {
-      place(o.left, o.right, -STEP)
-      place(o.right, o.left, STEP)
+      place(o.left, o.right, -STEP_X)
+      place(o.right, o.left, STEP_X)
       return
     }
-    refsOf(r).forEach((ref, k) => place(ref, refsOf(r)[0], k ? STEP : 0))
+    refsOf(r).forEach((ref, k) => place(ref, refsOf(r)[0], k ? STEP_X : 0))
   }
   ;(relations || []).forEach(visit)
   return next
+}
+
+/**
+ * Tidy up the pad: the arrows of the clues run left to right (smaller value
+ * left), cards linked by them form a group in columns with room for the
+ * labels, and each group gets its own band down the pad. Single cards line
+ * up at the bottom, wrapping at `width`. `links` as from relationLinks,
+ * `size(card)` -> { w, h }.
+ */
+export function layoutPad (pad, links, size, width) {
+  const GAP_X = 120
+  const GAP_Y = 34
+  const GROUP_GAP = 72
+  const MARGIN = 10
+  const ids = pad.cards.map(c => c.id)
+  const known = new Set(ids)
+  const edges = links.filter(l => known.has(l.from) && known.has(l.to) && l.from !== l.to)
+  const near = new Map(ids.map(id => [id, new Set()]))
+  for (const l of edges) {
+    near.get(l.from).add(l.to)
+    near.get(l.to).add(l.from)
+  }
+
+  // Column of a card: the longest chain of arrows leading to it (a cap stops
+  // contradictory cycles from growing forever).
+  const layer = new Map(ids.map(id => [id, 0]))
+  // Only arrows set columns; "=" and "≠" links leave cards in one column.
+  const arrows = edges.filter(l => l.kind === 'order' || l.kind === 'sym')
+  for (let round = 0; round < ids.length; round++) {
+    let changed = false
+    for (const l of arrows) {
+      const want = layer.get(l.from) + 1
+      if (layer.get(l.to) < want && want < ids.length) {
+        layer.set(l.to, want)
+        changed = true
+      }
+    }
+    if (!changed) break
+  }
+
+  // Linked groups.
+  const seen = new Set()
+  const groups = []
+  for (const id of ids) {
+    if (seen.has(id)) continue
+    const group = [id]
+    seen.add(id)
+    for (let i = 0; i < group.length; i++) {
+      for (const n of near.get(group[i])) {
+        if (!seen.has(n)) {
+          seen.add(n)
+          group.push(n)
+        }
+      }
+    }
+    groups.push(group)
+  }
+  // Big groups first, single cards last.
+  groups.sort((g, h) => h.length - g.length)
+
+  const byId = new Map(pad.cards.map(c => [c.id, c]))
+  const spots = new Map()
+  let y = MARGIN
+  const singles = []
+  for (const group of groups) {
+    if (group.length === 1) {
+      singles.push(group[0])
+      continue
+    }
+    const first = Math.min(...group.map(id => layer.get(id)))
+    const cols = []
+    for (const id of group) {
+      const k = layer.get(id) - first
+      ;(cols[k] = cols[k] || []).push(id)
+    }
+    // Order each column by where its linked cards in the columns before sit.
+    const order = new Map()
+    cols.forEach((col, k) => {
+      if (!col) return
+      if (k > 0) {
+        const at = (id) => {
+          const before = [...near.get(id)].filter(n => order.has(n) && layer.get(n) - first < k)
+          return before.length ? before.reduce((sum, n) => sum + order.get(n), 0) / before.length : Infinity
+        }
+        col.sort((p, q) => at(p) - at(q))
+      }
+      col.forEach((id, i) => order.set(id, i))
+    })
+    const colHeight = col => col.reduce((sum, id) => sum + size(byId.get(id)).h, 0) + GAP_Y * (col.length - 1)
+    const groupH = Math.max(...cols.filter(Boolean).map(colHeight))
+    // Spread the columns over the width when the pad is wider than needed.
+    const colW = cols.map(col => (col ? Math.max(...col.map(id => size(byId.get(id)).w)) : 0))
+    const needed = colW.reduce((sum, w) => sum + w, 0) + GAP_X * (cols.length - 1)
+    const gap = cols.length > 1 ? Math.max(GAP_X, Math.min(GAP_X * 1.8, (width - 2 * MARGIN - needed) / (cols.length - 1) + GAP_X)) : 0
+    let x = MARGIN
+    cols.forEach((col, k) => {
+      if (col) {
+        let cy = y + (groupH - colHeight(col)) / 2
+        for (const id of col) {
+          const s = size(byId.get(id))
+          spots.set(id, { x: x + (colW[k] - s.w) / 2, y: cy })
+          cy += s.h + GAP_Y
+        }
+      }
+      x += colW[k] + gap
+    })
+    y += groupH + GROUP_GAP
+  }
+  // Single cards in rows at the bottom.
+  let x = MARGIN
+  let rowH = 0
+  for (const id of singles) {
+    const s = size(byId.get(id))
+    if (x > MARGIN && x + s.w > width - MARGIN) {
+      x = MARGIN
+      y += rowH + GAP_Y
+      rowH = 0
+    }
+    spots.set(id, { x, y })
+    x += s.w + 24
+    rowH = Math.max(rowH, s.h)
+  }
+  return { ...pad, cards: pad.cards.map(c => ({ ...c, ...spots.get(c.id) })) }
 }

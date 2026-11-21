@@ -4,7 +4,10 @@
     <aside v-if="wide && clueCount" class="clue-list" data-palette="1">
       <div class="clue-list-head">
         <span class="source-title">{{ t('logical.clues') }}</span>
-        <button v-if="!disabled && missingClues.length" type="button" class="text-button" @click="addAllClues">{{ t('logical.padAllClues') }}</button>
+        <span class="head-buttons">
+          <button v-if="!disabled && missingClues.length" type="button" class="text-button" @click="addAllClues">{{ t('logical.padAllClues') }}</button>
+          <button v-if="!disabled && modelValue.cards.length > 1" type="button" class="text-button" :title="t('logical.padArrangeTitle')" @click="arrange">{{ t('logical.padArrange') }}</button>
+        </span>
       </div>
       <ol>
         <li v-for="i in clueCount" :key="`t${i}`" :class="{ on: modelValue.clues.includes(i - 1) }">
@@ -41,6 +44,7 @@
               @click.stop="toggleClue(i - 1)"
             >{{ i }}</button>
             <button v-if="!disabled && missingClues.length" type="button" class="text-button" @click.stop="addAllClues">{{ t('logical.padAllClues') }}</button>
+            <button v-if="!disabled && modelValue.cards.length > 1" type="button" class="text-button" :title="t('logical.padArrangeTitle')" @click.stop="arrange">{{ t('logical.padArrange') }}</button>
           </div>
         </div>
         <div v-for="(attr, a) in attributes" :key="`a${a}`" class="source-row">
@@ -101,6 +105,7 @@
           @pointerdown="startDrag($event, { type: 'card', id: card.id })"
           @click.stop="clickCard(card)"
         >
+          <div class="card-body">
           <template v-for="(part, p) in card.parts" :key="`p${p}`">
             <div v-if="p > 0" class="part-join">
               <span class="join-line" />
@@ -113,6 +118,7 @@
                 @pointerdown.stop
                 @click.stop="split(card, p)"
               >✂</button>
+              <span class="join-line" />
             </div>
             <span
               v-for="entry in part"
@@ -141,6 +147,7 @@
                 @click.stop="emitPad(toggleCrossed(modelValue, card.id, { attr: row.attr, value: c.value }))"
               >{{ c.value }}</button>
             </div>
+          </div>
           </div>
 
           <div v-if="!disabled" class="card-tools">
@@ -211,7 +218,7 @@ import { orientRelation, orientText } from './orientRelation'
 import {
   valueKey, cardOf, relationLinks, clueState, addToCard, newCard, removeValue,
   removeCard, moveCard, mergeCards, cardsClash, removeClue, addClue, sameBonds,
-  boundRefs, partsOf, splitPart, toggleCrossed, toggleNotes
+  boundRefs, partsOf, splitPart, toggleCrossed, toggleNotes, layoutPad
 } from './cluePad'
 
 const props = defineProps({
@@ -437,8 +444,43 @@ const drawnLinks = computed(() => {
       }
     }
   }
-  // Several links between the same two cards bend apart.
+  // Several links between the same two cards bend apart, and a link bends
+  // around cards in its way (the first bend whose curve and label miss them).
   const pairCount = new Map()
+  const curve = (a, b, ac, bc, bend) => {
+    const len = Math.hypot(bc.x - ac.x, bc.y - ac.y) || 1
+    const nx = -(bc.y - ac.y) / len
+    const ny = (bc.x - ac.x) / len
+    const mid = { x: (ac.x + bc.x) / 2 + nx * bend, y: (ac.y + bc.y) / 2 + ny * bend }
+    const p1 = edgePoint(a, mid.x, mid.y)
+    const p2 = edgePoint(b, mid.x, mid.y)
+    const ctrl = { x: 2 * mid.x - (p1.x + p2.x) / 2, y: 2 * mid.y - (p1.y + p2.y) / 2 }
+    return { mid, p1, p2, ctrl }
+  }
+  // Labels already placed: later links keep clear of them too.
+  const labels = []
+  // How badly a curve collides: crossing a card counts most, then running
+  // over a label; its own label inside a card is worst. 0 = clear.
+  const hits = (c, a, b) => {
+    const others = shownCards.value.filter(o => o.id !== a.id && o.id !== b.id)
+    const inCard = (p, pad) => others.some(o => p.x > o.left - pad && p.x < o.left + o.w + pad && p.y > o.top - pad && p.y < o.top + o.h + pad)
+    const onLabel = (p, pad) => labels.some(l => Math.abs(p.x - l.x) < 42 + pad && Math.abs(p.y - l.y) < 12 + pad)
+    let score = (inCard(c.mid, 22) ? 20 : 0) + (onLabel(c.mid, 22) ? 6 : 0)
+    for (let i = 1; i < 20; i++) {
+      const s = i / 20
+      const u = 1 - s
+      const p = {
+        x: u * u * c.p1.x + 2 * u * s * c.ctrl.x + s * s * c.p2.x,
+        y: u * u * c.p1.y + 2 * u * s * c.ctrl.y + s * s * c.p2.y
+      }
+      if (inCard(p, 8)) score += 3
+      else if (onLabel(p, 2)) score += 1
+    }
+    return score
+  }
+  // Arrows first, so the "=" / "≠" links bend around their labels.
+  const rank = link => (link.kind === 'order' || link.kind === 'sym' ? 0 : 1)
+  all.sort((p, q) => rank(p) - rank(q))
   return all.map((link, id) => {
     const a = byId.get(link.from)
     const b = byId.get(link.to)
@@ -448,25 +490,31 @@ const drawnLinks = computed(() => {
     pairCount.set(pair, k + 1)
     const ac = { x: a.left + a.w / 2, y: a.top + a.h / 2 }
     const bc = { x: b.left + b.w / 2, y: b.top + b.h / 2 }
-    const len = Math.hypot(bc.x - ac.x, bc.y - ac.y) || 1
-    const bend = (k % 2 ? -1 : 1) * Math.ceil(k / 2) * 40
-    const nx = -(bc.y - ac.y) / len
-    const ny = (bc.x - ac.x) / len
-    const mid = { x: (ac.x + bc.x) / 2 + nx * bend, y: (ac.y + bc.y) / 2 + ny * bend }
-    const p1 = edgePoint(a, mid.x, mid.y)
-    const p2 = edgePoint(b, mid.x, mid.y)
-    const ctrl = { x: 2 * mid.x - (p1.x + p2.x) / 2, y: 2 * mid.y - (p1.y + p2.y) / 2 }
+    const base = (k % 2 ? -1 : 1) * Math.ceil(k / 2) * 40
+    let shape = null
+    let best = Infinity
+    for (const extra of [0, 45, -45, 70, -70, 100, -100, 140, -140, 200, -200]) {
+      const c = curve(a, b, ac, bc, base + extra)
+      const score = hits(c, a, b)
+      if (score < best) {
+        best = score
+        shape = c
+      }
+      if (!score) break
+    }
+    const { mid, p1, p2, ctrl } = shape
+    labels.push(mid)
     const heads = []
     if (link.kind === 'order' || link.kind === 'sym') heads.push(arrowHead(p2, ctrl))
     if (link.kind === 'sym') heads.push(arrowHead(p1, ctrl))
     const r = link.relation
-    const base = link.kind === 'same' ? COLORS.same : link.kind === 'not' ? COLORS.not : categoryColor(r.by).dot
+    const tone = link.kind === 'same' ? COLORS.same : link.kind === 'not' ? COLORS.not : categoryColor(r.by).dot
     return {
       ...link,
       id,
       path: `M${p1.x} ${p1.y}Q${ctrl.x} ${ctrl.y} ${p2.x} ${p2.y}`,
       heads,
-      color: link.state === 'open' ? base : COLORS[link.state],
+      color: link.state === 'open' ? tone : COLORS[link.state],
       label: linkLabel(link),
       labelX: mid.x,
       labelY: mid.y
@@ -527,12 +575,19 @@ const toggleClue = (index) => {
   else addClueAt(index, autoSpot())
 }
 
-// Every clue onto the pad at once.
+// Tidy layout (cluePad.js layoutPad): arrows left to right, groups one below the other.
+const linksOf = pad => pad.clues.flatMap(i => relationsOf(i).flatMap(r => relationLinks(r, pad)))
+const tidy = pad => layoutPad(pad, linksOf(pad), sizeOf, padWidth.value)
+const arrange = () => {
+  if (!props.disabled) emitPad(tidy(props.modelValue))
+}
+
+// Every clue onto the pad at once, then tidied up.
 const addAllClues = () => {
   if (props.disabled) return
   let pad = props.modelValue
   for (const i of missingClues.value) pad = addClue(pad, i, relationsOf(i), autoSpot().x, autoSpot().y, freeSpot)
-  emitPad(pad)
+  emitPad(tidy(pad))
 }
 
 // --- Dragging ------------------------------------------------------------------
@@ -866,12 +921,11 @@ function endDrag () {
   position: absolute;
   z-index: 2;
   display: flex;
-  flex-direction: column;
   align-items: stretch;
   gap: 4px;
   min-width: 90px;
-  max-width: 260px;
-  padding: 6px 24px 6px 6px;
+  max-width: 280px;
+  padding: 6px;
   border-radius: 10px;
   background: #fff;
   border: 1px solid #ddd8ea;
@@ -911,12 +965,20 @@ function endDrag () {
 }
 
 // The seam between two joined cards, with ✂ to split them again.
+.card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+}
+
 .part-join {
-  position: relative;
   display: flex;
   align-items: center;
-  height: 10px;
-  margin: 1px 0;
+  gap: 4px;
+  height: 18px;
 
   .join-line {
     flex: 1;
@@ -924,10 +986,7 @@ function endDrag () {
   }
 
   .split {
-    position: absolute;
-    right: -22px;
-    top: 50%;
-    transform: translateY(-50%);
+    flex: none;
     width: 20px;
     height: 20px;
     padding: 0;
@@ -943,18 +1002,21 @@ function endDrag () {
   }
 }
 
+// Edit and remove, in a column of their own at the right of the card.
 .card-tools {
-  position: absolute;
-  top: 2px;
-  right: 2px;
+  flex: none;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  justify-content: space-between;
+  gap: 2px;
+  margin: -2px -2px -2px 0;
+  padding-left: 4px;
+  border-left: 1px solid #f1eff7;
 }
 
 .card-tool {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -1115,6 +1177,11 @@ function endDrag () {
     margin-bottom: 8px;
 
     .source-title { width: auto; }
+  }
+
+  .head-buttons {
+    display: flex;
+    gap: 6px;
   }
 
   ol {

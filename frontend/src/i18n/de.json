@@ -390,7 +390,9 @@
       "ok": "Mit diesen Karten ist der Hinweis erfüllt.",
       "bad": "Diese Karten widersprechen dem Hinweis.",
       "open": "Es fehlen noch Werte auf den Karten, um das zu entscheiden."
-    }
+    },
+    "padArrange": "Anordnen",
+    "padArrangeTitle": "Karten ordentlich anordnen: Pfeile von links nach rechts, jede Gruppe in einer eigenen Zeile"
   },
   "nonogram": {
     "colour": "Farbe",

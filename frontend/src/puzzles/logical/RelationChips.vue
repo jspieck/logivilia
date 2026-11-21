@@ -18,13 +18,12 @@
 
   <div v-else-if="oriented" class="relation" :title="sentence" :aria-label="sentence" role="img">
     <span class="value-chip" :style="chipStyle(oriented.left)"><span class="dot" />{{ label(oriented.left) }}</span>
-    <!-- Smaller -> bigger: a big arrow with the gap written on it. Without a
-         direction ("5 apart", neighbours) a double arrow, the text above. -->
-    <span v-if="oriented.sym" class="sym-arrow" :style="arrowStyle">
-      <span class="sym-text">{{ arrowText }}</span>
-      <span class="sym-shaft" />
+    <!-- Smaller -> bigger: a slim arrow with the gap written above it; a
+         double arrow when there is no direction ("5 apart", neighbours). -->
+    <span class="line-arrow" :class="{ sym: oriented.sym }" :style="arrowStyle">
+      <span class="arrow-text">{{ arrowText }}</span>
+      <span class="shaft" />
     </span>
-    <span v-else class="arrow" :style="arrowStyle"><span class="arrow-text">{{ arrowText }}</span></span>
     <span class="value-chip" :style="chipStyle(oriented.right)"><span class="dot" />{{ label(oriented.right) }}</span>
   </div>
 
@@ -130,63 +129,42 @@ const arrowStyle = computed(() => {
   &.danger { color: #c2410c; }
 }
 
-// Big arrow, smaller -> bigger, the gap written on it: a light body with a
-// coloured rim (the outer shape), cut to an arrow with clip-path.
-$head: 16px;
-$arrow: polygon(0 0, calc(100% - #{$head}) 0, 100% 50%, calc(100% - #{$head}) 100%, 0 100%, 7px 50%);
+// Slim arrow between two chips, smaller -> bigger, the gap written above it.
+// An empty line of the text's height below keeps the shaft at the middle of
+// the chips. .sym: heads on both ends.
+$head: 9px;
 
-.arrow {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 84px;
-  height: 32px;
-  padding: 0 $head + 6px 0 14px;
-  background: var(--rel-dot);
-  clip-path: $arrow;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 2.5px 3.5px 2.5px 2.5px;
-    background: var(--rel-bg);
-    clip-path: $arrow;
-  }
-
-  .arrow-text {
-    position: relative;
-    font-size: 13.5px;
-    font-weight: 700;
-    color: var(--rel-fg);
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-}
-
-// Double arrow (no direction): text above a wide two-headed shaft.
-.sym-arrow {
+.line-arrow {
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 2px;
-  min-width: 96px;
+  min-width: 64px;
 
-  .sym-text {
-    padding: 0 12px;
+  &::after {
+    content: '';
+    height: 14px;
+  }
+
+  .arrow-text {
+    height: 14px;
+    padding: 0 6px;
     text-align: center;
-    font-size: 12.5px;
+    font-size: 11.5px;
     font-weight: 700;
-    line-height: 1.1;
+    line-height: 14px;
     color: var(--rel-fg);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
 
-  .sym-shaft {
-    height: 16px;
+  .shaft {
+    height: 9px;
     background: var(--rel-dot);
-    clip-path: polygon(0 50%, 13px 0, 13px 34%, calc(100% - 13px) 34%, calc(100% - 13px) 0, 100% 50%, calc(100% - 13px) 100%, calc(100% - 13px) 66%, 13px 66%, 13px 100%);
+    clip-path: polygon(0 41%, calc(100% - #{$head}) 41%, calc(100% - #{$head}) 0, 100% 50%, calc(100% - #{$head}) 100%, calc(100% - #{$head}) 59%, 0 59%);
+  }
+
+  &.sym .shaft {
+    clip-path: polygon(0 50%, $head 0, $head 41%, calc(100% - #{$head}) 41%, calc(100% - #{$head}) 0, 100% 50%, calc(100% - #{$head}) 100%, calc(100% - #{$head}) 59%, $head 59%, $head 100%);
   }
 }
 

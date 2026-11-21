@@ -390,7 +390,9 @@
       "ok": "With these cards the clue holds.",
       "bad": "These cards contradict the clue.",
       "open": "Values are still missing on the cards to tell."
-    }
+    },
+    "padArrange": "Arrange",
+    "padArrangeTitle": "Arrange the cards: arrows left to right, each group on its own band"
   },
   "nonogram": {
     "colour": "Colour",
