@@ -21,7 +21,7 @@
           {{ t('home.playNow') }}
         </router-link>
         <router-link v-if="recent" :to="`/puzzle/${recent.id}`" class="secondary-button">
-          {{ t('home.continue', { name: recent.name }) }}
+          {{ t('home.continue', { name: puzzleName(recent) }) }}
           <ion-icon name="arrow-forward-outline"></ion-icon>
         </router-link>
       </div>
@@ -32,7 +32,7 @@
         <span><ion-icon name="calendar-outline"></ion-icon> {{ t('home.daily') }}</span>
         <span>{{ typeLabel(daily.type) }}<template v-if="daily.width"> · {{ daily.width }}×{{ daily.height }}</template></span>
       </div>
-      <div class="daily-name">{{ daily.name }}</div>
+      <div class="daily-name">{{ puzzleName(daily) }}</div>
 
       <div v-if="daily.type !== 'logical'" class="daily-grid" :style="gridStyle(daily)">
         <span v-for="n in gridCells(daily)" :key="n"></span>
@@ -78,7 +78,7 @@
     <div v-if="popular.length" class="panel">
       <h3>{{ t('home.popular') }}</h3>
       <router-link v-for="p in popular" :key="p.id" :to="`/puzzle/${p.id}`" class="list-row">
-        <span>{{ p.name }} <span class="muted">· {{ typeLabel(p.type) }}</span></span>
+        <span>{{ puzzleName(p) }} <span class="muted">· {{ typeLabel(p.type) }}</span></span>
         <span class="muted">{{ difficultyLabel(p.difficulty) }}</span>
       </router-link>
     </div>
@@ -97,6 +97,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { usePuzzleName } from '@/puzzles/puzzleName'
 import { storeToRefs } from 'pinia'
 import { useMainStore } from '@/store/store'
 import PuzzleService from '@/services/PuzzleService'
@@ -115,6 +116,7 @@ const types = [
 ]
 
 const { t, te } = useI18n()
+const puzzleName = usePuzzleName()
 const store = useMainStore()
 const { isUserLoggedIn, user } = storeToRefs(store)
 

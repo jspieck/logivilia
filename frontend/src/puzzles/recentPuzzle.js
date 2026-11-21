@@ -5,9 +5,18 @@
 
 const KEY = 'lastPuzzle'
 
+// The puzzle's translated names, so the start page shows the right one.
+const namesOf = translations => {
+  const names = {}
+  for (const [locale, tr] of Object.entries(translations || {})) {
+    if (tr && typeof tr.name === 'string') names[locale] = tr.name
+  }
+  return Object.keys(names).length ? names : undefined
+}
+
 export function rememberPuzzle (puzzle) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ id: puzzle.id, type: puzzle.type, name: puzzle.name }))
+    localStorage.setItem(KEY, JSON.stringify({ id: puzzle.id, type: puzzle.type, name: puzzle.name, names: puzzle.names || namesOf(puzzle.translations) }))
   } catch {
     // ignore
   }

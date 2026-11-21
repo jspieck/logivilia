@@ -4,7 +4,7 @@
 
     <template v-else-if="puzzle">
       <div v-if="puzzleType.showHeader" class="puzzle-header">
-        <h1 class="puzzle-title">{{ puzzle.name }}</h1>
+        <h1 class="puzzle-title">{{ puzzleName(puzzle) }}</h1>
         <DifficultyIndicator :difficulty="puzzle.difficulty" :maxDifficulty="5" />
       </div>
 
@@ -63,6 +63,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { usePuzzleName } from './puzzleName'
 import { useOruga } from '@oruga-ui/oruga-next'
 import { useMainStore } from '@/store/store'
 import { apiErrorMessage } from '@/i18n'
@@ -78,6 +79,7 @@ import { trackProgress, flushAll, localBest, recordLocalBest, formatTime } from 
 import { queueSolve, isOfflineError, onSolveSynced } from './engine/pendingSolves'
 
 const { t } = useI18n()
+const puzzleName = usePuzzleName()
 const route = useRoute()
 const store = useMainStore()
 const oruga = useOruga()

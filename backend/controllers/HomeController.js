@@ -5,7 +5,7 @@
 const { Op } = require('sequelize');
 const { Puzzle, PuzzleSolve, PuzzleRating, User, sequelize } = require('../models');
 const { PUZZLE_TYPES } = require('../puzzles');
-const { puzzleData } = require('../utils/puzzleView');
+const { puzzleData, nameTranslations } = require('../utils/puzzleView');
 const { sendError } = require('../utils/apiError');
 
 const POPULAR_COUNT = 4;
@@ -57,7 +57,7 @@ function pickDaily (puzzles, key) {
 /** Name, type and size of a puzzle, for lists and cards. */
 function summary (puzzle) {
   const data = puzzleData(puzzle);
-  const result = { id: puzzle.id, type: puzzle.type, name: puzzle.name, difficulty: puzzle.difficulty };
+  const result = { id: puzzle.id, type: puzzle.type, name: puzzle.name, names: nameTranslations(puzzle), difficulty: puzzle.difficulty };
   if (puzzle.type === 'logical') {
     result.question = data.question || null;
     result.image = data.image || null;

@@ -25,15 +25,19 @@ module.exports = (sequelize, DataTypes) => {
     // puzzles.
     width: DataTypes.INTEGER,
     height: DataTypes.INTEGER,
-    numColor: DataTypes.INTEGER
+    numColor: DataTypes.INTEGER,
+    // { [locale]: name } copied from data.translations, so the overview can
+    // show translated names without loading `data`. Null when untranslated.
+    names: DataTypes.JSON
   }, {
     hooks: {
       // Not run by bulkCreate (no individualHooks), so the copy-legacy
       // migration never writes these columns before they exist; migration
       // 20261121-02 fills them in.
       beforeSave (puzzle) {
-        const { listColumns } = require('../utils/puzzleView');
+        const { listColumns, nameTranslations } = require('../utils/puzzleView');
         Object.assign(puzzle, listColumns(puzzle));
+        puzzle.names = nameTranslations(puzzle);
       }
     },
     indexes: [

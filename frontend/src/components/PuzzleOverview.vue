@@ -72,7 +72,7 @@
       @sort="onSort"
     >
       <o-table-column field="name" :label="t('overview.name')" v-slot="props" sortable>
-        <router-link :to="{ path: `/puzzle/${props.row.id}`, query: linkQuery }" class="navLink">{{ props.row.name }}</router-link>
+        <router-link :to="{ path: `/puzzle/${props.row.id}`, query: linkQuery }" class="navLink">{{ localName(props.row, locale) }}</router-link>
       </o-table-column>
       <o-table-column field="difficulty" :label="t('overview.difficulty')" v-slot="props" sortable>
         {{ props.row.difficulty }}
@@ -140,6 +140,7 @@
 import { ref, reactive, computed, watch, onActivated, onDeactivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { localName } from '@/puzzles/puzzleName'
 import { storeToRefs } from 'pinia'
 import { useMainStore } from '@/store/store'
 import { usePuzzleList } from '@/puzzles/usePuzzleList'

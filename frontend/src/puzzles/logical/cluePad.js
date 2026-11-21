@@ -8,7 +8,8 @@
 // card: { id, x, y, values: { [attr]: value },
 //         parts:   [[attr, ...], ...]  cards it was joined from (to split it again),
 //         crossed: { [attr]: [value] } values the player ruled out for it,
-//         notes:   true while its candidate list is open }
+//         notes:   true while its candidate list is open,
+//         shown:   { [attr]: bool } rows of the list shown on the closed card }
 // parts, crossed and notes may be missing (older saved pads).
 // Only a scratch pad: it never touches the grid or the answer table.
 
@@ -190,7 +191,8 @@ const cloneCard = c => ({
   ...c,
   values: { ...c.values },
   parts: partsOf(c),
-  crossed: Object.fromEntries(Object.entries(c.crossed || {}).map(([k, v]) => [k, [...v]]))
+  crossed: Object.fromEntries(Object.entries(c.crossed || {}).map(([k, v]) => [k, [...v]])),
+  shown: { ...(c.shown || {}) }
 })
 const clone = pad => ({ ...pad, cards: pad.cards.map(cloneCard), clues: [...pad.clues] })
 const dropEmpty = pad => ({
@@ -288,7 +290,7 @@ export function mergeCards (pad, fromId, intoId) {
     cards: pad.cards
       .filter(c => c.id !== fromId)
       .map(c => (c.id === intoId
-        ? { ...c, values: { ...c.values, ...from.values }, parts: [...partsOf(c), ...partsOf(from)], crossed, notes: !!(c.notes || from.notes) }
+        ? { ...c, values: { ...c.values, ...from.values }, parts: [...partsOf(c), ...partsOf(from)], crossed, shown: { ...(from.shown || {}), ...(c.shown || {}) }, notes: !!(c.notes || from.notes) }
         : c))
   }
 }
@@ -316,6 +318,23 @@ export function toggleCrossed (pad, cardId, ref) {
       else delete crossed[ref.attr]
       return { ...c, crossed }
     })
+  }
+}
+
+/**
+ * Is a candidate row shown on the closed card? The player decides (👁);
+ * until then it shows as soon as something in it is crossed off.
+ */
+export function rowShown (card, attr) {
+  const set = card.shown?.[attr]
+  return set === undefined ? !!card.crossed?.[attr]?.length : !!set
+}
+
+/** Show a candidate row on the closed card, or stop showing it. */
+export function toggleShown (pad, cardId, attr) {
+  return {
+    ...pad,
+    cards: pad.cards.map(c => (c.id === cardId ? { ...c, shown: { ...(c.shown || {}), [attr]: !rowShown(c, attr) } } : c))
   }
 }
 

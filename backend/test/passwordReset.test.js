@@ -44,3 +44,14 @@ test('an expired reset link is rejected', async () => {
   assert.equal(res.status, 400);
   assert.equal(res.body.code, 'AUTH_RESET_EXPIRED');
 });
+
+test('e-mails follow the Accept-Language the frontend sends', async () => {
+  await request(app).post('/api/forgot').set('Accept-Language', 'en').send({ email: 'carol@example.com' });
+  const en = testOutbox.findLast(m => m.to === 'carol@example.com');
+  assert.match(en.subject, /Resetting your password/);
+  assert.match(en.text, /\/reset\/[0-9a-f]{64}/);
+
+  await request(app).post('/api/forgot').send({ email: 'carol@example.com' });
+  const de = testOutbox.findLast(m => m.to === 'carol@example.com');
+  assert.match(de.subject, /Zurücksetzen des Passworts/);
+});

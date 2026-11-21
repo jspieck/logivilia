@@ -124,6 +124,7 @@
   "comments": {
     "title": "Kommentare",
     "placeholder": "Dein Kommentar …",
+    "replyPlaceholder": "Deine Antwort …",
     "send": "Kommentar abschicken",
     "reply": "Replik abschicken",
     "thanks": "Danke für den Kommentar!",
@@ -367,7 +368,7 @@
       "join": "Eine Karte oder einen Wert auf eine Karte ziehen verbindet sie. Die Naht bleibt als gestrichelte Linie sichtbar, ✂ trennt sie wieder. Beim Ziehen zeigt der Block schon, wo es landet.",
       "clues": "Eine Hinweisnummer antippen oder auf den Block ziehen legt ihre Werte dazu. Ein „=“ kommt sofort auf eine gemeinsame Karte und bleibt dort zusammen. Vergleiche werden als Pfeil gezeichnet, der immer zum größeren Wert zeigt, z. B. „+5 Seiten“. „Alle Hinweise“ legt alle auf einmal auf.",
       "colors": "Die Farbe zeigt, ob deine Karten zum Hinweis passen: grün = mit diesen Karten ist der Hinweis erfüllt, rot = so kann es nicht stimmen, farbig/grau = noch offen (es fehlen Werte).",
-      "notes": "✎ auf einer Karte zeigt die Werte, die für sie noch in Frage kommen. Antippen streicht einen Wert durch; bleibt nur einer übrig, wird er grün.",
+      "notes": "✎ auf einer Karte zeigt die Werte der anderen Kategorien. Antippen streicht einen Wert durch; bleibt nur einer übrig, wird er grün. Mit 👁 entscheidest du, welche Reihen auch auf der geschlossenen Karte stehen (sobald du etwas streichst, wird die Reihe gezeigt).",
       "scratch": "Nur ein Notizblock: Raster und Lösung bleiben unverändert."
     },
     "padEmpty": "Werte oder Hinweisnummern hierher ziehen",
@@ -382,7 +383,6 @@
     "padSplit": "Wieder trennen",
     "padNotes": "Mögliche Werte notieren",
     "padBound": "durch ein „=“ verbunden, bewegt sich mit",
-    "padElsewhere": "liegt schon auf einer anderen Karte",
     "padDropRemove": "Loslassen zum Entfernen",
     "padFullscreen": "Großansicht",
     "padFullscreenClose": "Großansicht schließen",
@@ -392,7 +392,9 @@
       "open": "Es fehlen noch Werte auf den Karten, um das zu entscheiden."
     },
     "padArrange": "Anordnen",
-    "padArrangeTitle": "Karten ordentlich anordnen: Pfeile von links nach rechts, jede Gruppe in einer eigenen Zeile"
+    "padArrangeTitle": "Karten ordentlich anordnen: Pfeile von links nach rechts, jede Gruppe in einer eigenen Zeile",
+    "padShowRow": "auf der Karte zeigen",
+    "padHideRow": "auf der Karte ausblenden"
   },
   "nonogram": {
     "colour": "Farbe",

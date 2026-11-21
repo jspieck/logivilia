@@ -25,7 +25,13 @@ const { importLegacy } = require('../utils/legacyPuzzles');
 const { formalize } = require('./logicalRules');
 // Seed logicals with their formal rules (seed/logicalRules.js), as migration
 // 20261116-01 adds them to an existing database.
-const logicals = require('./logicals.json').map(l => (formalize(l.name, l) || { data: l }).data);
+// English texts (seed/logicalTranslations.en.json), as migration 20261121-04
+// adds them to an existing database.
+const logicalTranslations = require('./logicalTranslations.en.json');
+const logicals = require('./logicals.json')
+  .map(l => (formalize(l.name, l) || { data: l }).data)
+  .map(l => (logicalTranslations[l.name] ? { ...l, translations: { en: logicalTranslations[l.name] } } : l));
+const { backfillNames } = require('../migrations/20261121-04-logical-translations');
 const nonograms = require('./nonograms.json');
 const linelogs = require('./linelogs.json');
 const users = require('./users.json');
@@ -62,6 +68,9 @@ async function seed () {
     ratings: { nonogram: nonogramRatings, linelog: linelogRatings, logical: logicalRatings },
     users: createdUsers
   });
+
+  // bulkCreate skips the model hook that fills `names`.
+  await backfillNames(sequelize.getQueryInterface());
 
   for (const { riddleType, riddleId, ...comment } of comments) {
     await Comment.create({ ...comment, PuzzleId: idFor(riddleType, riddleId) });

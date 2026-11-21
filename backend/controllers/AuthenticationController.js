@@ -6,6 +6,7 @@ const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const { ownUser } = require('../utils/userView');
 const { sendError } = require('../utils/apiError');
+const { mailLocale, mailText } = require('../utils/mails');
 
 const ONE_WEEK = 60 * 60 * 24 * 7;
 const ONE_HOUR_S = 60 * 60;
@@ -70,50 +71,25 @@ function sendMail (mailOptions) {
   }
 }
 
-function sendForgotPasswordEmail (userEmail, token) {
-  sendMail({
-    to: userEmail,
-    subject: '[Logivilia] Informationen zum Zurücksetzen des Passworts',
-    text: `Sie erhalten diese E-Mail, da Sie (oder jemand anderes) das Zurücksetzen des Passworts Ihres Accounts bei ${config.mail.appUrl} beantragt hat.\n` +
-    'Bitte klicken Sie auf folgenden Link oder kopieren Sie diesen in ihren Browser, um diesen Prozess fertigzustellen.\n\n' +
-    `${config.mail.appUrl}/reset/${token} \n\n` +
-    'Wenn Sie das Zurücksetzen Ihres Passworts nicht beantragt haben, ignorieren Sie bitte diese E-Mail und Ihr Passwort bleibt unverändert.\n\n' +
-    'Mit freundlichen Grüßen\n' +
-    'Ihr Logivilia Team'
-  });
+function sendForgotPasswordEmail (userEmail, token, locale) {
+  const { appUrl } = config.mail;
+  sendMail({ to: userEmail, ...mailText('forgot', locale, { appUrl, link: `${appUrl}/reset/${token}` }) });
 }
 
-function sendVerificationEmail (userEmail, token) {
-  sendMail({
-    to: userEmail,
-    subject: '[Logivilia] Bitte bestätigen Sie Ihre E-Mail-Adresse',
-    text: 'Willkommen bei Logivilia!\n\n' +
-    'Bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie auf folgenden Link klicken oder ihn in Ihren Browser kopieren. ' +
-    'Erst danach können Sie Kommentare schreiben und eigene Rätsel veröffentlichen.\n\n' +
-    `${config.mail.appUrl}/verify/${token} \n\n` +
-    'Wenn Sie sich nicht bei Logivilia registriert haben, ignorieren Sie diese E-Mail bitte.\n\n' +
-    'Mit freundlichen Grüßen\n' +
-    'Ihr Logivilia Team'
-  });
+function sendVerificationEmail (userEmail, token, locale) {
+  sendMail({ to: userEmail, ...mailText('verify', locale, { link: `${config.mail.appUrl}/verify/${token}` }) });
 }
 
 /** Gives the user a new verification token and mails the link. */
-async function startVerification (user) {
+async function startVerification (user, locale) {
   const token = crypto.randomBytes(32).toString('hex');
   user.emailVerificationToken = hashToken(token);
   await user.save();
-  sendVerificationEmail(user.email, token);
+  sendVerificationEmail(user.email, token, locale);
 }
 
-function sendPasswordResetConfirmation (userEmail) {
-  sendMail({
-    to: userEmail,
-    subject: '[Logivilia] Passwort erfolgreich geändert',
-    text: 'Sie erhalten diese E-Mail, da Sie das Passwort erfolgreich geändert haben.\n' +
-    'Sie können sich nun mit Ihrem neuen Passwort anmelden.\n\n' +
-    'Mit freundlichen Grüßen\n' +
-    'Ihr Logivilia Team'
-  });
+function sendPasswordResetConfirmation (userEmail, locale) {
+  sendMail({ to: userEmail, ...mailText('resetDone', locale) });
 }
 
 module.exports = {
@@ -129,7 +105,7 @@ module.exports = {
         role: 'Mitglied',
         joined: new Date().toISOString().slice(0, 10)
       });
-      await startVerification(user);
+      await startVerification(user, mailLocale(req));
       res.send({
         user: ownUser(user),
         token: jwtSignUser(user)
@@ -154,7 +130,7 @@ module.exports = {
         user.resetPasswordToken = hashToken(token);
         user.resetPasswordExpires = nowSeconds() + ONE_HOUR_S;
         await user.save();
-        sendForgotPasswordEmail(user.email, token);
+        sendForgotPasswordEmail(user.email, token, mailLocale(req));
       }
       res.send(genericResponse);
     } catch (err) {
@@ -182,7 +158,7 @@ module.exports = {
       user.emailVerified = true;
       user.emailVerificationToken = null;
       await user.save();
-      sendPasswordResetConfirmation(user.email);
+      sendPasswordResetConfirmation(user.email, mailLocale(req));
       res.send({
         user: ownUser(user),
         token: jwtSignUser(user)
@@ -216,7 +192,7 @@ module.exports = {
       if (req.user.emailVerified) {
         return res.send({ user: ownUser(req.user) });
       }
-      await startVerification(req.user);
+      await startVerification(req.user, mailLocale(req));
       res.send({ message: 'VERIFY_EMAIL_SENT' });
     } catch (err) {
       console.error('Resending verification failed:', err.message);

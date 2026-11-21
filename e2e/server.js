@@ -20,6 +20,7 @@ const { Puzzle, User } = require('../backend/models');
 const { resetDatabase } = require('../backend/migrator');
 const { toPuzzleRow } = require('../backend/utils/legacyPuzzles');
 const seedLogicals = require('../backend/seed/logicals.json');
+const seedTranslations = require('../backend/seed/logicalTranslations.en.json');
 
 const PORT = Number(process.env.E2E_PORT || 4173);
 const DIST = path.join(__dirname, '..', 'frontend', 'dist');
@@ -35,7 +36,9 @@ async function fixtures () {
     type: 'linelog', name: 'E2E Linelog', difficulty: 1,
     data: { width: 3, height: 1, numColor: 1, colors: ['#e53935', '#ffffff'], information: [[3, 0, 3]], solution: [[1, 1, 1]] }
   });
-  await Puzzle.create({ ...toPuzzleRow('logical', seedLogicals[0], null), UserId: null });
+  // With its English texts, as the seed and migration 20261121-04 add them.
+  const logical = { ...seedLogicals[0], translations: { en: seedTranslations[seedLogicals[0].name] } };
+  await Puzzle.create({ ...toPuzzleRow('logical', logical, null), UserId: null });
   await Puzzle.create({
     type: 'nonogram', name: 'E2E Nonogramm Gross', difficulty: 3,
     data: { width: 12, height: 12, numColor: 1, colors: ['#000000', '#ffffff'], solution: Array.from({ length: 12 }, () => Array(12).fill(1)) }

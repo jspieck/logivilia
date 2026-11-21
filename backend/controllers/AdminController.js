@@ -5,6 +5,7 @@
 const nodemailer = require('nodemailer');
 const config = require('../config/config');
 const { sendError } = require('../utils/apiError');
+const { mailLocale, mailText } = require('../utils/mails');
 
 const ADMIN_ROLE = 'Admin';
 
@@ -51,8 +52,7 @@ module.exports = {
       const info = await transporter.sendMail({
         from: config.mail.from,
         to: req.user.email,
-        subject: '[Logivilia] Test-E-Mail',
-        text: 'Diese Test-E-Mail bestätigt, dass Logivilia E-Mails versenden kann.'
+        ...mailText('test', mailLocale(req))
       });
       res.send({ ok: true, sentTo: req.user.email, response: info.response, settings });
     } catch (err) {

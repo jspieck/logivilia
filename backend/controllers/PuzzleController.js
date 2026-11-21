@@ -10,6 +10,8 @@ const { sendError } = require('../utils/apiError');
 const solvableCheck = require('../utils/solvableCheck');
 
 const ADMIN_ROLE = 'Admin';
+// Data fields whose text data.translations repeats in other languages.
+const TRANSLATED_FIELDS = ['description', 'question', 'clues', 'attributes'];
 // Largest saved game accepted (JSON); a 100x100 nonogram needs about 40 KB.
 const MAX_PROGRESS_BYTES = 200 * 1024;
 // Times above a week are not believable as one sitting; such a time is dropped.
@@ -180,7 +182,7 @@ async function listPage (req, res) {
   const [total, rows] = await Promise.all([
     Puzzle.count({ where }),
     Puzzle.findAll({
-      attributes: ['id', 'type', 'name', 'difficulty', 'width', 'height', 'numColor', 'date', 'author'],
+      attributes: ['id', 'type', 'name', 'names', 'difficulty', 'width', 'height', 'numColor', 'date', 'author'],
       where,
       order: listOrder(req.query, userId),
       limit: perPage,
@@ -389,7 +391,14 @@ module.exports = {
       }
       const plugin = getPlugin(puzzle.type);
       const changes = pickFields(req.body, plugin.dataFields);
-      const data = { ...puzzleData(puzzle), ...changes };
+      const before = puzzleData(puzzle);
+      const data = { ...before, ...changes };
+      // Translations follow the German text; once that is edited they would
+      // tell a different puzzle, so they go (unless new ones come along).
+      if (data.translations && changes.translations === undefined &&
+          TRANSLATED_FIELDS.some(field => field in changes && JSON.stringify(changes[field]) !== JSON.stringify(before[field]))) {
+        delete data.translations;
+      }
       const problem = plugin.checkData(data);
       if (problem) {
         return sendError(res, 400, 'PUZZLE_INVALID', { reason: problem });

@@ -53,10 +53,6 @@ The editors suggest a difficulty; the server does not. Compute it on save from t
 Plesk shows no Node logs. Add a log file or an error-reporting endpoint, a `/api/health` check, and a documented database backup routine.
 - **Effort:** S. Makes every later deploy safer.
 
-#### 9. 🎨 English version
-Error codes and UI text already go through `vue-i18n` with `de` and `en`. Check `en.json` for gaps, translate the static pages (Impressum, Datenschutz, help texts) and the e-mails, and decide whether puzzle names get translations.
-- **Effort:** S–M.
-
 #### 10. 🏗 Dependency upkeep
 Keep Node ≥ 22 on Plesk for `vue-i18n` 11; move to Sequelize 7 once it is stable and drop the `uuid` override in `package.json`. Small bit: logical "Raster leeren" as a full restart with the time.
 - **Effort:** S.
@@ -76,6 +72,7 @@ Keep Node ≥ 22 on Plesk for `vue-i18n` 11; move to Sequelize 7 once it is stab
 | LogicalDisplay split (A9) | 2026-11-21 | Moved to `puzzles/logical/`: `LogicalDisplay` (state, save/restore, history, notepad) uses `LogicalIntro`, `LogicalCluesPanel`, `LogicGrid` and `LogicalSolutionTable`; grid geometry, painting and table sync are pure functions in `shared/puzzles/logicalGrid.js` with tests. |
 | Solver checks off the request thread (A10) | 2026-11-21 | `backend/utils/solvableCheck.js`: pool of up to 2 `worker_threads` for `checkSolvable`, 10 s safety timeout (`PUZZLE_TOO_COMPLEX`), at most 20 waiting checks (`RATE_LIMITED`). |
 | Leftover logging (A11) | 2026-11-21 | `console.log` calls removed from `frontend/src`, plus a dead upvote stub in `CommentSystem.vue`. |
+| English version (9) | 2026-11-21 | `en.json` complete (one hardcoded reply placeholder moved in); Impressum/Datenschutz were already bilingual. E-mails in de/en by the UI locale (`Accept-Language` from `Api.js`, texts in `backend/utils/mails.js`). The 54 seed Logikrätsel have English texts (`seed/logicalTranslations.en.json`, drafted by machine translation) as `data.translations.en`, added by migration `20261121-04`. The browser shows the translation and maps answers and saved games back to the German values (`shared/puzzles/logicalTranslation.js`). Translated names come from the new `names` column, and editing the German text drops a translation. Nonogram/linelog names stay German. |
 | Shareable overview filters (7) | 2026-11-21 | Search, filters, sort and page live in the overview URL (`frontend/src/puzzles/listQuery.mjs`); puzzle links carry the filters, and `GET /puzzles/:id/next` takes the list's filters and sort, so "next puzzle" continues in that list (ID order without them). |
 | One puzzle model (B1) | 2026-11-14 | `Puzzles`, `PuzzleRatings`, `PuzzleSolves`, comments by `PuzzleId`; old links redirect via `legacyId`; rankings counted in SQL. |
 | Plugin interface (B2) | 2026-11-14 | `shared/puzzles/<type>.js` used by backend and frontend; one `/puzzle/:id` page; shared grid engine with Pointer Events, zoom, undo/redo. |

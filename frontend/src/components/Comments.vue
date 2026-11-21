@@ -31,7 +31,7 @@
               :id="`comment-input-area${comment.id}`"
               class="comment-input"
               v-model="userComments[comment.id]"
-              placeholder="Deine Replik …"
+              :placeholder="$t('comments.replyPlaceholder')"
             ></textarea>
             <div class="divsend">
               <button class="button is-primary is-small" @click="sendComment(comment.id)"><span>{{ $t('comments.reply') }}</span><ion-icon name="paper-plane-sharp"></ion-icon></button>

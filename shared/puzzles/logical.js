@@ -9,8 +9,11 @@
 // with `clue` the index into `clues`. When every clue has at least one rule,
 // the solver checks that they lead to exactly one solution. Older puzzles
 // have only the free-text clues.
+// translations (optional): the texts in other languages, see
+// logicalTranslation.js.
 
 import { solveLogical, ruleProblem, brokenRules, orderMode, orderKeys, ORDER_MODES } from './logicalSolver.js';
+import { translationsProblem } from './logicalTranslation.js';
 
 // Time the uniqueness check may take when a puzzle is saved.
 const SOLVABLE_CHECK_MILLIS = 3000;
@@ -70,10 +73,14 @@ const LOCAL_IMAGE = /^\/images\/logicals\/[A-Za-z0-9._\/-]+\.(?:jpe?g|png|webp|g
 /** @type {import('../index').PuzzleTypePlugin<'logical'>} */
 const logical = {
   type: 'logical',
-  dataFields: ['description', 'question', 'clues', 'attributes', 'solution', 'image', 'rules'],
+  dataFields: ['description', 'question', 'clues', 'attributes', 'solution', 'image', 'rules', 'translations'],
 
   checkData (data) {
-    const { attributes, solution, clues, rules, image } = data;
+    const { attributes, solution, clues, rules, image, translations } = data;
+    const translationProblem = translationsProblem(translations);
+    if (translationProblem) {
+      return translationProblem;
+    }
     // Header images ship with the frontend; links to other sites (tracking
     // pixels, hot-linked pictures) are refused, and the CSP blocks them too.
     if (image != null && image !== '' &&

@@ -1,0 +1,2909 @@
+{
+ "Asiatische Lektüre": {
+  "name": "Asian Reading",
+  "description": "Karl plans to take a multi-week tour across the vast expanses of Asia during his next holiday. For this reason he has borrowed a wide variety of books on the subject of Asia from the library today. That way he can already gather information about his travel destination in advance and prepare himself for the diverse culture and landscape of Asia.",
+  "question": "Which book (title) has how many pages and would normally cost how much?",
+  "clues": [
+   "The book “Zen Buddhism” costs 2€ more at its regular price than the book “Qi”, and also has 5 pages more or fewer than the book by the author Nguyen, who did not write the book Qi.",
+   "The book by the author Takeda costs 5€ at the non-binding recommended retail price and describes an aspect of Asia in a book that is 5 pages longer than Suzuki's.",
+   "“Asian Lakes” can be bought for 1€ less than the 120-page book.",
+   "Isso's work has 5 pages fewer than the book “Thai Food” and also costs 2€ more than Umabe's book.",
+   "“Thai Food” is more expensive than the book “Asian Islands”, which has 100 pages."
+  ],
+  "attributes": [
+   {
+    "name": "Title",
+    "values": [
+     "Asian Islands",
+     "Asian Lakes",
+     "Thai Food",
+     "Qi",
+     "Zen Buddhism"
+    ]
+   },
+   {
+    "name": "Author",
+    "values": [
+     "Isso",
+     "Nguyen",
+     "Suzuki",
+     "Takeda",
+     "Umabe"
+    ]
+   },
+   {
+    "name": "Pages",
+    "values": [
+     "80",
+     "85",
+     "100",
+     "105",
+     "120"
+    ]
+   },
+   {
+    "name": "Cost",
+    "values": [
+     "5€",
+     "6€",
+     "7€",
+     "8€",
+     "9€"
+    ]
+   }
+  ]
+ },
+ "Aufgeregte Studenten": {
+  "name": "Eager Students",
+  "description": "The end of the semester is not only cause for joy at the hoped-for semester holidays for 10 students of Tiefental University, but also the date of a highly endowed tournament, at which the students give talks on self-chosen forward-looking innovations and can win scholarships. A whole team of professors follows the talks of these young hopefuls and rates the specialist presentations with 0 to 100 points. Although the professors do not once have to reach for the unpopular 0, not every talk can truly convince the strict jury, and so, for example, a meagre 5 points is awarded once. One student may be especially pleased, as he is the only one to receive the maximum possible score and therefore surely the desired scholarship.",
+  "question": "Which student (first name and surname) receives how many points and is presenting as which speaker in the order?",
+  "clues": [
+   "Svenja and Martin both have a surname that begins with the consonant “B”. Svenja may give her talk before the student who is sixth in the order. She receives 25 points more than Vanessa Karo. Vanessa is four talks after Tobias in the order, but she is not last.",
+   "Tobias, Samuel and Ralf all have surnames beginning with M. Samuel's and Tobias's points added together equal Ralf's. Tobias receives only half as many points as a person who is not Achmet.",
+   "Marie is one talk later in the order than the person with the surname Plam and one talk earlier than the student Vani. Marie achieves more points than Nina.",
+   "The person with the surname Bücher was rated 5 points more than Björn, but on the other hand 15 points fewer than the student named Müller.",
+   "Martin has 10 points fewer than Achmet, whose order position number is an integer multiple of Nina's order position number. Martin does not have order position number 10.",
+   "The student with the surname Holmet is either eighth or ninth in the order. The person who receives 45 points may give their talk fourth.",
+   "The student with the surname Marinet gives his speech two talks after a person who receives 40 points fewer than the student with the surname Trakon."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Achmet",
+     "Björn",
+     "Marie",
+     "Martin",
+     "Nina",
+     "Ralf",
+     "Samuel",
+     "Svenja",
+     "Tobias",
+     "Vanessa"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Bauer",
+     "Bücher",
+     "Holmet",
+     "Karo",
+     "Marinet",
+     "Menja",
+     "Müller",
+     "Plam",
+     "Trakon",
+     "Vani"
+    ]
+   },
+   {
+    "name": "Points",
+    "values": [
+     "5",
+     "15",
+     "30",
+     "40",
+     "45",
+     "65",
+     "70",
+     "80",
+     "85",
+     "100"
+    ]
+   },
+   {
+    "name": "Speaking order",
+    "values": [
+     "1.",
+     "2.",
+     "3.",
+     "4.",
+     "5.",
+     "6.",
+     "7.",
+     "8.",
+     "9.",
+     "10"
+    ]
+   }
+  ]
+ },
+ "Baum des Jahres": {
+  "name": "Tree of the Year",
+  "description": "In the magazine “Photo:Kultur” a “Photo of the Year” is crowned every year for a specific assignment. This year the goal was to photograph a tree in a season corresponding to its nature. (The connection between the “nature” of a particular tree and a special season seems, not unjustly, to be truly arbitrary, which is made evident in the various pairs “tree-season”.) For each season the jury beforehand selected one picture which, in their opinion, surpasses all other entries. Now it is the task of the readers to choose between the four finalists and determine their personal “Tree of the Year”.",
+  "question": "Which photographer (name) photographed which tree (species and height), and in which season was this photo taken?",
+  "clues": [
+   "The beech is six metres taller than the birch, which was photographed in summer.",
+   "The linden was photographed at a later season than the tree captured by Fenn (spring is taken here as the first season).",
+   "In autumn the image of a tree was immortalised that is six metres taller than Fenn's tree, which in turn is taller than Marn's photographic subject.",
+   "Arndt did not photograph his tree in winter.",
+   "Witzek photographed a maple which, however, was not 52 metres tall. The maple is also not six metres shorter than Marn's tree."
+  ],
+  "attributes": [
+   {
+    "name": "Species",
+    "values": [
+     "Maple",
+     "Birch",
+     "Beech",
+     "Linden"
+    ]
+   },
+   {
+    "name": "Height",
+    "values": [
+     "34",
+     "40",
+     "46",
+     "52"
+    ]
+   },
+   {
+    "name": "Photographer",
+    "values": [
+     "Arndt",
+     "Fenn",
+     "Marn",
+     "Witzek"
+    ]
+   },
+   {
+    "name": "Season",
+    "values": [
+     "Spring",
+     "Summer",
+     "Autumn",
+     "Winter"
+    ]
+   }
+  ]
+ },
+ "Dekadenz": {
+  "name": "Decadence",
+  "description": "Four decadent millionaires take great pleasure in boasting about their own vanities. As if owning several automobiles, helicopters and yachts were not decadent enough, their greatest superfluity lies in the fact that their purpose is not intrinsic, but rests purely on the possibility, provided by their existence, of showing off. Should that still not seem decadent enough, let it be noted that it is not the quality of their possessions that gives the owner cause to rhapsodise, but the cold quantity.",
+  "question": "Which of our four dear millionaires (first name) boasts of which number of automobiles, helicopters and yachts?",
+  "clues": [
+   "Hansi owns at least four cars more than Magda.",
+   "Armin may be pleased to own twice as many helicopters as Hansi.",
+   "The good old Erna, on the other hand, can boast twice as many yachts rusting in her private harbour as Armin.",
+   "The owner of two yachts has two helicopters more or fewer than the owner of three yachts, who can call an odd number of helicopters his own.",
+   "Erna owns one helicopter more than Hansi.",
+   "The owner of the three helicopters can boast 8 automobiles more than the owner of the two helicopters."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Armin",
+     "Erna",
+     "Hansi",
+     "Magda"
+    ]
+   },
+   {
+    "name": "Automobiles",
+    "values": [
+     "12",
+     "16",
+     "20",
+     "24"
+    ]
+   },
+   {
+    "name": "Helicopters",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   },
+   {
+    "name": "Yachts",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   }
+  ]
+ },
+ "Erfreuliche Pilzsuche": {
+  "name": "Happy Mushroom Hunt",
+  "description": "The month of August has been given the melodious name “Mushroom Month” by the four friends around Marie. Not without reason! For over 15 years the four friends have set off into the woods in this special month to return with as many edible mushrooms as possible. While the successes of the first years were rather meagre, more and more success has come over time, so that together they now often find more than 20 edible mushrooms. This year they also set a new record and found a total of 28 mushrooms. Following this success they had themselves proudly photographed with their find, and then prepared a delicious mushroom feast.",
+  "question": "Which friend (first name, surname) is how old, and how many mushrooms did he contribute to the success?",
+  "clues": [
+   "Isabell is four years younger than the mushroom hunter with the surname Maler.",
+   "The friend Bern can show two mushrooms more than Daniel, who in turn has found two mushrooms more than the eldest of the group.",
+   "Marie is not 38 years old.",
+   "The proud finder with the name Marlen is four years younger than Leander.",
+   "The person who found the most mushrooms is not 34 years old.",
+   "Leander found two mushrooms more than the mushroom hunter Ulbricht."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Daniel",
+     "Isabell",
+     "Leander",
+     "Marie"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Bern",
+     "Maler",
+     "Marlen",
+     "Ulbricht"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "30",
+     "34",
+     "38",
+     "42"
+    ]
+   },
+   {
+    "name": "Mushrooms",
+    "values": [
+     "4",
+     "6",
+     "8",
+     "10"
+    ]
+   }
+  ]
+ },
+ "Gegen das Englische": {
+  "name": "Against Anglicisms",
+  "description": "Kunigunde has, together with three female friends, made it their mission to protect the “pure” German language and to wage battle against Anglicisms and the influence of foreign languages on German in general. As a role model for these four older ladies stands none other than the Nobel Prize-winning author Thomas Mann, who represents for them an unmatched symbol of German linguistic competence. To what extent foreign influence on one's own language can be held back, and whether a pure, self-sufficient language exists at all (none of today's major languages arose independently of other nations) and should exist, may gladly be debated. That does not, however, disturb the ladies' dream; one notices only too often that the classical peace between reality and thought has always been hard to conclude. For this puzzle they need only find out two personal pieces of information about the four advocates of the German language.",
+  "question": "Which old lady (first name and surname) is how old?",
+  "clues": [
+   "Kunigunde, who does not answer to the lovely surname “von Besoin”, is two years older than her good friend “von Kreuzberg”, who in turn is two years older than Astrid.",
+   "The lady who calls herself “von Adem” is four years older than the advocate with the surname “von Amhof”.",
+   "Ingrid is not exactly 68 years old.",
+   "Genophepha is two years older than a lady who is not called “von Amhof” and who is two years younger or older than “von Kreuzberg”."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Astrid",
+     "Genophepha",
+     "Ingrid",
+     "Kunigunde"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "von Adem",
+     "von Amhof",
+     "von Besoin",
+     "von Kreuzberg"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "68",
+     "70",
+     "72",
+     "74"
+    ]
+   }
+  ]
+ },
+ "Hund aufs Herz": {
+  "name": "Hund aufs Herz",
+  "description": "The charity organisation “Hund aufs Herz” collects smaller and larger sums every year from its members and generous dog-loving patrons for the good cause (at least from the dogs' point of view). The noble donors then have the chance to take part in a tournament, in which not they, but their dogs compete for victory. The human winner is rewarded with glory and honour, and the winning dog with a golden dog biscuit.",
+  "question": "Work out how the top 5 dogs are made up (dog's name, breed, age, special feature)!",
+  "clues": [
+   "The dog with the beautiful paws (its owner had coated them with shoe polish for days) was the outstanding winner of the tournament. When the golden dog biscuit was handed over, the owner burst into tears and, visibly confused, stammered into the microphone that he could not accept the prize for his dog, since the trophy of the golden dog biscuit was in his opinion actually due to the older Sheltie, even though this one had shone neither through its elegant bearing nor barked loudly.",
+   "Fourth place in the tournament went either to the Yorkshire Terrier, the Dalmatian or the Sheltie.",
+   "Yorkie, the Yorkshire Terrier (his owner proudly announced that he had found this creative name in a dog-name dictionary), was clearly two years older than the dog that had thrilled the spectators with its elegant bearing. Yorkie did not achieve second place.",
+   "When the third or fourth prize was awarded to Sherry, the commentator made an error: “Especially because of his delightful eyes, the Chihuahua Sherry could thrill us!” Yet he was not a Chihuahua at all…",
+   "“Why only fifth, I don't understand that!”, revealed the older owner of her 2-year-old dog, who evidently found her dog simply phenomenal. Quite the opposite was the Dalmatian: “That one was quite bad!” she grumbled.",
+   "Wuff is two years older than Streuner (not the Chihuahua), who is one year younger than the dog that finished one place worse than the Golden Retriever."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Bello",
+     "Sherry",
+     "Streuner",
+     "Wuff",
+     "Yorkie"
+    ]
+   },
+   {
+    "name": "Breed",
+    "values": [
+     "Chihuahua",
+     "Dalmatian",
+     "Golden Retriever",
+     "Sheltie",
+     "Yorkshire Terrier"
+    ]
+   },
+   {
+    "name": "Place",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ]
+   },
+   {
+    "name": "Special feature",
+    "values": [
+     "Bearing",
+     "Eyes",
+     "Barking",
+     "Coat",
+     "Paw"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "6"
+    ]
+   }
+  ]
+ },
+ "Kaninchenzucht": {
+  "name": "Rabbit Breeding",
+  "description": "Fridolin and his four friends have each run their own rabbit breeding for years now. The golden goal set by the distinguished group is to breed a rabbit that can eat four carrots in under a minute. Whoever reaches this goal first receives, besides the obligatory recognition of the group, a golden carrot as a mark of their achievement. Because all participants have only limited capacity to take in animals, some faulty breedings are given away every year...",
+  "question": "Which friend (first name) is how old, and how many rabbits has he given away?",
+  "clues": [
+   "Gertje is five years older than Antje. One digit of Gertje's age matches a digit of Roman's age.",
+   "Fridolin is younger than Hanna, whose age is not divisible by the number of rabbits that Fridolin has given away this year.",
+   "Roman has given away two rabbits fewer this year than Hanna.",
+   "Fridolin has given away twice as many rabbits as Antje.",
+   "Gertje has not given away exactly one rabbit."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Antje",
+     "Fridolin",
+     "Gertje",
+     "Hanna",
+     "Roman"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "55",
+     "60",
+     "65",
+     "70",
+     "80"
+    ]
+   },
+   {
+    "name": "Rabbits",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ]
+   }
+  ]
+ },
+ "Kongress der Wissenschaft": {
+  "name": "Science Congress",
+  "description": "This Saturday a large science congress takes place in the Bruckner Hall, at which scientists from the most varied disciplines give specialist talks on their research areas. So that visitors from other fields can also benefit from the lectures, the scientific standard in terms of depth and technical language has been lowered and is set rather at a popular-science level, without thereby lowering the quality of the talks as such. The time allowed is set at a maximum of one hour, so that plenty of variety is guaranteed for the listener.",
+  "question": "Which professor (first name) gives a talk in which subject, planned for how long (minutes)?",
+  "clues": [
+   "Franziska speaks for 15 minutes longer than the scientist in the field of biology, who in turn speaks for 15 minutes longer than Joachim.",
+   "The professor of geology speaks for 30 minutes longer than Angela.",
+   "Bertram's talk lasted either 45 minutes shorter or longer than the talk in the field of geography."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Angela",
+     "Bertram",
+     "Franziska",
+     "Joachim"
+    ]
+   },
+   {
+    "name": "Field",
+    "values": [
+     "Biology",
+     "Chemistry",
+     "Geography",
+     "Geology"
+    ]
+   },
+   {
+    "name": "Duration",
+    "values": [
+     "15",
+     "30",
+     "45",
+     "60"
+    ]
+   }
+  ]
+ },
+ "Kunst der Architektur": {
+  "name": "The Art of Architecture",
+  "description": "Architecture can also be great art. This is recognised not only in the colossal buildings that everyone knows – monuments such as the Eiffel Tower or the Pantheon – but also in the thoughtful small things. A playground can also be art – which, besides its aesthetic effect, should also be genuinely suitable for small children in terms of function. This overarching appreciation of architecture as art is also championed by the architecture club “Arx”, which seeks to strengthen the perception of architecture as art in society. Today four leading members have gathered, who are working on four showcase projects, through which they aim, on the one hand, to lend artistic value to their home town and, on the other, to offer inspiration to young, aspiring architects.",
+  "question": "Which architect (first name, surname) is responsible for which type of building, and what is their artwork called?",
+  "clues": [
+   "In no row of the solution grid does an entry begin with the same letter as another entry (e.g. the name Max Mustermann would be forbidden).",
+   "Emil's surname begins with the same letter as Selina's.",
+   "Abraham is not responsible for the playground, which did not get the project name Goethe.",
+   "The project Etasis is a high-rise.",
+   "The architect named Merryman designs the building called Wanda I.",
+   "The luxury villa is not designed by Mulligan.",
+   "Hooven does not have a museum built."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Abraham",
+     "Emil",
+     "Sandra",
+     "Selina"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Abalain",
+     "Hooven",
+     "Merryman",
+     "Mulligan"
+    ]
+   },
+   {
+    "name": "Building",
+    "values": [
+     "High-rise",
+     "Luxury villa",
+     "Museum",
+     "Playground"
+    ]
+   },
+   {
+    "name": "Project name",
+    "values": [
+     "Etasis",
+     "Goethe",
+     "Soof IV",
+     "Wanda I"
+    ]
+   }
+  ]
+ },
+ "Kunstfertige Tiere": {
+  "name": "Skilful Animals",
+  "description": "No, it is not only humans who can impress with sporting feats – our animal friends also manage, with their sometimes absurd and partly comical tricks, to leave people with open mouths. Today a competition takes place in Eberstadt, in which six animal participants compete against each other and are meant to impress with their tricks. A high-ranking jury then assesses the quality of the performance using the German school grading system. The six trainers, however, cannot be satisfied – all six animals mercilessly fluff their tricks. At least laughs are guaranteed!",
+  "question": "Who (name) presents which animal, what trick does this one perform and which grade does it receive?",
+  "clues": [
+   "Georg's animal attempted a cartwheel – or rather, it was meant to, for in fact the jury only saw a sideways roll, in which the animal fell so unluckily that someone from the audience had to help the poor creature up. Nevertheless, the grade awarded for it surprisingly came out one grade better than that of Sabine's pet.",
+   "The hopping rabbit – the audience did not get to see any real leaps in the air – did not receive a 5, but a grade either one grade better or one grade worse than the pet trained by Alina – if one wants to euphemistically call the whole thing training.",
+   "The lamb receives a grade one grade better or one grade worse than Walter's animal. However, that was more due to the loud bleating than to the trick.",
+   "The somersault received a 5. The judges were lenient – perhaps it was down to the discreetly distributed “donation” of 20 € before the competition. In any case, the audience would only have seen a somersault if they had done one themselves.",
+   "The tumbling hamster received a grade one grade worse or better than Theodor's cow, but not a 4.",
+   "Alina's animal, which did not tumble into the wall, was given a grade one grade better or worse than Andreas's animal athlete.",
+   "The goose received a grade two grades better or worse than Walter's pike-perch, which apparently did not want to speak. Perhaps we are being too critical, though, and the rising air bubbles were a disguised attempt at communication.",
+   "Andreas received a better grade than Theodor."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Alina",
+     "Andreas",
+     "Georg",
+     "Sabine",
+     "Theodor",
+     "Walter"
+    ]
+   },
+   {
+    "name": "Animal",
+    "values": [
+     "Goose",
+     "Hamster",
+     "Rabbit",
+     "Lamb",
+     "Cow",
+     "Pike-perch"
+    ]
+   },
+   {
+    "name": "Trick",
+    "values": [
+     "Standing on one leg",
+     "Hopping",
+     "Tumbling",
+     "Cartwheel",
+     "Somersault",
+     "Speaking"
+    ]
+   },
+   {
+    "name": "Grades",
+    "values": [
+     "4",
+     "4",
+     "5",
+     "5",
+     "6",
+     "6"
+    ]
+   }
+  ]
+ },
+ "Kuriose Spezialitäten": {
+  "name": "Curious Specialities",
+  "description": "Susanne and Achim have finally summoned the courage to put their own business idea into action, and are now selling – as the two creatives have named them – “curious specialities”. At first glance these are oddly appearing fruits and vegetables, which surprise with a completely unexpected colour. Bananas are suddenly orange and lettuce leaves white – but wait! Not everything is to be revealed, as your task is to work out which colours the four best-selling curious specialities have.",
+  "question": "Which fruit or vegetable has which colour, and for what sum can the speciality be purchased?",
+  "clues": [
+   "The apples cost one euro less than the tomatoes.",
+   "The blue speciality does not cost exactly one euro.",
+   "The black bestseller costs one euro more than the carrots.",
+   "The cucumber is half a euro cheaper than the pink speciality."
+  ],
+  "attributes": [
+   {
+    "name": "Speciality",
+    "values": [
+     "Apple",
+     "Cucumber",
+     "Carrot",
+     "Tomato"
+    ]
+   },
+   {
+    "name": "Colour",
+    "values": [
+     "blue",
+     "purple",
+     "pink",
+     "black"
+    ]
+   },
+   {
+    "name": "Price",
+    "values": [
+     "0.50€",
+     "1€",
+     "1.50€",
+     "2€"
+    ]
+   }
+  ]
+ },
+ "Mit dem Fahrrad durch England": {
+  "name": "By Bicycle Through England",
+  "description": "Claudia and three friends share a common interest: cycling. Each of the four friends rediscovered their passion for cycle racing only a few years ago. Since then they have been holding a two-day race twice a year. The winner of the last race is always allowed to determine the location of the competition, so that, alongside fame and honour, a small additional reward also awaits the victor. After the last races in France, Great Britain was designated as the venue for this race. At 7:00 in the morning, the first stage of the competition begins, from London to Nottingham.",
+  "question": "Which cycling enthusiast (name) is how old and at what time in the evening do they reach the first intermediate goal?",
+  "clues": [
+   "Claudia arrives in Nottingham two hours before the 34-year-old tournament participant.",
+   "Susanne is two years younger than the friend who was first to reach the finish of the first stage.",
+   "The cyclist who arrived in Nottingham at 9:00 in the evening is two years younger than Matthias.",
+   "Hans arrived at the finish of the first stage one hour earlier or later than a person who arrived two hours before the 28-year-old participant."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Claudia",
+     "Hans",
+     "Matthias",
+     "Susanne"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "28",
+     "30",
+     "32",
+     "34"
+    ]
+   },
+   {
+    "name": "Arrival",
+    "values": [
+     "9:00",
+     "10:00",
+     "11:00",
+     "12:00"
+    ]
+   }
+  ]
+ },
+ "Mit dem Fahrrad durch England - Teil 2": {
+  "name": "By Bicycle Through England - Part 2",
+  "description": "Following the gruelling first part of the bicycle race across England, after a night's rest the very next day sees the second leg of the route from Nottingham to Darlington. Will the order of placings change significantly on the second day? Will the fitness of the amateur athletes still make itself felt and set back the previous day's leader? Find out by solving the second part of this puzzle.",
+  "question": "Which cycling enthusiast (name) has been racing for how many years, and what placing do they achieve at the end?",
+  "clues": [
+   "The cycling enthusiast who started racing again four years ago achieves a placing one place better than Hans.",
+   "Susanne has not been racing for three years and finishes one position lower than the friend who has only been racing for one year.",
+   "Hans has been racing one year longer than his good friend Matthias.",
+   "Claudia has been taking part in competitions with her bicycle one year longer than the cycling enthusiast who won symbolic bronze (but at the same time finished second-to-last)."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Claudia",
+     "Hans",
+     "Matthias",
+     "Susanne"
+    ]
+   },
+   {
+    "name": "Years racing",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   },
+   {
+    "name": "Placing",
+    "values": [
+     "1.",
+     "2.",
+     "3.",
+     "4."
+    ]
+   }
+  ]
+ },
+ "Späte musikalische Ambitionen": {
+  "name": "Late Musical Ambitions",
+  "description": "At around the age of 40, the four friends around band founder Detlef are no longer the youngest to embark on a musical career. But they themselves do not see their age as a disadvantage; rather, they hope to benefit musically from their many years of professional experience. Whether that is really the case will probably best be decided by the buyers of their first album, which is due to hit the shops this August. As the album title “Artificial” already suggests, the band attempts artful pop songs with real class.",
+  "question": "Which musician (first name + surname) plays which instrument and how old are they?",
+  "clues": [
+   "The musician Bose is two years older than Christian.",
+   "The band's vocalist is not called Alfons and is two years younger than the band member Wasserzieher, who is not the drummer.",
+   "Detlef is two years older than the musician named Proteus.",
+   "The musician with the surname Lindhberg is either one year younger or one year older than Detlef.",
+   "The drummer is one year older than the pianist."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Alfons",
+     "Christian",
+     "Detlef",
+     "Tiffany"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Bose",
+     "Lindhberg",
+     "Proteus",
+     "Wasserzieher"
+    ]
+   },
+   {
+    "name": "Instrument",
+    "values": [
+     "Vocals",
+     "Guitar",
+     "Piano",
+     "Drums"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "39",
+     "40",
+     "41",
+     "42"
+    ]
+   }
+  ]
+ },
+ "Urlaubsgeschichten": {
+  "name": "Holiday Stories",
+  "description": "After their summer holidays, the five employees of the small advertising agency Zirkania are gradually trickling back to their workplace. All have a great deal to report about their travels, as they were all very taken with their holiday destination. Each of the returnees finds different words to appropriately sum up their experiences...",
+  "question": "Which of the five employees (first name) travelled for how long to which country, and how can their trip be summed up in one word?",
+  "clues": [
+   "The holiday in France was rated as wonderful. The trip lasted one week less than the holiday in the home country, Germany, and two weeks longer than Elaine's holiday.",
+   "The destination Belgium was visited intensively for 3 weeks longer than the destination of the trip described as “relaxing”.",
+   "The first name of the person who travelled to Italy begins with a letter that comes further along the alphabet than the first name of the holidaymaker who rated their holiday as multifaceted.",
+   "Sybille's trip was one week shorter or longer than Liese's, who in turn had been away for one week longer than the person who visited the Netherlands.",
+   "Theodor was away for one week longer than the employee who described their trip as “cultural”."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Elaine",
+     "Liese",
+     "Sybille",
+     "Theodor",
+     "Ulrich"
+    ]
+   },
+   {
+    "name": "Destination",
+    "values": [
+     "Belgium",
+     "Germany",
+     "France",
+     "Netherlands",
+     "Italy"
+    ]
+   },
+   {
+    "name": "Weeks",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ]
+   },
+   {
+    "name": "Summary word",
+    "values": [
+     "insightful",
+     "relaxing",
+     "multifaceted",
+     "cultural",
+     "wonderful"
+    ]
+   }
+  ]
+ },
+ "Werdende Köche": {
+  "name": "Budding Chefs",
+  "description": "Mr Walt has been self-employed for two years with a cookery school, and since then has been teaching six promising talents in the art of the kitchen. After every lesson there is a cooking competition, in which the budding chefs can prove that they have followed the master's explanations and – all the more importantly – can also put them into practice in real kitchen work. This time the task was to prepare desserts with raspberry-vanilla sauce. Under the watchful eyes of the head chef, his six apprentices set to work.",
+  "question": "Which trainee (name) cooked which dish and received which grade for it?",
+  "clues": [
+   "The grade of the apprentice who attempted a chocolate parfait is numerically twice as large as that of the talent who wanted to impress with a lemon tart.",
+   "Mr Tre's grade differed by 1 from the grade that Ms Rat received for her dish, whose grade was in turn 1 worse than that of the apprentice who attempted a caramel ice cream.",
+   "The grade for the apple strudel is odd and two grades worse or better than the grade for the soufflé, which did one grade worse than the parfait.",
+   "The crêpes were one grade worse than Ms Sun's dish, whose dish differed by two grades from Mr Lek's creation.",
+   "Mr Hof did not receive the grade 4."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Hof",
+     "Lek",
+     "Mal",
+     "Rat",
+     "Sun",
+     "Tre"
+    ]
+   },
+   {
+    "name": "Dish",
+    "values": [
+     "Apple strudel",
+     "Crêpes",
+     "Caramel ice cream",
+     "Chocolate parfait",
+     "Soufflé",
+     "Lemon tart"
+    ]
+   },
+   {
+    "name": "Grade",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6"
+    ]
+   }
+  ]
+ },
+ "Wohltätiges Schwimmen": {
+  "name": "Charity Swim",
+  "description": "Today a charity swim takes place at the West swimming pool, at which money is to be collected for the renovation of the local primary school. Among the many participants are four regional celebrities, who presumably take part in the swim mainly for the sake of their good reputation. Each participant first agrees on an amount that they wish to donate per 25 metres swum, and then tries to swim as many lengths as their fitness allows. The celebrities evidently all lack an outstanding physical constitution. Indeed, none of the four swims more than 400 metres.",
+  "question": "Which “celebrity” (name) swims how many metres and what amount have they agreed to donate per 25 metres?",
+  "clues": [
+   "Katja has agreed on a donation of two euros more or fewer per 25 metres than Heino, who in turn donates more per 25 metres than the celebrity who swam the longest distance in total.",
+   "The amateur athlete who agreed on a generous 10€ per 25 metres swims 100 metres further than the athlete who agreed on at least half the amount of the previously mentioned celebrity.",
+   "Sarah swims 100 metres further than Ulf.",
+   "Ulf donates 2 € per 25 metres more than a person who did not swim the shortest distance of 100 metres completed by the four celebrities."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Heino",
+     "Katja",
+     "Sarah",
+     "Ulf"
+    ]
+   },
+   {
+    "name": "Distance swum",
+    "values": [
+     "100",
+     "200",
+     "300",
+     "400"
+    ]
+   },
+   {
+    "name": "Donation per 25 metres",
+    "values": [
+     "1€",
+     "3€",
+     "5€",
+     "10€"
+    ]
+   }
+  ]
+ },
+ "Zoologische Tauschgeschäfte": {
+  "name": "Zoo Swaps",
+  "description": "Through skilful swaps, Zoo Humbert has over the past years managed to build up a broad range of animal species. By skilful breeding of its own species, the zoo's owners were able to acquire giraffes and other “more exotic” animals. By expanding the number of species, they have also managed to significantly increase the number of visitors in recent years, so that they can now enjoy a solid financial footing.",
+  "question": "Which animal species was swapped in what number, in what year and from which zoo (location)?",
+  "clues": [
+   "Two more giraffes were swapped than of the species that had previously spent its life at the Nürnberg zoo.",
+   "In 2011, one secured two more animals than one received as elephants in a different swap.",
+   "Five animals were obtained one year after three animals, which in turn were swapped one year after the hippopotamuses.",
+   "The swap with the Hannover zoo did not take place in 2010.",
+   "One rhinoceros fewer was obtained than the number obtained of the species from Berlin, whose swap took place one year before the swap with the Nürnberg zoo."
+  ],
+  "attributes": [
+   {
+    "name": "Animal species",
+    "values": [
+     "Elephants",
+     "Giraffes",
+     "Rhinoceroses",
+     "Hippopotamuses"
+    ]
+   },
+   {
+    "name": "Number",
+    "values": [
+     "2",
+     "3",
+     "4",
+     "5"
+    ]
+   },
+   {
+    "name": "Year",
+    "values": [
+     "2010",
+     "2011",
+     "2012",
+     "2013"
+    ]
+   },
+   {
+    "name": "Zoo",
+    "values": [
+     "Berlin",
+     "Hamburg",
+     "Hannover",
+     "Nürnberg"
+    ]
+   }
+  ]
+ },
+ "Blumenzucht": {
+  "name": "Flower Breeding",
+  "description": "After a tough contest, the four finalists in the botany competition of the town of Splanburg are decided. Each of the four now has the task of breeding a particular flower variety familiar to the general public. The classic characteristics of the respective variety should be especially emphasised, so that the aesthetics of the form, arrangement of blossoms and other aspects are convincing.",
+  "question": "Who (name and age) takes which place with which type of flower?",
+  "clues": [
+   "Anne is 8 years older than the flower breeder who brought a rose to the competition, and 4 years older or younger than the breeder who wanted to win over the jury with a daisy.",
+   "Tim placed one place lower than Holger, who in turn placed one place lower than the breeder of the daisy.",
+   "Beate placed directly behind the 36-year-old breeder.",
+   "The rose placed one place lower than the tulip, which was not entered into the race by the 40-year-old breeder."
+  ],
+  "attributes": [
+   {
+    "name": "Flower",
+    "values": [
+     "Daisy",
+     "Lily",
+     "Rose",
+     "Tulip"
+    ]
+   },
+   {
+    "name": "Breeder",
+    "values": [
+     "Anne",
+     "Beate",
+     "Holger",
+     "Tim"
+    ]
+   },
+   {
+    "name": "Placing",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "28",
+     "32",
+     "36",
+     "40"
+    ]
+   }
+  ]
+ },
+ "Autoren stellen sich vor": {
+  "name": "Authors Introduce Themselves",
+  "description": "Tonight is a special event at the Museum Kapitz, which is devoted above all to preserving significant objects of literary history – including rare book copies, writing implements and more. Five regional writers have also been invited to this event. They will read from their newest works and so try to reach a wider audience with their writing.",
+  "question": "Which writer (name & age) has already published how many books, and which genre do these belong to?",
+  "clues": [
+   "Gertrud is five years older than the author who has written mainly biographies, but five years younger than the crime writer, who has written three books fewer than Lieselotte.",
+   "The 35-year-old has written 8 books.",
+   "The fantasy writer is either 30 or 40 years old.",
+   "Franziska does not write biographies, but has written two books more than Oskar. She is 15 years younger or older than the author who is known for heart-wrenching romances.",
+   "Olaf wrote 3 books fewer than the sci-fi author.",
+   "The crime writer is 10 years younger or older than Oskar.",
+   "Lieselotte writes neither romances nor biographies."
+  ],
+  "attributes": [
+   {
+    "name": "Author",
+    "values": [
+     "Franziska",
+     "Gertrud",
+     "Lieselotte",
+     "Olaf",
+     "Oskar"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "30",
+     "35",
+     "40",
+     "45",
+     "50"
+    ]
+   },
+   {
+    "name": "Number of books",
+    "values": [
+     "5",
+     "6",
+     "7",
+     "8",
+     "9"
+    ]
+   },
+   {
+    "name": "Genre",
+    "values": [
+     "Biography",
+     "Fantasy",
+     "Crime",
+     "Romance",
+     "Sci-Fi"
+    ]
+   }
+  ]
+ },
+ "Kugeltrikolore": {
+  "name": "Three-Colour Baubles",
+  "description": "Christmas is approaching. As every year, the Christmas tree must therefore be decorated. Decorating the tree with just one colour of baubles is out of the question for the self-appointed four <i>Christmas experts</i>. Each of them has bought a pack of 18 baubles, each in a different colour. The black, red and white baubles were then divided among the four friends according to preference and now decorate this year's three-coloured Christmas tree.",
+  "question": "Who (first name & surname) decorates their tree with how many red, black and white baubles?",
+  "clues": [
+   "Martin decorates his tree with one bauble fewer in total than Martha, whose number is 5 greater than that of the friend who uses the fewest baubles.",
+   "Santander uses one black bauble more than Muriel.",
+   "Wegener decorates the tree with one red bauble fewer than Martha.",
+   "Mr Zweck uses 9 baubles in total."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Alfie",
+     "Ellen",
+     "Martha",
+     "Martin"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Muriel",
+     "Santander",
+     "Wegener",
+     "Zweck"
+    ]
+   },
+   {
+    "name": "Red",
+    "values": [
+     "3",
+     "4",
+     "5",
+     "6"
+    ]
+   },
+   {
+    "name": "White",
+    "values": [
+     "3",
+     "4",
+     "5",
+     "6"
+    ]
+   },
+   {
+    "name": "Black",
+    "values": [
+     "3",
+     "4",
+     "5",
+     "6"
+    ]
+   }
+  ]
+ },
+ "Fleischhasser unter sich": {
+  "name": "Meat Haters Only",
+  "description": "Till and his three friends have one thing in common – each of them abhors meat. Popular opinion would probably simply label all four as vegetarians, but in fact each of the four people differs in the extent of their abstinence. Alongside the well-known vegetarian, the group of four also includes a pescatarian and a fructarian.",
+  "question": "Who (first & surname) calls themselves which type of vegetarian, and how long have they been maintaining this abstinence?",
+  "clues": [
+   "Till has been abstaining from meat for 5 years less than the person named Hitz. This person in turn has been a critic of vegetarianism for 5 years less than the pescatarian – this person therefore considers it fine to eat fish.",
+   "Marvin has not been a supporter of the meat-free lifestyle for 20 years, whereas his friend Wotzek has not been practising abstinence for 5 years.",
+   "Frederike has been meat-free for 5 years less or more than the vegetarian. She is not called Hitz, and is also 5 years longer or less meat-free than the person named Mall, who has not been abstaining from meat for 20 years.",
+   "The fructarian has been pursuing their alternative path for 10 years longer than the vegan eater. The fructarian, who tries to spare plants themselves, is named either Amalie or Marvin."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Amalie",
+     "Frederike",
+     "Marvin",
+     "Till"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Hitz",
+     "Mall",
+     "Ulo",
+     "Wotzek"
+    ]
+   },
+   {
+    "name": "Type",
+    "values": [
+     "Fructarian",
+     "Pescatarian",
+     "Vegan",
+     "Vegetarian"
+    ]
+   },
+   {
+    "name": "Duration",
+    "values": [
+     "10",
+     "15",
+     "20",
+     "5"
+    ]
+   }
+  ]
+ },
+ "Stricken auf Zeit": {
+  "name": "Knitting Against the Clock",
+  "description": "Knitting is not just for old people. This realisation should be had by anyone who attended this year's state knitting championships. Over 100 participants of various age groups competed for the title of knitting king or queen. In the end, a familiar face won. Bertha had in fact already won the competition before. In the eternal ranking of most wins, she belongs to the elite.",
+  "question": "Who (first and surname) is how old, and how many times have they already won the knitting championship?",
+  "clues": [
+   "This year's winner, Bertha, is 10 years younger than the person with the surname Severin, who in turn is 10 years younger than Ivonne.",
+   "The frequent knitting master Marix has won two fewer times than the person named Steif.",
+   "Bertha has won two fewer times than the 30-year-old person.",
+   "Uta is 20 years younger than the person named Steif.",
+   "Ivonne has won two fewer times than the only man in the top 4 with the first name Peter.",
+   "The 50-year-old person does not take 5th place."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Bertha",
+     "Ivonne",
+     "Peter",
+     "Uta"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Marix",
+     "Severin",
+     "Steif",
+     "Wanda"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "20",
+     "30",
+     "40",
+     "50"
+    ]
+   },
+   {
+    "name": "Wins",
+    "values": [
+     "3",
+     "4",
+     "5",
+     "6"
+    ]
+   }
+  ]
+ },
+ "Marmeladenfreunde": {
+  "name": "Jam Friends",
+  "description": "Supermarket jam? Oh, how boring! At least that is the view of the group around Alaine. Each of them makes their own delicious jams and then passes them on to their acquaintances. This creates entirely new combinations that stand out from the standard grey of classic jams. In the lively exchange of jam jars, favourites and interesting new arrivals are soon found.",
+  "question": "Who (first name) made how many jars of which jam this time (spice + fruit)?",
+  "clues": [
+   "Markus made 20 jars fewer than the friend who made a cherry-based jam.",
+   "The raspberry jam creator – not Alaine – made 20 jars more than the cook who added ginger to his jam.",
+   "The coriander specialist made 20 jars more than Tom.",
+   "There are 10 jars more of the caraway jam than of the plum jam.",
+   "Cinnamon was used as the spice in 20 more jars than in the jars of strawberry jam."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Alaine",
+     "Emma",
+     "Markus",
+     "Tom"
+    ]
+   },
+   {
+    "name": "Fruit",
+    "values": [
+     "Strawberry",
+     "Raspberry",
+     "Cherry",
+     "Plum"
+    ]
+   },
+   {
+    "name": "Spice",
+    "values": [
+     "Ginger",
+     "Coriander",
+     "Caraway",
+     "Cinnamon"
+    ]
+   },
+   {
+    "name": "Jars",
+    "values": [
+     "10",
+     "20",
+     "30",
+     "40"
+    ]
+   }
+  ]
+ },
+ "Tanzabend": {
+  "name": "Dance Evening",
+  "description": "Every Thursday, it is time to put on dancing shoes and head onto the dance floor. At least for the four friendly couples who got to know each other at a dance school and have since shared their common enthusiasm for dancing. This evening the four dance couples have invited a few guests who know how to win over the four couples with their individual dancing styles.",
+  "question": "Which couple (male and female first name) has been dancing for how long, and which style have they chosen today?",
+  "clues": [
+   "Mark does not dance with Anna.",
+   "Ivonne has been dancing for 5 years less than Sven and his dance partner.",
+   "Svenja has been dancing for 5 years less than the couple performing a tango this evening, who in turn have been dancing for 5 years less than the flamenco dancers.",
+   "Michael has been dancing for 10 years longer than his friend Timo.",
+   "Eva has been dancing for 10 years longer or shorter than Anna, and 5 years longer or shorter than the rumba dancer."
+  ],
+  "attributes": [
+   {
+    "name": "First name (m)",
+    "values": [
+     "Mark",
+     "Michael",
+     "Sven",
+     "Timo"
+    ]
+   },
+   {
+    "name": "First name (f)",
+    "values": [
+     "Anna",
+     "Eva",
+     "Ivonne",
+     "Svenja"
+    ]
+   },
+   {
+    "name": "Style",
+    "values": [
+     "Flamenco",
+     "Rumba",
+     "Tango",
+     "Waltz"
+    ]
+   },
+   {
+    "name": "Duration",
+    "values": [
+     "10",
+     "15",
+     "20",
+     "5"
+    ]
+   }
+  ]
+ },
+ "Italienische Genüsse": {
+  "name": "Italian Delights",
+  "description": "Italian cuisine is very popular even beyond its homeland of Italy. But it can be reduced above all to the popular duo of pizza and pasta in all their variations. In the small town of Windau, four Italian restaurants compete for the favour of customers. Each of the four head chefs claims to have perfected a certain type of pasta and a certain kind of pizza.",
+  "question": "Who (first name) comes from which Italian city, has been running their restaurant for how long, and what is the famous pizza and pasta of each restaurant?",
+  "clues": [
+   "Angelo is not known for his Margherita.",
+   "Enrico says he prepares an extraordinary Funghi pizza, and he opened his restaurant 2 years earlier than the chef from Rome.",
+   "The Four-Cheese pizza comes from the establishment that was founded four years before the restaurant of the Italian chef from Florence.",
+   "The enthusiastic cook from Naples celebrated the opening of his hotel 2 years after the tagliatelle chef and 2 years before the spaghetti chef, who does not come from Rome.",
+   "The fusilli chef opened his restaurant four years before or after the head chef Marcella."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Angelo",
+     "Antonio",
+     "Enno",
+     "Marcella"
+    ]
+   },
+   {
+    "name": "Hometown",
+    "values": [
+     "Florence",
+     "Naples",
+     "Pisa",
+     "Rome"
+    ]
+   },
+   {
+    "name": "Pasta",
+    "values": [
+     "Fusilli",
+     "Spaghetti",
+     "Tagliatelle",
+     "Tortellini"
+    ]
+   },
+   {
+    "name": "Pizza",
+    "values": [
+     "Funghi",
+     "Margherita",
+     "Napoli",
+     "Four-Cheese"
+    ]
+   },
+   {
+    "name": "Opening",
+    "values": [
+     " 2004",
+     "2000",
+     "2002",
+     "2006"
+    ]
+   }
+  ]
+ },
+ "KatzenträuMe": {
+  "name": "CatDreaMs",
+  "description": "The Cat Palace is a new facility where owners can bring their cats when they want to pamper their faithful four-legged friends properly. Each cat receives an individual wellness programme there, with carefully measured strokes and its favourite dishes. The Temple of Pleasure is arranged alphabetically. This puzzle is about five cats whose names each begin with an M.",
+  "question": "Which cat (name + age + breed) has which favourite food?",
+  "clues": [
+   "The cat that prizes sausage and is not called Mi is 3 years older than the hamburger lover.",
+   "The British Shorthair is exactly one year older than the female cat with a weakness for cream.",
+   "Murmel, so named because she always loves romping about with marbles, does not like cake and is one year younger than Mona, who is not a Sphynx.",
+   "Mau is one year older than the European Shorthair cat.",
+   "Mi and Muffin (the owners named their darling after its favourite food) are four years apart in age.",
+   "The European Longhair cat is one year older than the British Longhair cat and one year younger than the Sphynx."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Mau",
+     "Mi",
+     "Mona",
+     "Muffin",
+     "Murmel"
+    ]
+   },
+   {
+    "name": "Breed",
+    "values": [
+     "British Shorthair",
+     "British Longhair",
+     "European Shorthair",
+     "European Longhair",
+     "Sphynx"
+    ]
+   },
+   {
+    "name": "Favourite food",
+    "values": [
+     "Hamburger",
+     "Yoghurt",
+     "Cream",
+     "Cake",
+     "Sausage"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ]
+   }
+  ]
+ },
+ "Zaubererwettstreit": {
+  "name": "Magicians' Contest",
+  "description": "Four great masters of illusion compete today at the Admiral Palace in Las Vegas for the crown of Houdini, the most important prize that can be awarded to a magician. Behind their masks the artists cannot be recognised, but the field is divided: two women compete against two men and present their magic tricks. Each of the illusionists has a speciality in which they hope to win over the jury's hearts with particularly extravagant tricks.",
+  "question": "Which magician (stage name + first name + age) has which speciality?",
+  "clues": [
+   "As the name implies, Mr. X is indeed male.",
+   "The magician whose speciality is sawing in half (many assistants have already been cut into several pieces in front of the audience) is 5 years older or younger than Anja and 5 years older or younger than Marija.",
+   "The magician with the stage name Magnus is older than the magician who, in Houdini's tradition, wants to escape from a water tank. Neither of these two people is Anja.",
+   "Dr. Mircale is younger than Mr. X.",
+   "The master of card tricks is older than Fantasto (not Hugo) and younger than the illusionist who often vanishes from the stage without warning and is also not called Hugo."
+  ],
+  "attributes": [
+   {
+    "name": "Stage name",
+    "values": [
+     "Dr. Mircale",
+     "Fantasto",
+     "Magnus",
+     "Mr. X"
+    ]
+   },
+   {
+    "name": "First name",
+    "values": [
+     "Adrian",
+     "Anja",
+     "Hugo",
+     "Marija"
+    ]
+   },
+   {
+    "name": "Speciality",
+    "values": [
+     "Card tricks",
+     "Vanishing",
+     "Water tank",
+     "Sawing in half"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "30",
+     "35",
+     "40",
+     "55"
+    ]
+   }
+  ]
+ },
+ "Weltenbummler": {
+  "name": "Globetrotters",
+  "description": "Saturday evening, 19:00. The five female friends around Beate sit together at the living-room table and exchange views on their shared passion: travelling. Each of the women was in a different country last month and now answers the questions of the other like-minded friends about how she experienced her stay. For each of the friends, this was not the first trip she had taken recently.",
+  "question": "Who (name and age) most recently travelled to which country, and how many countries did each of the friends visit over the last five years?",
+  "clues": [
+   "The friend who had travelled to China on her last trip made ten fewer trips over the last five years than Lola.",
+   "The visitor to Peru travelled through five countries fewer than Franziska over the last five years, but five countries more than the 35-year-old.",
+   "Kathrin visited five more or fewer countries than the person who looked at New Zealand and who has visited more than one country per year over the last five years.",
+   "The 50-year-old visited ten countries fewer recently than the Greenland tourist.",
+   "Beate can look back on five more trips abroad in the last five years than Monika.",
+   "Kathrin is five years younger than the visitor to Peru."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Beate",
+     "Franziska",
+     "Kathrin",
+     "Lola",
+     "Monika"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "30",
+     "35",
+     "40",
+     "45",
+     "50"
+    ]
+   },
+   {
+    "name": "Country",
+    "values": [
+     "Argentina",
+     "China",
+     "Greenland",
+     "New Zealand",
+     "Peru"
+    ]
+   },
+   {
+    "name": "Number of countries",
+    "values": [
+     "5",
+     "10",
+     "15",
+     "20",
+     "30"
+    ]
+   }
+  ]
+ },
+ "Klassikliebhaber": {
+  "name": "Classical Music Lovers",
+  "description": "“Classical music is the only true genre of music.” The four classical music lovers Andreas, Sandra, Ursula and Valentin would sign up to this statement immediately. They have been indulging in this special listening pleasure since they were little and have been addicted ever since. Asked who their favourite composer was, each of the four people gave a different answer. The spectrum ranges from Mozart to Shostakovich. In addition, each of the four people also plays an instrument themselves.",
+  "question": "Who (name and age) has which favourite composer, and which instrument does the person play?",
+  "clues": [
+   "The Mozart fan is five years older than Valentin, but five years younger than the person who said they play the clarinet.",
+   "The person who can be enraptured by the sounds of Beethoven is not called Sandra and is five years younger than the Schubert fan.",
+   "The piano is the instrument played by the person who is five years younger than the classical music lover who plays the violin themselves.",
+   "The oboe player is five years younger than Ursula."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Andreas",
+     "Sandra",
+     "Ursula",
+     "Valentin"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "50",
+     "55",
+     "60",
+     "65"
+    ]
+   },
+   {
+    "name": "Composer",
+    "values": [
+     "Beethoven",
+     "Mozart",
+     "Shostakovich",
+     "Schubert"
+    ]
+   },
+   {
+    "name": "Instrument",
+    "values": [
+     "Clarinet",
+     "Piano",
+     "Oboe",
+     "Violin"
+    ]
+   }
+  ]
+ },
+ "Lieblingsdichter": {
+  "name": "Favourite Poets",
+  "description": "Some people love the classic poets such as Goethe, others prefer romantic poets such as Eichendorff. The members of a poetry club around Martin also have different tastes. Today they meet and read each other poems by their favourite authors aloud.",
+  "question": "Who (first name & surname & age) has which favourite poet, and how many poems do they read aloud today?",
+  "clues": [
+   "Ilse, whose favourite author is not Goethe, reads two poems fewer than the person who favours Eichendorff and is not called Martin.",
+   "Martin is not 50 years old.",
+   "The person named Anger reads one poem more than Beate.",
+   "The Schiller fan reads one poem fewer than the Brecht devotee whose surname is fittingly Brecht.",
+   "Beate is 20 years younger than Steve.",
+   "The person named Imminger reads one poem fewer than the 40-year-old person."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Beate",
+     "Ilse",
+     "Martin",
+     "Steve"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Anger",
+     "Brecht",
+     "Imminger",
+     "Jung"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "30",
+     "40",
+     "50",
+     "60"
+    ]
+   },
+   {
+    "name": "Poet",
+    "values": [
+     "Brecht",
+     "Eichendorff",
+     "Göthe",
+     "Schiller"
+    ]
+   },
+   {
+    "name": "Number of poems",
+    "values": [
+     "1",
+     "3",
+     "4",
+     "5"
+    ]
+   }
+  ]
+ },
+ "Lieferantenchaos": {
+  "name": "Supplier Chaos",
+  "description": "Station master Ulf ate his bratwurst at his desk. Now all the papers are splattered with mustard. Help him rewrite the supplier list using the few pieces of information that can still be made out. Railway inspector Benny will be coming soon and urgently needs 3 important pieces of information!",
+  "question": "On which day was steel delivered, what did Alan deliver, and who delivered 60 wagons?",
+  "clues": [
+   "The steel supplier delivered 40 wagons fewer than the brick supplier and did not arrive on Tuesday.",
+   "Alan arrived 2 days before the gravel supplier and had 20 wagons fewer than Lucy.",
+   "Mizuki had twice as many wagons as the wood supplier. She delivered one day after Bobby, but one day before the glass supplier.",
+   "Sam had 60 wagons fewer than the glass supplier. He did not deliver on Friday, and he had not loaded any gravel."
+  ],
+  "attributes": [
+   {
+    "name": "Supplier",
+    "values": [
+     "Alan",
+     "Bobby",
+     "Lucy",
+     "Mizuki",
+     "Sam"
+    ]
+   },
+   {
+    "name": "Material",
+    "values": [
+     "Glass",
+     "Wood",
+     "Gravel",
+     "Steel",
+     "Brick"
+    ]
+   },
+   {
+    "name": "Day",
+    "values": [
+     "Monday",
+     "Tuesday",
+     "Wednesday",
+     "Thursday",
+     "Friday"
+    ]
+   },
+   {
+    "name": "Wagons",
+    "values": [
+     "40",
+     "60",
+     "80",
+     "100",
+     "120"
+    ]
+   }
+  ]
+ },
+ "Wagner Opern": {
+  "name": "Wagner Operas",
+  "description": "Franziska is a great Wagner fan and cannot get enough of his operas. That is why she has already bought tickets for five performances taking place in the near future. Full of anticipation, she now waits for the “magnificent works of art”, as she is fond of calling the operas.",
+  "question": "Which Wagner opera is staged by which person (first name + surname + age)?",
+  "clues": [
+   "The organiser of “The Ring of the Nibelung” does not have the surname Santos and is ten years younger than Genophepha, who in turn is five years younger than Ms Vonn.",
+   "The opera “Parsifal” is staged by a person who is five years younger than the organiser Oster.",
+   "Renate's surname is not Wann.",
+   "Werner and Peter, whose surname is not Mauser, are five years apart in age.",
+   "The organiser of “The Mastersingers of Nuremberg” is five years older than the organiser of “The Flying Dutchman” and five years younger than the person with the surname Wann."
+  ],
+  "attributes": [
+   {
+    "name": "Opera",
+    "values": [
+     "The Flying Dutchman",
+     "The Mastersingers of Nuremberg",
+     "Parsifal",
+     "The Ring of the Nibelung",
+     "Tannhäuser"
+    ]
+   },
+   {
+    "name": "First name",
+    "values": [
+     "Genophepha",
+     "Peter",
+     "Renate",
+     "Uta",
+     "Werner"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Mauser",
+     "Oster",
+     "Santos",
+     "Vonn",
+     "Wann"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "50",
+     "55",
+     "60",
+     "65",
+     "70"
+    ]
+   }
+  ]
+ },
+ "Müslierfinder": {
+  "name": "Muesli Inventors",
+  "description": "A well-known muesli manufacturer has held a competition in which customers could submit their personal muesli creations, and the best four designs will make it onto the market as real products. After a long voting phase the result is now decided, and customers can look forward to the four new varieties Royal, Fruity, Asia and Special.",
+  "question": "Which variety (name) was invented by which person (first name), how many unique ingredients does it contain, and what is its standout ingredient?",
+  "clues": [
+   "Rebecca's creation contains four ingredients fewer than Samuel's stroke of genius.",
+   "The muesli with rice as an ingredient is not called “Fruity” and contains four components fewer than the muesli that relies on the special flavour of pumpkin.",
+   "The mango muesli contains four components fewer or more than the blend named “Asia”.",
+   "Tobias is not the creator of the “Fruity” muesli.",
+   "Anja did not use exactly 12 ingredients for her muesli.",
+   "The “Special” muesli has 8 components fewer than the special muesli in which gold dust is actually used and which does not come from Anja."
+  ],
+  "attributes": [
+   {
+    "name": "Muesli name",
+    "values": [
+     "Asia",
+     "Fruity",
+     "Royal",
+     "Special"
+    ]
+   },
+   {
+    "name": "Inventor",
+    "values": [
+     "Anja",
+     "Rebecca",
+     "Samuel",
+     "Tobias"
+    ]
+   },
+   {
+    "name": "Number of ingredients",
+    "values": [
+     "12",
+     "20",
+     "4",
+     "8"
+    ]
+   },
+   {
+    "name": "Special ingredient",
+    "values": [
+     "Gold dust",
+     "Pumpkin",
+     "Mango",
+     "Rice"
+    ]
+   }
+  ]
+ },
+ "Harry Potter": {
+  "name": "Harry Potter",
+  "description": "Harry, Hermine and Ron are in trouble again. They have been snooping around the castle and locked themselves into Snape's potion cupboard. Find out which potion from which wizard opens the door.",
+  "question": "Which potion, from which wizard, has which effect?",
+  "clues": [
+   "The teacher from the second year in Defence Against the Dark Arts uses a green potion.",
+   "The potion of the blond curly-haired boy loved by Mrs. Weasly pushes curtains aside.",
+   "The Herbology teacher does not have the potion that opens the chest.",
+   "The potion that makes objects float is made from blue and red ingredients.",
+   "A head of house from Slytherin has a potion made from a single primary colour."
+  ],
+  "attributes": [
+   {
+    "name": "Wizard",
+    "values": [
+     "Gilderoy Lockhart",
+     "Horace Slughorn",
+     "Pomona Sprout"
+    ]
+   },
+   {
+    "name": "Potion",
+    "values": [
+     "Green potion",
+     "Red potion",
+     "Violet potion"
+    ]
+   },
+   {
+    "name": "Effect",
+    "values": [
+     "Makes objects float",
+     "Pushes curtains aside",
+     "Opens the chest"
+    ]
+   }
+  ]
+ },
+ "Wichtel-Rätsel": {
+  "name": "Wichtel Puzzle",
+  "description": "Like every year, families from all over the world come together to spend the holidays enjoying good food. So too do the families of Santa Claus, the Christkind, Frau Holle and, of course, your Wichtel mum. Naturally, everyone brings their children along, and one or two of them even have a pet scurrying between the legs of the family members. To work out who your Wichtel mum is this year, you must answer the following question:",
+  "question": "Who is your Wichtel mum celebrating Christmas with, and what is there to eat?",
+  "clues": [
+   "Mum has a dog",
+   "Santa Claus has a cat",
+   "Frau Holle has an animal hair allergy",
+   "Mum has no children",
+   "Santa Claus has one child.",
+   "The Christkind has a rabbit",
+   "The Christkind has three children",
+   "Frau Holle has four children",
+   "Santa Claus eats a goose",
+   "Mum eats sausages",
+   "At the Christkind's there is raclette",
+   "Frau Holle serves fish"
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Christkind",
+     "Frau Holle",
+     "Mum",
+     "Santa Claus"
+    ]
+   },
+   {
+    "name": "Children",
+    "values": [
+     "three children",
+     "one child",
+     "no children",
+     "four children"
+    ]
+   },
+   {
+    "name": "Pet",
+    "values": [
+     "Dog",
+     "Rabbit",
+     "Cat",
+     "Animal hair allergy"
+    ]
+   },
+   {
+    "name": "Food",
+    "values": [
+     "Fish",
+     "Goose",
+     "Raclette",
+     "Sausages"
+    ]
+   }
+  ]
+ },
+ "Jonglieren geht über Probieren": {
+  "name": "Juggling Beats Trying",
+  "description": "After visiting a circus, where the jugglers were especially impressive, Bernd and his three friends decided to teach themselves how to juggle.\nAfter a few weeks of practice, the friends have progressed to different degrees. While some only juggle with balls or pens, one has turned out to be very daring and has tried his luck with chainsaws.",
+  "question": "Who (first and last name) juggles mainly with which type of object, and how many of these objects can that person keep in the air at the same time?",
+  "clues": [
+   "The person with the surname Albrich juggles two objects more than Bernd and one object more or fewer than the friend who tries pens.",
+   "Severin throws two objects fewer into the air than the hobby juggler with the surname Frederik",
+   "The daredevil, who risks his life juggling chainsaws, is not called Bös and even throws one more object than another of the friends who juggles with balls.",
+   "Katja juggles one object fewer than a person who throws one object more or fewer than the person who throws clubs."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Bernd",
+     "Katja",
+     "Marina",
+     "Severin"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Albrich",
+     "Bös",
+     "Frederik",
+     "Tal"
+    ]
+   },
+   {
+    "name": "Object type",
+    "values": [
+     "balls",
+     "chainsaws",
+     "clubs",
+     "pens"
+    ]
+   },
+   {
+    "name": "Number",
+    "values": [
+     "6",
+     "7",
+     "8",
+     "9"
+    ]
+   }
+  ]
+ },
+ "Wettessweltmeister": {
+  "name": "Eating World Champions",
+  "description": "Anyone can eat, but gobbling down a lot of food quickly is the speciality of only a few rapid food disposers. Among experts, four eating artists in particular count as the elite of competitive eaters. They have given themselves fitting nicknames. At the last eating contest, the aim was to polish off as many hot dogs as possible in the shortest time. No problem for our four talents, who each managed to eat a double-digit number before time ran out.",
+  "question": "Who (stage name and surname) actually has which favourite food, and how many hot dogs did they gobble down today?",
+  "clues": [
+   "Barik ate one hot dog more than Jumbo, who did not name hot dog as his favourite food, and one hot dog fewer than the eater with the surname Sens.",
+   "The roast pork lover ate one hot dog fewer than the person with the surname Manso.",
+   "The pizza connoisseur managed two hot dogs more or fewer than Hot Bob.",
+   "The person named Wall does not like pizza and ate either one hot dog more or one fewer than Fat Marco."
+  ],
+  "attributes": [
+   {
+    "name": "Stage name",
+    "values": [
+     "Big Mac",
+     "Fat Marco",
+     "Hot Bob",
+     "Jumbo"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Barik",
+     "Manso",
+     "Sens",
+     "Wall"
+    ]
+   },
+   {
+    "name": "Favourite food",
+    "values": [
+     "Hot dog",
+     "Pizza",
+     "Schnitzel",
+     "Roast pork"
+    ]
+   },
+   {
+    "name": "Number of hot dogs",
+    "values": [
+     "15",
+     "16",
+     "17",
+     "18"
+    ]
+   }
+  ]
+ },
+ "Gewichtestemmer": {
+  "name": "Weightlifting Machines",
+  "description": "Lifting weights is one of the most popular training exercises for building arm muscles. The candidates in this puzzle, however, have quite different goals: they do not lift the weights themselves, but have developed special machines for this purpose, which are meant to lift large masses into the air despite each having a low own weight of under 100 kg. How well this works can be found out in this puzzle.",
+  "question": "Who (first and last name) lifts which weight, and how old is that person?",
+  "clues": [
+   "Frank's machine lifts 200 kg less than the one belonging to the person named Schmitt",
+   "Mark is 10 years older than the builder of the 300 kg lifting machine and 10 years younger than the lifter Storch",
+   "The inventor Wals does not lift exactly 100 kg less than Storch",
+   "Frank is not 60 years old",
+   "Titus is 10 years older than the person with the surname Andres, who lifts 200kg less than Storch"
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Frank",
+     "Mark",
+     "Titus",
+     "Uta"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Andres",
+     "Schmitt",
+     "Storch",
+     "Wals"
+    ]
+   },
+   {
+    "name": "Weight",
+    "values": [
+     "100",
+     "200",
+     "300",
+     "400"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "30",
+     "40",
+     "50",
+     "60"
+    ]
+   }
+  ]
+ },
+ "Ergotherapeutin": {
+  "name": "Occupational Therapist",
+  "description": "Regina, Lisa, Anna and Birgitta have been good friends since their school days. Each of them has a different job and lives in a different city. Despite the great distance, they meet up regularly one weekend a year.",
+  "question": "Find out which of the four women works where as an occupational therapist, and what her full name is.",
+  "clues": [
+   "Ms Klose lives furthest north. She did not choose a social profession.",
+   "The stuntwoman's surname is Martens.",
+   "Anna does not come from Mannheim.",
+   "Anna, the childcare worker, does not have the surname Wöhrle.",
+   "This year the women are meeting in the city where the occupational therapist with the surname Wöhrle lives.",
+   "Regina arrives late, as she has the furthest journey.",
+   "Birgitta from München arrives earliest."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Anna",
+     "Birgitta",
+     "Lisa",
+     "Regina"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Cyriax",
+     "Klose",
+     "Martens",
+     "Wöhrle"
+    ]
+   },
+   {
+    "name": "Job",
+    "values": [
+     "Occupational therapist",
+     "Childcare worker",
+     "Engineer",
+     "Stuntwoman"
+    ]
+   },
+   {
+    "name": "City",
+    "values": [
+     "Erfurt",
+     "Kiel",
+     "Mannheim",
+     "München"
+    ]
+   }
+  ]
+ },
+ "Geocacher": {
+  "name": "Geocachers",
+  "description": "Today a big geocaching tour is planned for Einhard, Fritzezippel, Golwischer, Luy83 and Mainfuchs. Just as they are about to set off, five new caches are published. So all five want to try their luck, all plans are thrown overboard and the five go on a FTF hunt. The final container of these five caches was each time found first by a different cacher.\n\nWill the five container hunters manage to scoop five FTFs?\n\n",
+  "question": "How many minutes after publication did the five reach their final containers? What type of cache is each one? Which of the five cachers gets the container in hand first?",
+  "clues": [
+   "The cache that Golwischer found first was found 48 minutes after publication.",
+   "Blue Moonlight was discovered 30 minutes after publication and is not a Wherigo.",
+   "Einhard's cache type is not Multi.",
+   "The mystery cache that Mainfuchs loves so much had to wait 6 minutes longer for its find after publication than the traditional cache called Red Swim Trunks.",
+   "The letterbox was found 54 minutes after publication.",
+   "Luy83's favourite cache, Green Tree, is not the container that was found exactly six minutes after Brown Earth."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Einhard",
+     "Fritzezippel",
+     "Golwischer",
+     "Luy83",
+     "Mainfuchs"
+    ]
+   },
+   {
+    "name": "Cache",
+    "values": [
+     "Blue Moonlight",
+     "Brown Earth",
+     "Yellow Cat",
+     "Green Tree",
+     "Red Swim Trunks"
+    ]
+   },
+   {
+    "name": "Cache type",
+    "values": [
+     "Letterbox",
+     "Multi",
+     "Mystery",
+     "Traditional",
+     "Wherigo"
+    ]
+   },
+   {
+    "name": "Found after publication",
+    "values": [
+     "30 minutes",
+     "36 minutes",
+     "42 minutes",
+     "48 minutes",
+     "54 minutes"
+    ]
+   }
+  ]
+ },
+ "Wahrsagerinnen": {
+  "name": "Fortune Tellers",
+  "description": "Despite having no scientific evidence to support them, many people still believe in horoscopes. Some go even further and trust in the future predictions of dubious fortune tellers. Marie and three other friends have discovered fortune-telling for themselves and offer their services to superstitious fellow humans.",
+  "question": "Who (first name, age and star sign) uses which fortune-telling technique?",
+  "clues": [
+   "The crystal ball user is ten years younger than the person with the star sign Leo",
+   "Marie is five years older than Suzan and five years younger than the Sagittarius",
+   "Margaret is ten years older than the tarot reader",
+   "The coffee grounds reader is not called Margaret and is ten years older than the fortune teller with the star sign Taurus",
+   "Joli is not a Taurus and is five years younger or older than the person who uses palmistry for her predictions."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Joli",
+     "Margaret",
+     "Marie",
+     "Suzan"
+    ]
+   },
+   {
+    "name": "Star sign",
+    "values": [
+     "Leo",
+     "Sagittarius",
+     "Taurus",
+     "Libra"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "45",
+     "50",
+     "55",
+     "60"
+    ]
+   },
+   {
+    "name": "Method",
+    "values": [
+     "Crystal ball",
+     "Palmistry",
+     "Coffee grounds",
+     "Tarot"
+    ]
+   }
+  ]
+ },
+ "Konservendosen": {
+  "name": "Tin Cans",
+  "description": "Food preservation treats foods so that they keep for longer, for example to ensure provisions in times of need. The task of this puzzle is to rearrange the tins into the correct order.",
+  "question": "Which tin (colour) stands in which position?",
+  "clues": [
+   "The purple tin is two places to the left of the green tin.",
+   "The yellow tin is two places to the left of the pink tin, which stands one place further to the left than the red tin.",
+   "The blue tin is not in position 1."
+  ],
+  "attributes": [
+   {
+    "name": "Colour",
+    "values": [
+     "Blue",
+     "Yellow",
+     "Green",
+     "Purple",
+     "Pink",
+     "Red"
+    ]
+   },
+   {
+    "name": "Position",
+    "values": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6"
+    ]
+   }
+  ]
+ },
+ "YouTube-Sternchen": {
+  "name": "YouTube Stars",
+  "description": "YouTube offers not only funny cat videos, but a myriad of entertaining, frightening or educational videos on all kinds of topics that everyday life has in store for us. Besides watching videos as a single, self-contained action before the stream of videos drifts us off in another direction, there is also the consumption of channels as a video supplier on a regular basis. Some of these channels have amassed so many subscribers that their operators can earn a living from the adverts played in their videos. Five of these channel operators are presented in this puzzle.",
+  "question": "Who (name and age) publishes videos from which category, and how many subscribers does this person have?",
+  "clues": [
+   "The channel that showcases the latest makeup is, unsurprisingly, run by a female person.",
+   "Equally unsurprising is that the gaming channel is run by a male video producer.",
+   "Sam has twice as many subscribers as Anke",
+   "The singing channel has twice as many subscribers as the comedy channel, but 500 000 fewer than the channel that provides gaming videos.",
+   "Sultana is two years older than the person who runs the singing channel, but two years younger than the person who publishes gaming videos.",
+   "Amy is two years older than the operator of the makeup channel.",
+   "The person responsible for the comedy channel is two years younger than Anke."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Amy",
+     "Anke",
+     "Mark",
+     "Sam",
+     "Sultana"
+    ]
+   },
+   {
+    "name": "Age",
+    "values": [
+     "18",
+     "20",
+     "22",
+     "24",
+     "26"
+    ]
+   },
+   {
+    "name": "Channel type",
+    "values": [
+     "Comedy",
+     "Gaming",
+     "Singing",
+     "Makeup",
+     "Sport"
+    ]
+   },
+   {
+    "name": "Subscribers",
+    "values": [
+     "1.000.000",
+     "1.500.000",
+     "2.000.000",
+     "2.500.000",
+     "500.000"
+    ]
+   }
+  ]
+ },
+ "Maja": {
+  "name": "Maja",
+  "description": "The little hard-working bee Maja has done it! The ten-thousandth blossom has been pollinated, and her friends want to secretly prepare a surprise picnic with everything that goes with it on the poppy meadow.\n\nThere will be games and music. Maja's friend Willi has promised to brew his famous honey beer, and the spider Thekla takes care of everyone's well-being with her dandelion casserole.\n\nNow all that remains is to organise the games, the music and everything else important.\n\nTo this end, the cheerful grasshopper Flip has written a list which says exactly who has to take on which important task and, above all, when and how much time it will take.\n\nThere is only one week left now, and it is time to hand out the tasks. But however much Flip searches that morning, the list is and remains missing. Yet he had put it down exactly where he would always find it. Unfortunately, he can no longer remember where that was…\n\nSo he sits at home now, brooding, and tries to reconstruct what was on the list.\n\n",
+  "question": "Could you perhaps help him with this?",
+  "clues": [
+   "The lanterns are not hung up on Saturday",
+   "Willi sets up the tables and chairs on Wednesday, which does not take him the most time",
+   "Alexander needs 500 minutes to distract Maja",
+   "Thekla needs 200 minutes for her task on Thursday",
+   "Kurt does not do his task on Monday",
+   "Setting up the pavilion takes longer than thinking up games, but 200 minutes less than the task to be done on Friday",
+   "Puck needs 300 minutes for his task",
+   "Flip does his task on Tuesday",
+   "Putting together the music takes 400 minutes"
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     " Kurt",
+     "Alexander",
+     "Flip",
+     "Puck",
+     "Thekla",
+     "Willi"
+    ]
+   },
+   {
+    "name": "Task",
+    "values": [
+     "Distraction",
+     "Lanterns",
+     "Music",
+     "Pavilion",
+     "Games",
+     "Tables"
+    ]
+   },
+   {
+    "name": "Day",
+    "values": [
+     "Tue",
+     "Thu",
+     "Fri",
+     "Wed",
+     "Mon",
+     "Sat"
+    ]
+   },
+   {
+    "name": "Duration",
+    "values": [
+     "100",
+     "200",
+     "300",
+     "400",
+     "500",
+     "600"
+    ]
+   }
+  ]
+ },
+ "Kinorätsel": {
+  "name": "Cinema Puzzle",
+  "description": "Friday evening at 20:15. The Markfeld cinema is full of visitors who, on retro night, are watching old classics such as “Gone with the Wind” once more on the big screen. Five staff members have got the evening off work and have gone off to the various cinema screens, well stocked with snacks and drinks.",
+  "question": "Who (name) sits in which row, watches which film, and takes which snack and drink?",
+  "clues": [
+   "Rolf, who does not drink apple spritzer, likes to sit right at the front, directly in front of the screen, in row ten",
+   "Hannah, who likes to eat chocolate during a cinema visit, sits further down than Stefanie.",
+   "Wilhelm is currently watching Dirty Dancing.",
+   "Stefanie does not sit in the top row with her orange juice.",
+   "The viewer in row four eats nachos.",
+   "The viewer who bought ice confectionery is watching Blues Brothers.",
+   "Wilhelm, who sits further down than Peter, does not like nachos.",
+   "The viewer in row eight, who did not buy sparkling water, is watching Casablanca.",
+   "The viewer with the cola also bought gummy bears.",
+   "During the ten-minute film break of “Gone with the Wind”, the viewer gets a new apple spritzer."
+  ],
+  "attributes": [
+   {
+    "name": "Row",
+    "values": [
+     "1",
+     "10",
+     "4",
+     "6",
+     "8"
+    ]
+   },
+   {
+    "name": "Viewer",
+    "values": [
+     "Hannah",
+     "Peter",
+     "Rolf",
+     "Stefanie",
+     "Wilhelm"
+    ]
+   },
+   {
+    "name": "Film",
+    "values": [
+     "Blues Brothers",
+     "Casablanca",
+     "Dirty Dancing",
+     "Star Wars",
+     "Gone with the Wind"
+    ]
+   },
+   {
+    "name": "Snack",
+    "values": [
+     "Ice confectionery",
+     "Gummy bears",
+     "Nachos",
+     "Popcorn",
+     "Chocolate"
+    ]
+   },
+   {
+    "name": "Drink",
+    "values": [
+     "Apple spritzer",
+     "Cola",
+     "Iced tea",
+     "Orange juice",
+     "Sparkling water"
+    ]
+   }
+  ]
+ },
+ "Strohsterne": {
+  "name": "Straw Stars",
+  "description": "Five friends are making straw stars together for their relatives for Christmas. However, they cannot agree on what the perfect straw star should look like. So various numbers of points and materials are on the table. Despite their differing opinions, the friends have great fun making the stars and, after the crafting process, marvel at how each model has its own appeal.",
+  "question": "Who wants to give a straw star to their aunt?",
+  "clues": [
+   "Anja's straw star has 4 points.",
+   "The five friends sit next to each other at a long table.",
+   "Sabine wants to give the star to her neighbour.",
+   "Sophie uses a blue thread for tying.",
+   "The girl who makes a star with 8 points sits to the left of the friend who crafts one with 12 points.",
+   "The girl who makes a 12-pointed straw star uses a white thread.",
+   "The star made of oat straw is for the crafter's mum.",
+   "The friend who sits in the middle takes a silver thread.",
+   "The star with 5 points is made of rye straw.",
+   "Ines sits at the far left.",
+   "The straw star made of rye straw is crafted by the girl who is making her star for her grandma.",
+   "The girl who makes the star for her sister-in-law sits next to the girl who uses rye straw.",
+   "The star made of spelt straw has a gold thread.",
+   "Ines sits next to the girl who makes a star with 10 points.",
+   "Caro crafts a star from barley straw.",
+   "The girl who uses wheat straw sits next to the girl who uses a red thread."
+  ],
+  "attributes": [
+   {
+    "name": "Crafter",
+    "values": [
+     "Anja",
+     "Caro",
+     "Ines",
+     "Sabine",
+     "Sophie"
+    ]
+   },
+   {
+    "name": "Points",
+    "values": [
+     "10",
+     "12",
+     "4",
+     "5",
+     "8"
+    ]
+   },
+   {
+    "name": "Thread",
+    "values": [
+     "Blue",
+     "Gold",
+     "Red",
+     "Silver",
+     "White"
+    ]
+   },
+   {
+    "name": "Material",
+    "values": [
+     "Spelt straw",
+     "Barley straw",
+     "Oat straw",
+     "Rye straw",
+     "Wheat straw"
+    ]
+   },
+   {
+    "name": "Recipient",
+    "values": [
+     "Mum",
+     "Neighbour",
+     "Grandma",
+     "Sister-in-law",
+     "Aunt"
+    ]
+   }
+  ]
+ },
+ "Der Stasi-Spitzel": {
+  "name": "The Stasi Informer",
+  "description": "After you have found your Stasi file, you read it carefully. Unfortunately, it does not state explicitly who the informal collaborator of the Stasi was who spied on people. You only know that his code name was LYNX.\nWhile reading, you gather all the information you can find about LYNX. Perhaps you can work out in this way who has been spying on you!",
+  "question": "Who spied on them?",
+  "clues": [
+   "The real name of the ADDER has 5 letters.",
+   "Peter has the code name OWL.",
+   "OWL has grey hair.",
+   "Paul has neither a potbelly nor flat feet.",
+   "Pawel is slim.",
+   "Patrick is my cousin's husband.",
+   "The one with flat feet I know from the skittles club.",
+   "LYNX is a work colleague."
+  ],
+  "attributes": [
+   {
+    "name": "Code name",
+    "values": [
+     "OWL",
+     "COBRA",
+     "LYNX",
+     "ADDER"
+    ]
+   },
+   {
+    "name": "Name",
+    "values": [
+     "Patrick",
+     "Paul",
+     "Pawel",
+     "Peter"
+    ]
+   },
+   {
+    "name": "Feature",
+    "values": [
+     "Flat feet",
+     "Moustache",
+     "Potbelly",
+     "Grey hair"
+    ]
+   },
+   {
+    "name": "Acquaintance",
+    "values": [
+     "Work",
+     "Family",
+     "Circle of friends",
+     "Sports club"
+    ]
+   }
+  ]
+ },
+ "Skilager": {
+  "name": "Ski Camp",
+  "description": "Five children sit next to each other on a bench and will soon be going to the ski camp with their classes. Each child is taking different equipment with them. Furthermore, their ski suits and the assigned teachers differ. Each child has forgotten an item at home.",
+  "question": "Which child takes skis with them to camp?",
+  "clues": [
+   "Dani's ski suit is orange.",
+   "The child in the middle has forgotten their gloves.",
+   "Between the child with the yellow ski suit and the child with the green ski suit sits the child with the orange ski suit. Ms Zulian is not assigned to the child with the green ski suit.",
+   "Anna goes to the ski camp with Ms Beutler, does not sit in the middle and rides a sled.",
+   "Cony sits to the left of the child with the orange ski suit.",
+   "Emma has forgotten her scarf and sits at the far right.",
+   "To the left of the child who forgot their gloves sits the child who goes to the ski camp with Ms Achermann.",
+   "Dani has forgotten neither the gloves nor the scarf.",
+   "Beni's ski suit is blue, and he rides a snowboard.",
+   "Ms Zulian goes to the ski camp with neither Dani nor Cony. The child with the snowshoes has not forgotten their gloves or their ski pole and does not go to camp with Ms Wiltz.",
+   "Ms Achermann goes to camp with the child who sits on one side next to the child who forgot their helmet, and on the other side next to the snowblade user.",
+   "The child in the blue ski suit sits to the right of the child in the red ski suit.",
+   "The child who forgot their ski goggles sits to the left of the middle.",
+   "Between the child who forgot the scarf and the child who does not have the gloves with them sits the child with the orange ski suit.",
+   "Ms Maurer does not go to camp with Beni or Dani."
+  ],
+  "attributes": [
+   {
+    "name": "Seat",
+    "values": [
+     "Left",
+     "Half-left",
+     "Middle",
+     "Half-right",
+     "Right"
+    ]
+   },
+   {
+    "name": "Child's name",
+    "values": [
+     "Anna",
+     "Beni",
+     "Cony",
+     "Dani",
+     "Emma"
+    ]
+   },
+   {
+    "name": "Equipment",
+    "values": [
+     "Sled",
+     "Snowshoes",
+     "Skis",
+     "Snowblades",
+     "Snowboard"
+    ]
+   },
+   {
+    "name": "Ski suit colour",
+    "values": [
+     "Blue",
+     "Yellow",
+     "Green",
+     "Orange",
+     "Red"
+    ]
+   },
+   {
+    "name": "Forgotten item",
+    "values": [
+     "Gloves",
+     "Helmet",
+     "Scarf",
+     "Ski goggles",
+     "Ski pole"
+    ]
+   },
+   {
+    "name": "Teacher",
+    "values": [
+     "Ms Achermann",
+     "Ms Beutler",
+     "Ms Maurer",
+     "Ms Wiltz",
+     "Ms Zulian"
+    ]
+   }
+  ]
+ },
+ "Haustiere": {
+  "name": "Pets",
+  "description": "The neighbours on Henningstraße are all great friends of pets. Each of them, however, has special preferences regarding the kind and appearance of the animals. So it is no surprise that the pets are not only of different kinds but also all have different colours.",
+  "question": "What name, colour, favourite person, age and favourite food does each of the listed pets have?",
+  "clues": [
+   "Mimi is 13 years old",
+   "Bob is twice as old as Sabine's pet.",
+   "The goldfish prefers to eat flakes.",
+   "Stefan buys the carrots.",
+   "Sabine's pet is one year old.",
+   "The black dog belongs to a friend of Sabine's.",
+   "Karl is white.",
+   "The grey animal prefers wet food; the rabbit prefers to eat carrots.",
+   "Martin always buys dry food.",
+   "Tobi is not the cat and does not like flakes.",
+   "Stefan's pet is 2 years old."
+  ],
+  "attributes": [
+   {
+    "name": "Pet",
+    "values": [
+     "Goldfish",
+     "Rabbit",
+     "Dog",
+     "Cat"
+    ]
+   },
+   {
+    "name": "Name",
+    "values": [
+     "Bob",
+     "Karl",
+     "Mimi",
+     "Tobi"
+    ]
+   },
+   {
+    "name": "Colour",
+    "values": [
+     "Brown",
+     "Grey",
+     "Black",
+     "White"
+    ]
+   },
+   {
+    "name": "Favourite person",
+    "values": [
+     "Antonia",
+     "Martin",
+     "Sabine",
+     "Stefan"
+    ]
+   },
+   {
+    "name": "Pet's age",
+    "values": [
+     "1",
+     "13",
+     "2",
+     "8"
+    ]
+   },
+   {
+    "name": "Favourite food",
+    "values": [
+     "Wet food",
+     "Flakes",
+     "Carrots",
+     "Dry food"
+    ]
+   }
+  ]
+ },
+ "Logik des Thing": {
+  "name": "Logic of the Thing",
+  "description": "From the northern lands, the Vikings met for their annual Thing. Ragnarr Loðbrók, Erik der Rote, Harald Blåtand, Runer Jonsson and Thor Heyerdahl also came. They prefer different countries and therefore wanted to coordinate. Of course, each of them had an item typical of him and travelled with a different means of transport. Many matters could be settled at the Thing, but at the meal there were still problems, because each of them had a different favourite dish that he wanted served.",
+  "question": "Which Viking (name & attribute) travelled from which country, with which means of transport, and what is his favourite food?",
+  "clues": [
+   "Runer Jonsson does not like animals and therefore does not arrive on an animal. He also eats vegetarian food.",
+   "Ragnarr Loðbrók, on the other hand, loves animals, which is why he comes to the Thing with his raven on his shoulder and on his white horse.",
+   "Erik the Red reports on his journey from Greenland. He made the long way there in a longship and loves his horned helmet.",
+   "Thor Heyerdahl would like to eat Sustrømming and has travelled to the Thing from Sweden.",
+   "Harald Blåtand personally hunted the elk with his singing sword for his Elsdyr.",
+   "The Thing participant who came from Sweden still has both eyes.",
+   "The participant from Norway comes across the water in a dugout canoe.",
+   "The first name of the participant who prefers Røde Pølser starts with R.",
+   "The participant with the crown does not come by any watercraft.",
+   "The vegetarian travels from an island."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Erik der Rote",
+     "Harald Blåtand",
+     "Ragnarr Loðbrók",
+     "Runer Jonsson",
+     "Thor Heyerdahl"
+    ]
+   },
+   {
+    "name": "Country",
+    "values": [
+     "Denmark",
+     "Greenland",
+     "Iceland",
+     "Norway",
+     "Sweden"
+    ]
+   },
+   {
+    "name": "Means of transport",
+    "values": [
+     "Dugout canoe",
+     "Hanseatic cog",
+     "Longship",
+     "Oxcart",
+     "White horse"
+    ]
+   },
+   {
+    "name": "Attribute",
+    "values": [
+     "Singing sword",
+     "Horned helmet",
+     "Crown",
+     "Raven",
+     "Only one eye"
+    ]
+   },
+   {
+    "name": "Favourite food",
+    "values": [
+     "Elsdyr",
+     "Køttbullar",
+     "Røde Pølser",
+     "Smørrebrød",
+     "Sustrømming"
+    ]
+   }
+  ]
+ },
+ "Hüttenbesuch": {
+  "name": "Hut Visit",
+  "description": "Five friends had arranged to meet in the mountains at a hut. Unfortunately, communication was poor, so everyone arrived at a different hut. The friends decide to spend a night in their respective accommodation and to consume their favourite meals and dishes there. The next day a joint meeting is then to be organised.",
+  "question": "But who (first and last name) arrived at which hut? What did they eat and drink, and how large were the dormitories?",
+  "clues": [
+   "Ines likes meat.",
+   "Volz is a vegetarian and does not drink alcohol.",
+   "Edmund is at one of the huts.",
+   "Erwin's room houses fewer hikers than Volz's room and more than Papert's room. Andrea also drinks beer.",
+   "Reinhold has a shorter surname than Ines and Edmund.",
+   "The person in the largest room drinks ginger lemonade.",
+   "Papert's first name is longer than the first names of Ehses and Hillary.",
+   "At the Stuttgarter-Hütte, only dormitories have an even number of beds. The guest at Willers-Alpe sleeps with at least 6 other people in one dormitory. The number of beds in the dormitories of the Bad-Kissinger-Hütte is evenly divisible by 5.",
+   "At the Bad-Kissinger-Hütte and at the Karwendelhaus, no meat is served. At Willers-Alpe, however, there are only dishes with meat and no beer. Beer is had with Penne Arrabiata and sausage salad.",
+   "Papert's accommodation does not have ten rooms.",
+   "Ehses's accommodation has either four or six rooms.",
+   "Messner can be found at the Stuttgarter-Hütte.",
+   "Andrea's hut has half as many rooms as the hut of a person who does not have the Schnitzel.",
+   "The Kemptener-Hütte does not offer sausage salad. In addition, Erwin, who drinks blackcurrant spritzer, is not a guest there.",
+   "The accommodation that serves Helles has fewer rooms than the one that serves wheat beer.",
+   "The accommodation with the vegetable curry has fewer rooms than the one known for its tofu sausages."
+  ],
+  "attributes": [
+   {
+    "name": "First name",
+    "values": [
+     "Andrea",
+     "Edmund",
+     "Erwin",
+     "Ines",
+     "Reinhold"
+    ]
+   },
+   {
+    "name": "Surname",
+    "values": [
+     "Ehses",
+     "Hillary",
+     "Messner",
+     "Papert",
+     "Volz"
+    ]
+   },
+   {
+    "name": "Hut",
+    "values": [
+     "Bad-Kissinger-Hütte",
+     "Karwendelhaus",
+     "Kemptener-Hütte",
+     "Stuttgarter-Hütte",
+     "Willers-Alpe"
+    ]
+   },
+   {
+    "name": "Food",
+    "values": [
+     "Vegetable curry",
+     "Penne Arrabiata",
+     "Schnitzel",
+     "Tofu sausages",
+     "Sausage salad"
+    ]
+   },
+   {
+    "name": "Drink",
+    "values": [
+     "Helles",
+     "Ginger lemonade",
+     "Blackcurrant spritzer",
+     "Ski water",
+     "Wheat beer"
+    ]
+   },
+   {
+    "name": "Dormitory size",
+    "values": [
+     "10",
+     "4",
+     "5",
+     "6",
+     "8"
+    ]
+   }
+  ]
+ },
+ "Masternix": {
+  "name": "Masternix",
+  "description": "In the depths of winter, Masternix returns shivering to the Gaulish village. There he is already expected by four Gauls, who have prepared a tasty drink in various vessels so that he can warm up. Masternix thanks them at once and tries to taste what the offered drinks are made of.\n",
+  "question": "Who prepared which drink (base and refinement), and in which vessel is it served?",
+  "clues": [
+   "Knorrfix uses a copper cauldron for his drink, but no water.",
+   "Rührfix did not brew his drink in the clay pot.",
+   "Trinkfix does not cook with wine, but he refines his drink with a note of clove.",
+   "Glühfix's drink tastes neither of cardamom nor of cinnamon.",
+   "Masternix does not taste any note of wine in Knorrfix's drink.",
+   "Rührfix's drink has a surprisingly good taste of rum.",
+   "Whoever uses water as a base does not cook in the clay pot.",
+   "In the iron pot, the drink is refined with cinnamon."
+  ],
+  "attributes": [
+   {
+    "name": "Name",
+    "values": [
+     "Glühfix",
+     "Knorrfix",
+     "Rührfix",
+     "Trinkfix"
+    ]
+   },
+   {
+    "name": "Base",
+    "values": [
+     "Cherry juice",
+     "Rum",
+     "Wine",
+     "Water"
+    ]
+   },
+   {
+    "name": "Refinement",
+    "values": [
+     "Rock sugar",
+     "Cardamom",
+     "Clove",
+     "Cinnamon"
+    ]
+   },
+   {
+    "name": "Vessel",
+    "values": [
+     "Iron pot",
+     "Copper cauldron",
+     "Stone jug",
+     "Clay pot"
+    ]
+   }
+  ]
+ }
+}

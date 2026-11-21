@@ -132,20 +132,37 @@
             ><span v-if="entry.bound" class="bond" aria-hidden="true">=</span>{{ entry.label }}</span>
           </template>
 
-          <!-- Candidates: values still possible for this card, to cross off -->
+          <!-- Candidates: the values of the other categories, to cross off.
+               👁 decides whether a row also shows on the closed card. -->
           <div v-if="card.notes && card.candidates.length" class="notes" @pointerdown.stop>
             <div v-for="row in card.candidates" :key="row.attr" class="note-row">
-              <span class="note-dot" :style="{ background: categoryColor(row.attr).dot }" :title="attributes[row.attr].name" />
+              <button
+                type="button"
+                class="eye"
+                :class="{ on: row.shown }"
+                :style="{ '--dot': categoryColor(row.attr).dot }"
+                :title="`${attributes[row.attr].name}: ${t(row.shown ? 'logical.padHideRow' : 'logical.padShowRow')}`"
+                :aria-label="`${attributes[row.attr].name}: ${t(row.shown ? 'logical.padHideRow' : 'logical.padShowRow')}`"
+                :aria-pressed="row.shown"
+                :disabled="disabled"
+                @click.stop="emitPad(toggleShown(modelValue, card.id, row.attr))"
+              ><ion-icon :name="row.shown ? 'eye-outline' : 'eye-off-outline'"></ion-icon></button>
               <button
                 v-for="c in row.values"
                 :key="c.value"
                 type="button"
                 class="cand"
-                :class="{ crossed: c.crossed, elsewhere: c.elsewhere, last: row.left === 1 && !c.crossed && !c.elsewhere }"
-                :title="c.elsewhere ? t('logical.padElsewhere') : ''"
+                :class="{ crossed: c.crossed, last: row.left === 1 && !c.crossed }"
                 :disabled="disabled"
                 @click.stop="emitPad(toggleCrossed(modelValue, card.id, { attr: row.attr, value: c.value }))"
               >{{ c.value }}</button>
+            </div>
+          </div>
+          <!-- Closed card: what is still possible in the rows marked 👁 -->
+          <div v-else-if="card.summary.length" class="summary">
+            <div v-for="row in card.summary" :key="row.attr" class="summary-row" :class="{ last: row.left === 1 }" :title="attributes[row.attr].name">
+              <span class="note-dot" :style="{ background: categoryColor(row.attr).dot }" />
+              <span class="summary-values">{{ row.values.filter(c => !c.crossed).map(c => c.value).join(' · ') || '–' }}</span>
             </div>
           </div>
           </div>
@@ -218,7 +235,7 @@ import { orientRelation, orientText } from './orientRelation'
 import {
   valueKey, cardOf, relationLinks, clueState, addToCard, newCard, removeValue,
   removeCard, moveCard, mergeCards, cardsClash, removeClue, addClue, sameBonds,
-  boundRefs, partsOf, splitPart, toggleCrossed, toggleNotes, layoutPad
+  boundRefs, partsOf, splitPart, toggleCrossed, toggleNotes, layoutPad, rowShown, toggleShown
 } from './cluePad'
 
 const props = defineProps({
@@ -340,20 +357,15 @@ const clampY = y => Math.max(MARGIN, y)
 
 const placedKeys = computed(() => new Set(props.modelValue.cards.flatMap(c => Object.entries(c.values).map(([a, v]) => `${a}:${v}`))))
 
-// Values still possible for a card, per category it has no value of yet.
-const candidatesOf = (card) => {
-  if (!card.notes) return []
-  return props.attributes.map((attr, a) => {
-    if (card.values[a] !== undefined) return null
-    const crossed = new Set(card.crossed?.[a] || [])
-    const values = attr.values.map(String).map(value => ({
-      value,
-      crossed: crossed.has(value),
-      elsewhere: placedKeys.value.has(`${a}:${value}`)
-    }))
-    return { attr: a, values, left: values.filter(v => !v.crossed && !v.elsewhere).length }
-  }).filter(Boolean)
-}
+// Per category the card has no value of yet: its values, the ones the player
+// crossed off (nothing is crossed automatically: that is the player's
+// thinking), and whether the row shows on the closed card (rowShown).
+const candidatesOf = card => props.attributes.map((attr, a) => {
+  if (card.values[a] !== undefined) return null
+  const crossed = new Set(card.crossed?.[a] || [])
+  const values = attr.values.map(String).map(value => ({ value, crossed: crossed.has(value) }))
+  return { attr: a, values, left: values.filter(v => !v.crossed).length, shown: rowShown(card, a) }
+}).filter(Boolean)
 
 // Cards as drawn: kept inside the pad, and following the pointer while dragged.
 const shownCards = computed(() => props.modelValue.cards.map((card) => {
@@ -369,7 +381,8 @@ const shownCards = computed(() => props.modelValue.cards.map((card) => {
     return { ref: r, key, label: valueLabel(r, props.attributes), bound: boundKeys.value.has(key) }
   }
   const parts = partsOf(card).map(part => [...part].sort((p, q) => p - q).map(entry))
-  return { ...card, w, h, left: clampX(x, w), top: clampY(y), parts, candidates: candidatesOf(card) }
+  const candidates = candidatesOf(card)
+  return { ...card, w, h, left: clampX(x, w), top: clampY(y), parts, candidates, summary: candidates.filter(row => row.shown) }
 }))
 
 const BASE_HEIGHT = 300
@@ -663,7 +676,7 @@ const dropRemove = computed(() => {
 // Card under a dragged card or value: green when it joins, red when it cannot.
 const cardClass = (card) => {
   const d = drag.value
-  const classes = { dragging: d?.type === 'card' && d.id === card.id && d.moved }
+  const classes = { dragging: d?.type === 'card' && d.id === card.id && d.moved, open: !!card.notes }
   if (d?.moved && d.target.card === card.id) {
     if (d.type === 'card') classes[cardsClash(props.modelValue, d.id, card.id) ? 'drop-bad' : 'drop-ok'] = true
     else if (d.type === 'value') classes['drop-ok'] = true
@@ -942,6 +955,8 @@ function endDrag () {
     box-shadow: 0 12px 28px rgba(91, 63, 196, 0.25);
   }
 
+  // An open candidate list lies over the cards around it.
+  &.open { z-index: 4; box-shadow: 0 8px 22px rgba(31, 29, 43, 0.18); }
   &.drop-ok { border-color: #1f9d6b; box-shadow: 0 0 0 3px rgba(31, 157, 107, 0.35); }
   &.drop-bad { border-color: #d14343; box-shadow: 0 0 0 3px rgba(209, 67, 67, 0.3); }
   &.drop-clue { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
@@ -1030,6 +1045,59 @@ function endDrag () {
   &.on { background: #ede9fe; color: #5b3fc4; }
 }
 
+// Closed card: the values still possible in the rows marked 👁.
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 1px;
+  padding-top: 4px;
+  border-top: 1px solid #eeebf5;
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #55526a;
+  font-variant-numeric: tabular-nums;
+
+  .note-dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  .summary-values { overflow-wrap: anywhere; }
+
+  &.last { color: #146c4a; }
+}
+
+.eye {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 20px;
+  margin-right: 2px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #b4b0c4;
+  font-size: 14px;
+  cursor: pointer;
+
+  &.on { color: var(--dot); background: #f5f3ff; }
+  &:hover { background: #f1eff7; }
+  &:disabled { cursor: default; }
+}
+
 // Candidates of a card: tap to cross off.
 .notes {
   display: flex;
@@ -1072,7 +1140,6 @@ function endDrag () {
 
   &:hover { border-color: #b9b2d3; }
   &.crossed { color: #c2bfd0; text-decoration: line-through; text-decoration-color: #d14343; text-decoration-thickness: 2px; }
-  &.elsewhere { color: #c2bfd0; border-style: dashed; }
   &.last { background: #e3f5ec; border-color: #1f9d6b; color: #146c4a; }
   &:disabled { cursor: default; }
 }

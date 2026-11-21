@@ -3,7 +3,7 @@
     <p v-if="restored && !solved" class="board-message">{{ t('common.restored') }}</p>
     <LogicalDisplay
       ref="display"
-      :logical="puzzle"
+      :logical="view.puzzle"
       :solved="solved"
       :elapsed="elapsed"
       @solution-check="check"
@@ -24,11 +24,15 @@
 // table with the stored solution (shared/puzzles/logical.js).
 // Grid, table, crossed-off clues, notepad and time are saved per puzzle
 // (localStorage, and the server for logged-in players; ../engine/progress.js).
+// A translated puzzle (data.translations) is shown in the player's language;
+// answers and saved games keep the German values the server knows.
 
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LogicalDisplay from './LogicalDisplay.vue'
 import { readProgress, saveProgress, clearProgress, formatTime } from '../engine/progress'
+import { localizeLogical } from '@shared/puzzles/logicalTranslation.js'
+import { mapSavedState, mapTable } from './localizeState'
 
 const props = defineProps({
   puzzle: { type: Object, required: true },
@@ -38,7 +42,8 @@ const props = defineProps({
 })
 const emit = defineEmits(['solved'])
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const view = computed(() => localizeLogical(props.puzzle, locale.value))
 const display = ref(null)
 const solved = ref(false)
 const checking = ref(false)
@@ -53,7 +58,7 @@ function save () {
     return
   }
   if (!started.value || !display.value) return
-  saveProgress('logical', props.puzzle.id, { ...display.value.saveState(), elapsed: elapsed.value })
+  saveProgress('logical', props.puzzle.id, { ...mapSavedState(display.value.saveState(), view.value.toCanonical), elapsed: elapsed.value })
 }
 
 // Saving on every change would write on each mouse move of a drag; once a
@@ -71,7 +76,7 @@ function restore () {
   solved.value = false
   message.value = ''
   const saved = readProgress('logical', props.puzzle.id)
-  const ok = Boolean(saved) && display.value.restoreState(saved)
+  const ok = Boolean(saved) && display.value.restoreState(mapSavedState(saved, view.value.fromCanonical))
   elapsed.value = ok ? Number(saved.elapsed) || 0 : 0
   started.value = ok
   restored.value = ok
@@ -79,6 +84,15 @@ function restore () {
 
 // PuzzlePage keys the board by puzzle id, so one board is one puzzle.
 onMounted(restore)
+
+// Switching the language swaps the texts and values (LogicalDisplay starts
+// afresh on a new puzzle object); the game carries over in German values.
+// 'pre': runs before LogicalDisplay updates, so it still holds the old state.
+watch(view, (next, prev) => {
+  if (!display.value || (!next.translated && !prev.translated)) return
+  const state = mapSavedState(display.value.saveState(), prev.toCanonical)
+  nextTick(() => display.value?.restoreState(mapSavedState(state, next.fromCanonical)))
+}, { flush: 'pre' })
 
 // LogicalDisplay emits (complete, table): table has one row per value of the
 // first attribute, that value in column 0.
@@ -89,7 +103,7 @@ const check = async (isComplete, table) => {
   }
   checking.value = true
   try {
-    const result = await props.submit(table, { seconds: elapsed.value })
+    const result = await props.submit(mapTable(table, view.value.toCanonical), { seconds: elapsed.value })
     if (result === true) finish()
     else if (result === 'offline') message.value = t('puzzle.offlineCheckLater')
     else message.value = t('logical.mistakes')

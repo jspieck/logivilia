@@ -58,6 +58,34 @@ function listColumns (puzzle) {
   return { width: toCount(data.width), height: toCount(data.height), numColor: toCount(data.numColor) };
 }
 
+/**
+ * The puzzle's name in other languages, { [locale]: name }, from
+ * data.translations; null if it has none. Kept in the `names` column (set by
+ * the Puzzle model), so lists can show it without loading `data`.
+ */
+function nameTranslations (puzzle) {
+  const translations = puzzleData(puzzle).translations;
+  if (!translations || typeof translations !== 'object') return null;
+  const names = {};
+  for (const [locale, tr] of Object.entries(translations)) {
+    if (tr && typeof tr.name === 'string' && tr.name.trim()) names[locale] = tr.name;
+  }
+  return Object.keys(names).length ? names : null;
+}
+
+/** The stored `names` column as an object (MariaDB may return JSON as text). */
+function namesOf (puzzle) {
+  let names = plain(puzzle).names;
+  if (typeof names === 'string') {
+    try {
+      names = JSON.parse(names);
+    } catch {
+      return null;
+    }
+  }
+  return names && typeof names === 'object' ? names : null;
+}
+
 /** What the overview tables show of a puzzle: no clues, no solution. */
 function listPuzzle (puzzle, extra = {}) {
   const row = plain(puzzle);
@@ -65,6 +93,7 @@ function listPuzzle (puzzle, extra = {}) {
     id: row.id,
     type: row.type,
     name: row.name,
+    names: namesOf(row),
     difficulty: row.difficulty,
     width: row.width ?? null,
     height: row.height ?? null,
@@ -89,6 +118,8 @@ module.exports = {
   publicPuzzle,
   listPuzzle,
   listColumns,
+  nameTranslations,
+  namesOf,
   puzzleData,
   pickFields,
   EDITABLE_COMMON_FIELDS

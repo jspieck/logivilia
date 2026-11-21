@@ -124,6 +124,7 @@
   "comments": {
     "title": "Comments",
     "placeholder": "Your comment …",
+    "replyPlaceholder": "Your reply …",
     "send": "Post comment",
     "reply": "Post reply",
     "thanks": "Thanks for your comment!",
@@ -367,7 +368,7 @@
       "join": "Drop a card or a value onto a card to join them. The seam stays visible as a dashed line, ✂ splits it again. While dragging, the pad shows where things will land.",
       "clues": "Tap a clue number or drag it onto the pad to add its values. An \"=\" goes straight onto one card and stays together there. Comparisons are drawn as arrows that always point to the bigger value, e.g. \"+5 pages\". \"All clues\" adds all of them at once.",
       "colors": "The colour tells whether your cards fit the clue: green = with these cards the clue holds, red = it cannot be like this, coloured/grey = still open (values missing).",
-      "notes": "✎ on a card lists the values still possible for it. Tap to cross one off; when only one is left, it turns green.",
+      "notes": "✎ on a card lists the values of the other categories. Tap to cross one off; when only one is left, it turns green. 👁 decides which rows also show on the closed card (a row shows once you cross something off in it).",
       "scratch": "Only a scratch pad: grid and answer stay as they are."
     },
     "padEmpty": "Drop values or clue numbers here",
@@ -382,7 +383,6 @@
     "padSplit": "Split again",
     "padNotes": "Note possible values",
     "padBound": "joined by an \"=\", moves along",
-    "padElsewhere": "already on another card",
     "padDropRemove": "Release to remove",
     "padFullscreen": "Large view",
     "padFullscreenClose": "Close large view",
@@ -392,7 +392,9 @@
       "open": "Values are still missing on the cards to tell."
     },
     "padArrange": "Arrange",
-    "padArrangeTitle": "Arrange the cards: arrows left to right, each group on its own band"
+    "padArrangeTitle": "Arrange the cards: arrows left to right, each group on its own band",
+    "padShowRow": "show on the card",
+    "padHideRow": "hide on the card"
   },
   "nonogram": {
     "colour": "Colour",

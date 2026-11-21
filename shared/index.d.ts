@@ -134,7 +134,18 @@ export interface PuzzleData {
     image?: string | null;
     /** Formal clues (optional, not sent to players). */
     rules?: LogicalRule[];
+    /** The texts in other languages, keyed by locale (puzzles/logicalTranslation.js). */
+    translations?: Record<string, LogicalTranslation>;
   };
+}
+
+/** A Logikrätsel in another language, in the order of the German original. */
+export interface LogicalTranslation {
+  name?: string;
+  description?: string;
+  question?: string;
+  clues?: string[];
+  attributes?: { name?: string; values?: string[] }[];
 }
 
 /** What players get for each type instead of the solution. */
