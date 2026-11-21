@@ -18,7 +18,7 @@ const APP_CACHE = `app-${VERSION}`
 const API_CACHE = 'api-v1'
 const CDN_CACHE = 'cdn-v1'
 const SHELL = '/index.html'
-const CDN_HOSTS = ['unpkg.com', 'cdn.materialdesignicons.com', 'use.fontawesome.com', 'fonts.googleapis.com', 'fonts.gstatic.com']
+const CDN_HOSTS = ['unpkg.com', 'cdn.jsdelivr.net', 'use.fontawesome.com', 'fonts.googleapis.com', 'fonts.gstatic.com']
 
 // Public, not user-specific GET endpoints worth having offline.
 const isCachedApi = (path) =>

@@ -289,4 +289,4 @@ Rolling back means restoring the backup and deploying the previous version; the 
 
 ## 8. Where to go next
 
-See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). The foundation items (B1–B5, B15) are done apart from self-hosting the logical puzzle images; next is the planned **automatic solver** (B6–B8), which plugs into the puzzle-type plugins and can then power uniqueness checks, difficulty rating and hints.
+See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). Part A lists what is still open (production steps for the owner first), Part B the ranked next points, Part C what is done (with the old item numbers B1–B15 that code comments refer to).
