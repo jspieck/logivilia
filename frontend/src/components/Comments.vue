@@ -82,7 +82,6 @@ export default {
     const loggedIn = computed(() => isUserLoggedIn.value);
 
     const initUserState = () => {
-      console.log("Init Comment", getComments());
       for (const c of getComments()) {
         userComments.value[c.id] = "";
       }

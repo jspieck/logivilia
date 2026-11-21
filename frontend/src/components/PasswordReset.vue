@@ -63,8 +63,6 @@ export default {
             type: 'info',
             closable: false
           })
-          
-          console.log(response.data)
         } catch (err) {
           error.value = apiErrorMessage(err)
         }

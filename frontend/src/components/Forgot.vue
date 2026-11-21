@@ -188,7 +188,7 @@ export default {
 
     const forgot = async () => {
       try {
-        const response = await AuthenticationService.forgot({ email: forgottenEmail.value })
+        await AuthenticationService.forgot({ email: forgottenEmail.value })
         error.value = null
         
         oruga.notification.open({
@@ -198,8 +198,6 @@ export default {
           variant: 'success',
           closable: true
         })
-        
-        console.log(response.data)
       } catch (err) {
         error.value = apiErrorMessage(err)
       }

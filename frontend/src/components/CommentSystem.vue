@@ -73,13 +73,8 @@ export default {
     }
 
     const sendComment = async () => {
-      console.log('Send Comment')
       await sendCommentToDb(userComment.value, -1)
       commentSend.value = true
-    }
-
-    const commentUpvote = (a) => {
-      console.log(a)
     }
 
     watch(computedPuzzleId, async () => {
@@ -108,8 +103,7 @@ export default {
       userComment,
       commentSend,
       isUserLoggedIn,
-      sendComment,
-      commentUpvote
+      sendComment
     }
   }
 }

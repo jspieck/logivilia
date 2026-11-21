@@ -4,7 +4,6 @@
     <LogicalDisplay
       ref="display"
       :logical="puzzle"
-      :is-preview="false"
       :solved="solved"
       :elapsed="elapsed"
       @solution-check="check"
@@ -28,7 +27,7 @@
 
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import LogicalDisplay from '@/components/LogicalDisplay.vue'
+import LogicalDisplay from './LogicalDisplay.vue'
 import { readProgress, saveProgress, clearProgress, formatTime } from '../engine/progress'
 
 const props = defineProps({

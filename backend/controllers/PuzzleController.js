@@ -7,6 +7,7 @@ const { Puzzle, PuzzleRating, PuzzleSolve, PuzzleProgress, sequelize } = require
 const { getPlugin, isPuzzleType } = require('../puzzles');
 const { publicPuzzle, listPuzzle, puzzleData, pickFields, EDITABLE_COMMON_FIELDS } = require('../utils/puzzleView');
 const { sendError } = require('../utils/apiError');
+const solvableCheck = require('../utils/solvableCheck');
 
 const ADMIN_ROLE = 'Admin';
 // Largest saved game accepted (JSON); a 100x100 nonogram needs about 40 KB.
@@ -334,7 +335,7 @@ module.exports = {
       if (problem) {
         return sendError(res, 400, 'PUZZLE_INVALID', { reason: problem });
       }
-      const unsolvable = plugin.checkSolvable && plugin.checkSolvable(data);
+      const unsolvable = plugin.checkSolvable && await solvableCheck.checkSolvable(type, data);
       if (unsolvable) {
         return sendError(res, 400, unsolvable.code, unsolvable.params);
       }
@@ -346,6 +347,9 @@ module.exports = {
       });
       res.send(publicPuzzle(puzzle));
     } catch (err) {
+      if (err instanceof solvableCheck.QueueFullError) {
+        return sendError(res, 429, 'RATE_LIMITED');
+      }
       console.error(err);
       sendError(res, 500, 'PUZZLE_CREATE_FAILED');
     }
@@ -370,13 +374,17 @@ module.exports = {
         return sendError(res, 400, 'PUZZLE_INVALID', { reason: problem });
       }
       // Only when the puzzle itself changes, so renaming an old puzzle works.
-      const unsolvable = Object.keys(changes).length > 0 && plugin.checkSolvable && plugin.checkSolvable(data);
+      const unsolvable = Object.keys(changes).length > 0 && plugin.checkSolvable &&
+        await solvableCheck.checkSolvable(puzzle.type, data);
       if (unsolvable) {
         return sendError(res, 400, unsolvable.code, unsolvable.params);
       }
       await puzzle.update({ ...pickFields(req.body, EDITABLE_COMMON_FIELDS), data });
       res.send(publicPuzzle(puzzle));
     } catch (err) {
+      if (err instanceof solvableCheck.QueueFullError) {
+        return sendError(res, 429, 'RATE_LIMITED');
+      }
       console.error(err);
       sendError(res, 500, 'PUZZLE_UPDATE_FAILED');
     }

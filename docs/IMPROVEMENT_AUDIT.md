@@ -20,12 +20,7 @@ Part A lists what is still open from the first audit. Part B ranks the next impr
 
 ### Code
 
-| # | Item | What is left |
-|---|---|---|
-| A8 | `npm audit` | One moderate advisory (`uuid` inside Sequelize); needs a Sequelize upgrade. |
-| A9 | `LogicalDisplay.vue` | Still 1,100+ lines mixing input, rendering and checks; the other types are split into board components. |
-| A10 | Solver checks block the server | `checkSolvable` runs on the request thread for up to 3 s per save. Move it to a `worker_thread`. |
-| A11 | Leftover logging | 5 `console.log` calls in `frontend/src`. |
+Nothing open.
 
 ---
 
@@ -73,7 +68,7 @@ Error codes and UI text already go through `vue-i18n` with `de` and `en`. Check 
 - **Effort:** S–M.
 
 #### 10. 🏗 Dependency upkeep
-Upgrade Sequelize (A8) and keep Node ≥ 22 on Plesk for `vue-i18n` 11. Small bits: logical "Raster leeren" as a full restart with the time, remove leftover `console.log`s (A11).
+Keep Node ≥ 22 on Plesk for `vue-i18n` 11; move to Sequelize 7 once it is stable and drop the `uuid` override in `package.json`. Small bit: logical "Raster leeren" as a full restart with the time.
 - **Effort:** S.
 
 ---
@@ -87,6 +82,10 @@ Upgrade Sequelize (A8) and keep Node ≥ 22 on Plesk for `vue-i18n` 11. Small bi
 | Hardening | 2026-11-14 | `helmet` (without CSP), random seed passwords, seed refuses production, separate rate-limit budgets. |
 | Content Security Policy (A6) | 2026-11-21 | `helmet` CSP with an allowlist in `backend/createApp.js` (unpkg, jsdelivr, Font Awesome, same-origin images and workers); `CSP_REPORT_ONLY=1` only logs. MDI stylesheet now linked from jsdelivr (the old CDN redirects there). |
 | Last hotlinked image (A7) | 2026-11-21 | The pixabay Weimar photo ships under `frontend/public/images/logicals/pixabay/` (Pixabay Content License allows self-hosting); seeds updated, migration `20261121-03` rewrites the live row. |
+| Dependency audit (A8) | 2026-11-21 | `npm audit` clean: npm `overrides` pin Sequelize's `uuid` to ^11.1.1 (Sequelize 6.37.8 is the newest stable; it only calls v1/v4, so the advisory never applied) and nodemon's `minimatch` to ^11.0.1. |
+| LogicalDisplay split (A9) | 2026-11-21 | Moved to `puzzles/logical/`: `LogicalDisplay` (state, save/restore, history, notepad) uses `LogicalIntro`, `LogicalCluesPanel`, `LogicGrid` and `LogicalSolutionTable`; grid geometry, painting and table sync are pure functions in `shared/puzzles/logicalGrid.js` with tests. |
+| Solver checks off the request thread (A10) | 2026-11-21 | `backend/utils/solvableCheck.js`: pool of up to 2 `worker_threads` for `checkSolvable`, 10 s safety timeout (`PUZZLE_TOO_COMPLEX`), at most 20 waiting checks (`RATE_LIMITED`). |
+| Leftover logging (A11) | 2026-11-21 | `console.log` calls removed from `frontend/src`, plus a dead upvote stub in `CommentSystem.vue`. |
 | One puzzle model (B1) | 2026-11-14 | `Puzzles`, `PuzzleRatings`, `PuzzleSolves`, comments by `PuzzleId`; old links redirect via `legacyId`; rankings counted in SQL. |
 | Plugin interface (B2) | 2026-11-14 | `shared/puzzles/<type>.js` used by backend and frontend; one `/puzzle/:id` page; shared grid engine with Pointer Events, zoom, undo/redo. |
 | No solutions in the browser (B3) | 2026-11-14 | Server sends clues, verifies every solve; public `check` endpoint. |
