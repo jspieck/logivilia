@@ -26,6 +26,8 @@ const deleteAccountLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
 // The check endpoint answers "is this grid correct?", so it is limited to
 // keep it from being used to brute-force small puzzles.
 const checkLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
+// The boards save at most every few seconds; this only stops runaway clients.
+const progressLimiter = rateLimit({ windowMs: 60 * 1000, max: 120 });
 
 module.exports = () => {
   const router = express.Router();
@@ -129,6 +131,19 @@ module.exports = () => {
   router.post('/puzzles/:puzzleId/solve',
     isAuthenticated,
     PuzzleController.solve);
+
+  // The logged-in user's saved game of a puzzle (continue on another
+  // device) and best time.
+  router.get('/puzzles/:puzzleId/progress',
+    isAuthenticated,
+    PuzzleController.progress);
+  router.put('/puzzles/:puzzleId/progress',
+    progressLimiter,
+    isAuthenticated,
+    PuzzleController.saveProgress);
+  router.delete('/puzzles/:puzzleId/progress',
+    isAuthenticated,
+    PuzzleController.deleteProgress);
 
   // The logged-in user's rating of a puzzle (1-5)
   router.get('/puzzles/:puzzleId/rating',

@@ -27,6 +27,9 @@
     "LOGICAL_RULE_BROKEN": "Die Regel von Hinweis {clue} passt nicht zu deiner Lösungstabelle.",
     "SOLUTION_INCORRECT": "Die Lösung ist nicht korrekt.",
     "SOLUTION_SAVE_FAILED": "Die Lösung konnte nicht gespeichert werden.",
+    "PROGRESS_INVALID": "Ungültiger Spielstand.",
+    "PROGRESS_FETCH_FAILED": "Der Spielstand konnte nicht geladen werden.",
+    "PROGRESS_SAVE_FAILED": "Der Spielstand konnte nicht gespeichert werden.",
     "USER_NOT_FOUND": "Benutzer nicht gefunden.",
     "RANKING_FETCH_FAILED": "Die Bestenliste konnte nicht geladen werden.",
     "HOME_FETCH_FAILED": "Die Startseite konnte nicht geladen werden.",
@@ -277,7 +280,8 @@
     "alreadySolved": "Sie haben dieses Rätsel bereits gelöst.",
     "markedSolved": "Rätsel erfolgreich als gelöst markiert!",
     "ratingSaved": "Bewertung gespeichert",
-    "leaveConfirm": "Möchten Sie die Seite wirklich verlassen? Nicht gespeicherte Rätsel sind für immer verloren!"
+    "bestTime": "Ihre Bestzeit: {time}",
+    "newBest": "Neue Bestzeit!"
   },
   "linelog": {
     "beta": "Dieser Rätseltyp befindet sich noch in der Testphase. Es kann zu Fehlern kommen.",

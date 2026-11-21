@@ -108,7 +108,7 @@
 // partner. Press a number to start a path, a path's loose end to continue it,
 // a complete path's number to pull that end back, or the middle of a path to
 // cut it there. Right-click deletes a path. Undo/redo, time and progress are
-// kept per puzzle in localStorage.
+// saved per puzzle (localStorage, and the server for logged-in players).
 //
 // UI colour encoding: colour k of the puzzle is index k - 1; the last colour is
 // the background. When every number is connected, the answer goes to the
@@ -119,6 +119,7 @@ import { useI18n } from 'vue-i18n'
 import { useGridPointer } from '../engine/useGridPointer'
 import { useHistory } from '../engine/useHistory'
 import { useZoom } from '../engine/useZoom'
+import { readProgress, saveProgress, clearProgress, formatTime } from '../engine/progress'
 import { textColorFor } from '../engine/colors'
 
 const props = defineProps({
@@ -260,30 +261,21 @@ const gridCursor = computed(() => {
   return h && (numberAt(h.x, h.y) > 1 || ownerAt(h.x, h.y) !== -1) ? 'pointer' : 'default'
 })
 
-const formatTime = seconds => {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  const pad = n => String(n).padStart(2, '0')
-  return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
-}
-
 // ---------------------------------------------------------------------------
-// Progress: localStorage per puzzle (may be unavailable, e.g. private mode)
+// Progress: localStorage per puzzle, mirrored to the server for logged-in
+// players (../engine/progress.js)
 // ---------------------------------------------------------------------------
-
-const storageKey = () => `logivilia:linelog:${props.puzzle.id}`
 
 function save () {
-  try {
-    if (solved.value) {
-      localStorage.removeItem(storageKey())
-      return
-    }
-    localStorage.setItem(storageKey(), JSON.stringify({
-      w: width.value, h: height.value, paths: paths.value, elapsed: elapsed.value
-    }))
-  } catch { /* storage unavailable */ }
+  if (solved.value) {
+    clearProgress('linelog', props.puzzle.id)
+    return
+  }
+  // Nothing to keep yet (also after "Neu starten").
+  if (!started.value) return
+  saveProgress('linelog', props.puzzle.id, {
+    w: width.value, h: height.value, paths: paths.value, elapsed: elapsed.value
+  })
 }
 
 const isValidPath = path => path && Number.isInteger(path.color) && Number.isInteger(path.length) &&
@@ -293,13 +285,11 @@ const isValidPath = path => path && Number.isInteger(path.color) && Number.isInt
   numberAt(path.cells[0][0], path.cells[0][1]) === path.length
 
 function load () {
-  try {
-    const saved = JSON.parse(localStorage.getItem(storageKey()) || 'null')
-    if (saved && saved.w === width.value && saved.h === height.value &&
-        Array.isArray(saved.paths) && saved.paths.every(isValidPath)) {
-      return saved
-    }
-  } catch { /* storage unavailable or broken */ }
+  const saved = readProgress('linelog', props.puzzle.id)
+  if (saved && saved.w === width.value && saved.h === height.value &&
+      Array.isArray(saved.paths) && saved.paths.every(isValidPath)) {
+    return saved
+  }
   return null
 }
 
@@ -318,7 +308,7 @@ const allConnected = () => connectedPairs.value === totalPairs.value
 
 async function checkSolved () {
   if (solved.value || !allConnected()) return
-  if (await props.submit(answer())) {
+  if (await props.submit(answer(), { seconds: elapsed.value })) {
     solved.value = true
     hover.value = null
     if (expanded.value) toggleExpanded()
@@ -360,7 +350,7 @@ const redo = () => {
 
 function restart () {
   if (started.value && !window.confirm(t('nonogram.restartConfirm'))) return
-  try { localStorage.removeItem(storageKey()) } catch { /* ignore */ }
+  clearProgress('linelog', props.puzzle.id)
   reset()
   message.value = null
 }

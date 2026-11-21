@@ -19,15 +19,19 @@ import RelationChips from '@/puzzles/logical/RelationChips.vue'
 import CluePad from '@/puzzles/logical/CluePad.vue'
 import { emptyPad } from '@/puzzles/logical/cluePad'
 import { categoryColor } from '@/puzzles/logical/categoryColors'
+import { formatTime } from '@/puzzles/engine/progress'
 
 const { t } = useI18n()
 const props = defineProps({
   logical: { type: Object, required: true },
   isPreview: { type: Boolean, default: false },
-  solved: { type: Boolean, default: false }
+  solved: { type: Boolean, default: false },
+  // Seconds played, shown next to the title (null: no timer, e.g. preview).
+  elapsed: { type: Number, default: null }
 })
 
-const emit = defineEmits(['solution-check', 'solution-update'])
+// 'progress': the player changed something worth saving (see saveState).
+const emit = defineEmits(['solution-check', 'solution-update', 'progress'])
 
 const EMPTY = 0
 const NO = 1
@@ -182,6 +186,53 @@ watch(tableVisible, visible => { if (visible) measure() })
 
 watch([grid, attrInputs], () => {
   emit('solution-update', { gridState: grid.value, attrInputs: attrInputs.value })
+}, { deep: true })
+
+// --- Saved game ----------------------------------------------------------
+// Everything the player built: grid, answer table, crossed-off clues and the
+// notepad. LogicalBoard stores it (../puzzles/engine/progress.js).
+const saveState = () => ({
+  n: n.value,
+  m: m.value,
+  grid: [...grid.value],
+  attrInputs: { ...attrInputs.value },
+  doneClues: [...doneClues.value],
+  pad: JSON.parse(JSON.stringify(pad.value))
+})
+
+// Restores a saveState() result; false (and nothing changed) if it does not
+// fit this puzzle any more, e.g. after the author edited it.
+let restoring = false
+const restoreState = (saved) => {
+  if (!saved || saved.n !== n.value || saved.m !== m.value) return false
+  const cells = saved.grid
+  if (!Array.isArray(cells) || cells.length !== size.value * size.value ||
+      !cells.every(v => v === EMPTY || v === NO || v === YES)) return false
+  const inputs = {}
+  for (const k of Object.keys(attrInputs.value)) {
+    const j = Number(k.split('_')[1])
+    const value = saved.attrInputs?.[k]
+    inputs[k] = value != null && attributes.value[j + 1].values.map(String).includes(String(value)) ? value : null
+  }
+  const clueCount = (props.logical.clues || []).length
+  const done = (Array.isArray(saved.doneClues) ? saved.doneClues : []).filter(i => Number.isInteger(i) && i >= 0 && i < clueCount)
+  const savedPad = saved.pad
+  const padOk = savedPad && Array.isArray(savedPad.cards) && Array.isArray(savedPad.clues) && Number.isInteger(savedPad.nextId)
+  restoring = true
+  grid.value = [...cells]
+  history.reset(grid.value)
+  attrInputs.value = inputs
+  doneClues.value = new Set(done)
+  pad.value = padOk ? savedPad : emptyPad()
+  return true
+}
+
+watch([grid, attrInputs, doneClues, pad], () => {
+  if (restoring) {
+    restoring = false
+    return
+  }
+  emit('progress')
 }, { deep: true })
 
 // --- Painting ------------------------------------------------------------
@@ -392,14 +443,19 @@ const tools = computed(() => [
   { value: EMPTY, icon: 'backspace-outline', label: t('logical.toolErase') }
 ])
 
-defineExpose({ checkSolution, tableVisible, attrInputs })
+defineExpose({ checkSolution, tableVisible, attrInputs, saveState, restoreState })
 </script>
 
 <template>
   <div class="logical" v-if="logical">
     <div class="puzzle-header">
       <h1 class="puzzle-title">{{ logical.name }}</h1>
-      <DifficultyIndicator :difficulty="logical.difficulty" :maxDifficulty="5" />
+      <div class="header-side">
+        <span v-if="elapsed !== null" class="timer" :title="t('nonogram.time')">
+          <ion-icon name="time-outline"></ion-icon>{{ formatTime(elapsed) }}
+        </span>
+        <DifficultyIndicator :difficulty="logical.difficulty" :maxDifficulty="5" />
+      </div>
     </div>
 
     <section class="puzzle-intro">
@@ -692,6 +748,13 @@ h3 {
     font-weight: 600;
     margin: 0;
   }
+
+  .header-side {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
 }
 
 .puzzle-intro {

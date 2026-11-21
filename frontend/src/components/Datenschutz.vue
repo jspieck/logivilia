@@ -23,7 +23,8 @@
         <li>
           <strong>In your browser:</strong> Your login (a token and your user profile) is kept in <em>sessionStorage</em> and deleted when
           you close the tab. In <em>localStorage</em> we remember whether you have acknowledged the cookie notice, your
-          language and the puzzle you opened last (number, type and name, for “Continue” on the start page). Logivilia sets no tracking or advertising cookies and uses no analytics services.
+          language, the puzzle you opened last (number, type and name, for “Continue” on the start page), your unfinished
+          games with their time, and, without an account, your best time per puzzle. Logivilia sets no tracking or advertising cookies and uses no analytics services.
         </li>
       </ul>
 
@@ -34,7 +35,8 @@
           whether your e-mail address is confirmed, and temporarily the tokens from confirmation and password links (as a hash only).</li>
         <li><strong>Optional profile details:</strong> gender, year of birth, city and “About me”.
           These details are visible to everyone on your public profile. You can change or clear them at any time.</li>
-        <li><strong>Activity:</strong> which puzzles you solved and when, your ratings, comments and upvotes, and the
+        <li><strong>Activity:</strong> which puzzles you solved, when and in what best time, your unfinished puzzles
+          (saved game and time, so you can continue on another device; deleted once the puzzle is solved or restarted), your ratings, comments and upvotes, and the
           puzzles you have published. Solved puzzles appear as numbers on your profile and in the leaderboard,
           comments appear with your username below the puzzle.</li>
       </ul>
@@ -87,7 +89,8 @@
         <li>
           <strong>Im Browser:</strong> Ihre Anmeldung (ein Token und Ihr Benutzerprofil) liegt im <em>sessionStorage</em> und wird beim
           Schließen des Tabs gelöscht. Im <em>localStorage</em> merken wir uns, ob Sie den Cookie-Hinweis bestätigt haben, Ihre
-          Sprache und das zuletzt geöffnete Rätsel (Nummer, Art und Name, für „Weiterspielen“ auf der Startseite). Logivilia setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analysedienste.
+          Sprache, das zuletzt geöffnete Rätsel (Nummer, Art und Name, für „Weiterspielen“ auf der Startseite), Ihre
+          angefangenen Rätsel mit ihrer Zeit und, ohne Konto, Ihre Bestzeit je Rätsel. Logivilia setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analysedienste.
         </li>
       </ul>
 
@@ -98,7 +101,9 @@
           ob Ihre E-Mail-Adresse bestätigt ist, sowie zeitweise die Tokens aus Bestätigungs- und Passwort-Links (nur als Hash).</li>
         <li><strong>Freiwillige Profilangaben:</strong> Geschlecht, Geburtsjahr, Wohnort und „Über mich“.
           Diese Angaben sind auf Ihrem öffentlichen Profil für alle sichtbar. Sie können sie jederzeit ändern oder leeren.</li>
-        <li><strong>Aktivität:</strong> welche Rätsel Sie wann gelöst haben, Ihre Bewertungen, Kommentare und Upvotes sowie die
+        <li><strong>Aktivität:</strong> welche Rätsel Sie wann und in welcher Bestzeit gelöst haben, Ihre angefangenen Rätsel
+          (Spielstand und Zeit, damit Sie auf einem anderen Gerät weiterspielen können; gelöscht, sobald das Rätsel gelöst
+          oder neu gestartet ist), Ihre Bewertungen, Kommentare und Upvotes sowie die
           Rätsel, die Sie veröffentlicht haben. Gelöste Rätsel erscheinen als Zahlen auf Ihrem Profil und in der Bestenliste,
           Kommentare mit Ihrem Benutzernamen unter dem Rätsel.</li>
       </ul>

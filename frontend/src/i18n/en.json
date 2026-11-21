@@ -27,6 +27,9 @@
     "PUZZLE_TYPE_INVALID": "Unknown puzzle type.",
     "SOLUTION_INCORRECT": "The solution is not correct.",
     "SOLUTION_SAVE_FAILED": "The solution could not be saved.",
+    "PROGRESS_INVALID": "Invalid saved game.",
+    "PROGRESS_FETCH_FAILED": "The saved game could not be loaded.",
+    "PROGRESS_SAVE_FAILED": "The saved game could not be saved.",
     "USER_NOT_FOUND": "User not found.",
     "RANKING_FETCH_FAILED": "The leaderboard could not be loaded.",
     "HOME_FETCH_FAILED": "The start page could not be loaded.",
@@ -277,7 +280,8 @@
     "alreadySolved": "You have already solved this puzzle.",
     "markedSolved": "Puzzle marked as solved!",
     "ratingSaved": "Rating saved",
-    "leaveConfirm": "Do you really want to leave this page? Unsaved puzzles will be lost forever!"
+    "bestTime": "Your best time: {time}",
+    "newBest": "New best time!"
   },
   "linelog": {
     "beta": "This puzzle type is still in testing. Errors may occur.",

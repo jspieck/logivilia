@@ -25,13 +25,18 @@
           <p v-else class="login-message">{{ t('puzzle.loginToRate') }}</p>
         </div>
 
-        <div v-if="solvedNow || alreadySolved" class="status-section">
+        <div v-if="solvedNow || alreadySolved || bestSeconds" class="status-section">
           <div v-if="solvedNow" class="success-message">
             <ion-icon name="checkmark-circle-outline"></ion-icon>
             {{ t('puzzle.solvedNow') }}
           </div>
-          <div v-else class="already-solved">
+          <div v-else-if="alreadySolved" class="already-solved">
             {{ t('puzzle.alreadySolved') }}
+          </div>
+          <div v-if="bestSeconds" class="best-time">
+            <ion-icon name="trophy-outline"></ion-icon>
+            {{ t('puzzle.bestTime', { time: formatTime(bestSeconds) }) }}
+            <strong v-if="newBest" class="new-best">{{ t('puzzle.newBest') }}</strong>
           </div>
         </div>
       </div>
@@ -44,9 +49,10 @@
 <script setup>
 // One page for every puzzle type: loads the puzzle, renders the type's board
 // (see ./index.js), and handles what all types share: recording the solve,
-// rating, "already solved" and comments.
+// rating, "already solved", saved games on the server, best times and
+// comments.
 
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useOruga } from '@oruga-ui/oruga-next'
@@ -59,6 +65,7 @@ import DifficultyIndicator from '@/components/DifficultyIndicator.vue'
 import StarRating from '@/components/StarRating.vue'
 import { getPuzzleType } from './index'
 import { rememberPuzzle, forgetPuzzle } from './recentPuzzle'
+import { trackProgress, flushAll, localBest, recordLocalBest, formatTime } from './engine/progress'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -70,6 +77,9 @@ const loadError = ref('')
 const rating = ref(null)
 const alreadySolved = ref(false)
 const solvedNow = ref(false)
+// Personal best time in seconds (server for logged-in players, else local).
+const bestSeconds = ref(null)
+const newBest = ref(false)
 
 const puzzleType = computed(() => getPuzzleType(puzzle.value.type))
 // Admins and the author may see the stored data (e.g. a logic puzzle's rules).
@@ -98,43 +108,72 @@ const loadUserState = async () => {
   }
 }
 
+// Logged-in players: the saved game and best time from the server. A failure
+// only means playing on with the local copy.
+const loadProgress = async (id) => {
+  if (!store.isUserLoggedIn) return { progress: null, bestSeconds: localBest(id) }
+  try {
+    return (await PuzzleService.progress(id)).data
+  } catch (error) {
+    console.error('Error loading saved game:', error)
+    return { progress: null, bestSeconds: null }
+  }
+}
+
 const load = async (id) => {
+  flushAll()
   puzzle.value = null
   loadError.value = ''
   solvedNow.value = false
+  newBest.value = false
+  let loaded
+  let progress
   try {
-    puzzle.value = (await PuzzleService.show(id)).data
+    [loaded, progress] = await Promise.all([PuzzleService.show(id), loadProgress(id)])
   } catch (error) {
     loadError.value = apiErrorMessage(error)
     return
   }
+  // Before the board is shown, so it starts from the newer saved game.
+  trackProgress(loaded.data.type, loaded.data.id, progress.progress)
+  bestSeconds.value = progress.bestSeconds
+  puzzle.value = loaded.data
   rememberPuzzle(puzzle.value)
   await loadUserState()
 }
 
-// Passed to the board. Logged-in players record the solve (the server checks
-// the answer first); guests and players who solved it before only ask whether
-// the answer is correct.
+// Passed to the board: submit(answer, { seconds }). Logged-in players record
+// the solve and time (the server checks the answer first; solving again may
+// set a new best time); guests only ask whether the answer is correct and
+// keep their best time locally.
 let inFlight = false
-const submit = async (answer) => {
+const submit = async (answer, { seconds } = {}) => {
   if (inFlight) return false
   inFlight = true
   const id = puzzle.value.id
   try {
-    if (store.isUserLoggedIn && !alreadySolved.value) {
+    if (store.isUserLoggedIn) {
+      let result
       try {
-        await PuzzleService.solve(id, answer)
+        result = (await PuzzleService.solve(id, answer, seconds)).data
       } catch (error) {
         if (error.response?.data?.code === 'SOLUTION_INCORRECT') return false
         throw error
       }
+      if (!alreadySolved.value) notify(t('puzzle.markedSolved'))
       alreadySolved.value = true
+      bestSeconds.value = result.bestSeconds ?? null
+      newBest.value = result.newBest === true
       forgetPuzzle(id)
-      notify(t('puzzle.markedSolved'))
       return true
     }
     const solved = (await PuzzleService.check(id, answer)).data.solved === true
-    if (solved) forgetPuzzle(id)
+    if (solved) {
+      forgetPuzzle(id)
+      const best = recordLocalBest(id, seconds)
+      bestSeconds.value = best.bestSeconds
+      newBest.value = best.newBest
+    }
     return solved
   } catch (error) {
     console.error('Error checking solution:', error)
@@ -163,13 +202,13 @@ watch(() => store.isUserLoggedIn, loadUserState)
 onMounted(() => {
   load(route.params.id)
   window.ondragstart = () => false
-  window.onbeforeunload = () => t('puzzle.leaveConfirm')
 })
 
 onBeforeUnmount(() => {
   window.ondragstart = null
-  window.onbeforeunload = null
 })
+// After the board's own last save (children unmount first).
+onUnmounted(() => flushAll())
 </script>
 
 <style lang="scss" scoped>
@@ -227,6 +266,19 @@ onBeforeUnmount(() => {
   .already-solved {
     color: #666;
     font-style: italic;
+  }
+
+  .best-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    color: #374151;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .new-best {
+    color: #b45309;
   }
 }
 

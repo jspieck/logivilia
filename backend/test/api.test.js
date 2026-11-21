@@ -325,7 +325,8 @@ describe('solving', () => {
       for (let i = 0; i < 2; i++) {
         const res = await api().post(solvePath(id)).set('Authorization', alice.auth).send(body);
         assert.equal(res.status, 200, `${type}: ${JSON.stringify(res.body)}`);
-        assert.deepEqual(res.body, { solved: true });
+        assert.equal(res.body.solved, true);
+        assert.equal(res.body.firstSolve, i === 0, type);
       }
       const solved = await api().get(`/api/users/${alice.user.id}/solved?type=${type}`);
       assert.deepEqual(solved.body, [id], type);
@@ -494,6 +495,73 @@ describe('ratings and comments', () => {
       .set('Authorization', alice.auth)
       .send({ text: 'Hallo' });
     assert.equal(res.status, 404);
+  });
+});
+
+describe('saved games and best times', () => {
+  const progressPath = id => `/api/puzzles/${id}/progress`;
+  const solve = (user, seconds) => api().post(`/api/puzzles/${linelog.id}/solve`)
+    .set('Authorization', user.auth).send({ answer: seedLinelogs[0].solution, seconds });
+
+  test('saved games need a login', async () => {
+    assert.equal((await api().get(progressPath(nonogram.id))).status, 403);
+    assert.equal((await api().put(progressPath(nonogram.id)).send({ state: { a: 1 } })).status, 403);
+  });
+
+  test('a saved game is stored per user and can be replaced and deleted', async () => {
+    const first = await api().put(progressPath(nonogram.id)).set('Authorization', bob.auth)
+      .send({ state: { cells: [1, 0], elapsed: 12 } });
+    assert.equal(first.status, 200, JSON.stringify(first.body));
+    await api().put(progressPath(nonogram.id)).set('Authorization', bob.auth)
+      .send({ state: { cells: [1, 1], elapsed: 20 } });
+
+    const mine = await api().get(progressPath(nonogram.id)).set('Authorization', bob.auth);
+    assert.equal(mine.status, 200);
+    assert.deepEqual(mine.body.progress.state, { cells: [1, 1], elapsed: 20 });
+    assert.ok(mine.body.progress.updatedAt);
+
+    const other = await api().get(progressPath(nonogram.id)).set('Authorization', alice.auth);
+    assert.deepEqual(other.body.progress, null);
+
+    assert.equal((await api().delete(progressPath(nonogram.id)).set('Authorization', bob.auth)).status, 200);
+    const after = await api().get(progressPath(nonogram.id)).set('Authorization', bob.auth);
+    assert.equal(after.body.progress, null);
+  });
+
+  test('invalid or oversized saved games are rejected', async () => {
+    for (const state of [null, 'text', [1, 2], { big: 'x'.repeat(300 * 1024) }]) {
+      const res = await api().put(progressPath(nonogram.id)).set('Authorization', bob.auth).send({ state });
+      assert.equal(res.status, 400, JSON.stringify(state).slice(0, 30));
+    }
+    const missing = await api().put(progressPath(999999)).set('Authorization', bob.auth).send({ state: { a: 1 } });
+    assert.equal(missing.status, 404);
+  });
+
+  test('solving keeps the best time and deletes the saved game', async () => {
+    await api().put(progressPath(linelog.id)).set('Authorization', bob.auth).send({ state: { paths: [] } });
+
+    const first = await solve(bob, 90);
+    assert.deepEqual(first.body, { solved: true, firstSolve: true, bestSeconds: 90, newBest: false });
+    const saved = await api().get(progressPath(linelog.id)).set('Authorization', bob.auth);
+    assert.deepEqual(saved.body, { progress: null, bestSeconds: 90 });
+
+    const slower = await solve(bob, 120);
+    assert.deepEqual(slower.body, { solved: true, firstSolve: false, bestSeconds: 90, newBest: false });
+    const faster = await solve(bob, 45);
+    assert.deepEqual(faster.body, { solved: true, firstSolve: false, bestSeconds: 45, newBest: true });
+    // Times that are not whole positive seconds are ignored.
+    for (const seconds of [-5, 0, 1.5, '10', 10 ** 9]) {
+      const res = await solve(bob, seconds);
+      assert.equal(res.body.bestSeconds, 45, String(seconds));
+    }
+  });
+
+  test('the data export lists saved games and best times', async () => {
+    await api().put(progressPath(logical.id)).set('Authorization', bob.auth).send({ state: { grid: [0] } });
+    const res = await api().get(`/api/users/${bob.user.id}/export`).set('Authorization', bob.auth);
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.savedGames.map(g => g.puzzle.id), [logical.id]);
+    assert.equal(res.body.solves.find(s => s.puzzle.id === linelog.id).bestSeconds, 45);
   });
 });
 

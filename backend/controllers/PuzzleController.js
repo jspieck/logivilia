@@ -2,12 +2,21 @@
 // (data fields, input checks, clues, answer checks) comes from the type's
 // plugin in shared/puzzles.
 
-const { Puzzle, PuzzleRating, PuzzleSolve, sequelize } = require('../models');
+const { Puzzle, PuzzleRating, PuzzleSolve, PuzzleProgress, sequelize } = require('../models');
 const { getPlugin, isPuzzleType } = require('../puzzles');
 const { publicPuzzle, puzzleData, pickFields, EDITABLE_COMMON_FIELDS } = require('../utils/puzzleView');
 const { sendError } = require('../utils/apiError');
 
 const ADMIN_ROLE = 'Admin';
+// Largest saved game accepted (JSON); a 100x100 nonogram needs about 40 KB.
+const MAX_PROGRESS_BYTES = 200 * 1024;
+// Times above a week are not believable as one sitting; such a time is dropped.
+const MAX_SECONDS = 7 * 24 * 3600;
+
+/** A solve time in whole seconds, or null if `value` is not a usable one. */
+function solveSeconds (value) {
+  return Number.isInteger(value) && value > 0 && value <= MAX_SECONDS ? value : null;
+}
 
 function parseId (value) {
   const id = Number(value);
@@ -202,8 +211,10 @@ module.exports = {
     }
   },
 
-  // POST /puzzles/:puzzleId/solve - { answer }. Records a solve for the
-  // logged-in user after checking the answer; solving again is harmless.
+  // POST /puzzles/:puzzleId/solve - { answer, seconds? }. Records a solve
+  // for the logged-in user after checking the answer, keeps the fastest
+  // time and deletes the saved game. Solving again is harmless (and may set
+  // a new best time). -> { solved, firstSolve, bestSeconds, newBest }
   async solve (req, res) {
     try {
       const puzzle = await findPuzzle(req, res);
@@ -213,13 +224,90 @@ module.exports = {
       if (!isCorrect(puzzle, req.body && req.body.answer)) {
         return sendError(res, 400, 'SOLUTION_INCORRECT');
       }
-      await PuzzleSolve.findOrCreate({
-        where: { UserId: req.user.id, PuzzleId: puzzle.id }
+      const seconds = solveSeconds(req.body.seconds);
+      const where = { UserId: req.user.id, PuzzleId: puzzle.id };
+      const [solve, created] = await PuzzleSolve.findOrCreate({ where, defaults: { bestSeconds: seconds } });
+      const previousBest = created ? null : solve.bestSeconds;
+      const newBest = seconds !== null && (previousBest === null || seconds < previousBest);
+      if (!created && newBest) {
+        await solve.update({ bestSeconds: seconds });
+      }
+      await PuzzleProgress.destroy({ where });
+      res.send({
+        solved: true,
+        firstSolve: created,
+        bestSeconds: newBest ? seconds : previousBest,
+        newBest: newBest && previousBest !== null
       });
-      res.send({ solved: true });
     } catch (err) {
       console.error(err);
       sendError(res, 500, 'SOLUTION_SAVE_FAILED');
+    }
+  },
+
+  // GET /puzzles/:puzzleId/progress - the logged-in user's saved game and
+  // best time: { progress: { state, updatedAt } | null, bestSeconds }.
+  async progress (req, res) {
+    try {
+      const puzzle = await findPuzzle(req, res);
+      if (!puzzle) {
+        return;
+      }
+      const where = { UserId: req.user.id, PuzzleId: puzzle.id };
+      const [progress, solve] = await Promise.all([
+        PuzzleProgress.findOne({ where }),
+        PuzzleSolve.findOne({ where, attributes: ['bestSeconds'] })
+      ]);
+      res.send({
+        progress: progress ? { state: progress.state, updatedAt: progress.updatedAt } : null,
+        bestSeconds: solve ? solve.bestSeconds : null
+      });
+    } catch (err) {
+      console.error(err);
+      sendError(res, 500, 'PROGRESS_FETCH_FAILED');
+    }
+  },
+
+  // PUT /puzzles/:puzzleId/progress - { state }: creates or replaces the
+  // saved game. `state` is any JSON object up to MAX_PROGRESS_BYTES.
+  async saveProgress (req, res) {
+    try {
+      const state = req.body && req.body.state;
+      if (!state || typeof state !== 'object' || Array.isArray(state) ||
+          JSON.stringify(state).length > MAX_PROGRESS_BYTES) {
+        return sendError(res, 400, 'PROGRESS_INVALID');
+      }
+      const puzzle = await findPuzzle(req, res);
+      if (!puzzle) {
+        return;
+      }
+      const where = { UserId: req.user.id, PuzzleId: puzzle.id };
+      const [entry, created] = await PuzzleProgress.findOrCreate({ where, defaults: { state } });
+      if (!created) {
+        // changed() because Sequelize does not notice a replaced JSON value
+        // that compares equal by reference.
+        entry.set('state', state);
+        entry.changed('state', true);
+        await entry.save();
+      }
+      res.send({ updatedAt: entry.updatedAt });
+    } catch (err) {
+      console.error(err);
+      sendError(res, 500, 'PROGRESS_SAVE_FAILED');
+    }
+  },
+
+  // DELETE /puzzles/:puzzleId/progress - the player restarted the puzzle.
+  async deleteProgress (req, res) {
+    try {
+      const id = parseId(req.params.puzzleId);
+      if (id) {
+        await PuzzleProgress.destroy({ where: { UserId: req.user.id, PuzzleId: id } });
+      }
+      res.send({ progress: null });
+    } catch (err) {
+      console.error(err);
+      sendError(res, 500, 'PROGRESS_SAVE_FAILED');
     }
   },
 

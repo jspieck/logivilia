@@ -168,7 +168,8 @@
 // column and only fills unknown cells, so it never destroys work. Clues of a
 // line are crossed off when they are certainly placed, and turn red when the
 // line can no longer match. "Tipp" and "Prüfen" use the shared solver.
-// Progress and time are kept in localStorage per puzzle.
+// Progress and time are saved per puzzle (localStorage, and the server for
+// logged-in players); see ../engine/progress.js.
 
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -179,6 +180,7 @@ import {
 import { useGridPointer } from '../engine/useGridPointer'
 import { useHistory } from '../engine/useHistory'
 import { useZoom } from '../engine/useZoom'
+import { readProgress, saveProgress, clearProgress, formatTime } from '../engine/progress'
 import { textColorFor } from '../engine/colors'
 
 const props = defineProps({
@@ -315,40 +317,29 @@ const hintCells = computed(() => (hint.value?.cells || [])
   .filter(c => state.value[c.y * width.value + c.x] !== c.value))
 const hintAt = pos => hintCells.value.find(c => c.x === pos.x && c.y === pos.y)
 
-const formatTime = seconds => {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  const pad = n => String(n).padStart(2, '0')
-  return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
-}
-
 // ---------------------------------------------------------------------------
-// Progress: localStorage per puzzle (may be unavailable, e.g. private mode)
+// Progress: localStorage per puzzle, mirrored to the server for logged-in
+// players (../engine/progress.js)
 // ---------------------------------------------------------------------------
-
-const storageKey = () => `logivilia:nonogram:${props.puzzle.id}`
 
 function save () {
-  try {
-    if (solved.value) {
-      localStorage.removeItem(storageKey())
-      return
-    }
-    localStorage.setItem(storageKey(), JSON.stringify({
-      w: width.value, h: height.value, cells: state.value, elapsed: elapsed.value, crossed: [...crossed.value]
-    }))
-  } catch { /* storage unavailable */ }
+  if (solved.value) {
+    clearProgress('nonogram', props.puzzle.id)
+    return
+  }
+  // Nothing to keep yet (also after "Neu starten").
+  if (!started.value) return
+  saveProgress('nonogram', props.puzzle.id, {
+    w: width.value, h: height.value, cells: state.value, elapsed: elapsed.value, crossed: [...crossed.value]
+  })
 }
 
 function load () {
-  try {
-    const saved = JSON.parse(localStorage.getItem(storageKey()) || 'null')
-    if (saved && saved.w === width.value && saved.h === height.value &&
-        Array.isArray(saved.cells) && saved.cells.length === width.value * height.value) {
-      return saved
-    }
-  } catch { /* storage unavailable or broken */ }
+  const saved = readProgress('nonogram', props.puzzle.id)
+  if (saved && saved.w === width.value && saved.h === height.value &&
+      Array.isArray(saved.cells) && saved.cells.length === width.value * height.value) {
+    return saved
+  }
   return null
 }
 
@@ -369,7 +360,7 @@ function checkSolved () {
     save()
     emit('solved')
     // The clues prove it is solved; this records it for logged-in players.
-    props.submit(answer())
+    props.submit(answer(), { seconds: elapsed.value })
   }
 }
 
@@ -414,7 +405,7 @@ const redo = () => {
 
 function restart () {
   if (started.value && !window.confirm(t('nonogram.restartConfirm'))) return
-  try { localStorage.removeItem(storageKey()) } catch { /* ignore */ }
+  clearProgress('nonogram', props.puzzle.id)
   reset()
 }
 

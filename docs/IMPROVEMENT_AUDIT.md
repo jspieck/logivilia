@@ -145,11 +145,10 @@ Rate difficulty from the solver's work: the deepest technique needed, the number
 
 ### Player features
 
-#### 10. ✨ Autosave, resume and timer
-Save progress per puzzle (localStorage for guests, server for logged-in users) and resume it. Add a timer and personal best times. The logical page already warns "unsaved puzzles are lost forever"; this removes that problem.
-- **Effort:** S–M.
-- **Partly done:** nonograms and linelogs save progress and time per puzzle in localStorage and restore them, with a timer and "Gelöst in …".
-- **Still open:** logicals (no autosave; the logical creator still warns that unsaved puzzles are lost), progress on the server for logged-in users across devices, personal best times.
+#### 10. ✨ Autosave, resume and timer ✅
+Save progress per puzzle (localStorage for guests, server for logged-in users) and resume it. Add a timer and personal best times.
+- **Done (2026-11-21):** all three types save progress and time per puzzle (`frontend/src/puzzles/engine/progress.js`) and restore it, with a timer and "Gelöst in …"; logicals save grid, answer table, crossed-off clues and notepad. Logged-in players' games are mirrored to the server (`PuzzleProgresses`, `GET/PUT/DELETE /api/puzzles/:id/progress`) and continue on any device; the newer copy wins. Solving keeps the personal best time (`PuzzleSolves.bestSeconds`; guests: localStorage) and shows it under the puzzle ("Neue Bestzeit!"). The "unsaved puzzles are lost forever" warning is gone. Saved games and best times are in the data export and deleted with the account.
+- **Not done:** best-time leaderboards per puzzle; the logical "Raster leeren" still clears only the grid (no full restart with the time).
 
 #### 11. ✨ Daily puzzle, streaks and achievements
 - One featured puzzle per type per day, with a shared daily leaderboard.

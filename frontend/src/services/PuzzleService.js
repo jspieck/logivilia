@@ -32,9 +32,17 @@ export default {
   check (puzzleId, answer) {
     return Api().post(`puzzles/${puzzleId}/check`, { answer });
   },
-  // Records a solve for the logged-in user; 400 SOLUTION_INCORRECT if wrong.
-  solve (puzzleId, answer) {
-    return Api().post(`puzzles/${puzzleId}/solve`, { answer });
+  // Records a solve (and the time in seconds, optional) for the logged-in
+  // user; 400 SOLUTION_INCORRECT if wrong.
+  // -> { solved, firstSolve, bestSeconds, newBest }
+  solve (puzzleId, answer, seconds) {
+    return Api().post(`puzzles/${puzzleId}/solve`, { answer, seconds });
+  },
+  // The logged-in user's saved game and best time:
+  // { progress: { state, updatedAt } | null, bestSeconds }
+  // (saving goes through puzzles/engine/progress.js)
+  progress (puzzleId) {
+    return Api().get(`puzzles/${puzzleId}/progress`);
   },
   // The logged-in user's rating: { rating: 1..5 | null }
   myRating (puzzleId) {

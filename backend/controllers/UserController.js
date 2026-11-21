@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { User, Puzzle, PuzzleSolve, PuzzleRating, Comment, CommentUpvote, sequelize } = require('../models');
+const { User, Puzzle, PuzzleSolve, PuzzleRating, PuzzleProgress, Comment, CommentUpvote, sequelize } = require('../models');
 const { PUZZLE_TYPES } = require('../puzzles');
 const { publicUser, ownUser } = require('../utils/userView');
 const { sendError } = require('../utils/apiError');
@@ -39,7 +39,7 @@ const isOwnAccount = req => String(req.params.userId) === String(req.user.id);
 async function exportUser (user) {
   const UserId = user.id;
   const puzzleRef = { model: Puzzle, attributes: ['id', 'type', 'name'] };
-  const [solves, ratings, comments, upvotes, puzzles] = await Promise.all([
+  const [solves, ratings, comments, upvotes, puzzles, progress] = await Promise.all([
     PuzzleSolve.findAll({ where: { UserId }, include: [puzzleRef], order: [['id', 'ASC']] }),
     PuzzleRating.findAll({ where: { UserId }, include: [puzzleRef], order: [['id', 'ASC']] }),
     Comment.findAll({ where: { UserId }, order: [['id', 'ASC']] }),
@@ -48,7 +48,8 @@ async function exportUser (user) {
       where: { UserId },
       attributes: ['id', 'type', 'name', 'difficulty', 'date', 'author', 'createdAt'],
       order: [['id', 'ASC']]
-    })
+    }),
+    PuzzleProgress.findAll({ where: { UserId }, include: [puzzleRef], order: [['id', 'ASC']] })
   ]);
   const puzzleOf = row => row.Puzzle
     ? { id: row.Puzzle.id, type: row.Puzzle.type, name: row.Puzzle.name }
@@ -56,7 +57,8 @@ async function exportUser (user) {
   return {
     exportedAt: new Date().toISOString(),
     account: { ...ownUser(user), createdAt: user.createdAt, updatedAt: user.updatedAt },
-    solves: solves.map(row => ({ puzzle: puzzleOf(row), solvedAt: row.createdAt })),
+    solves: solves.map(row => ({ puzzle: puzzleOf(row), solvedAt: row.createdAt, bestSeconds: row.bestSeconds })),
+    savedGames: progress.map(row => ({ puzzle: puzzleOf(row), state: row.state, savedAt: row.updatedAt })),
     ratings: ratings.map(row => ({ puzzle: puzzleOf(row), rating: row.rating, ratedAt: row.updatedAt })),
     comments: comments.map(row => ({ id: row.id, puzzleId: row.PuzzleId, replyTo: row.replyId, text: row.text, date: row.date })),
     commentUpvotes: upvotes.map(row => ({ commentId: row.CommentId, date: row.createdAt })),
@@ -117,6 +119,7 @@ module.exports = {
         await Comment.destroy({ where: { UserId }, transaction });
         await PuzzleRating.destroy({ where: { UserId }, transaction });
         await PuzzleSolve.destroy({ where: { UserId }, transaction });
+        await PuzzleProgress.destroy({ where: { UserId }, transaction });
         await Puzzle.update({ author: null }, { where: { UserId, author: user.username }, transaction });
         await Puzzle.update({ UserId: null }, { where: { UserId }, transaction });
         await user.destroy({ transaction });
