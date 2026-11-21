@@ -69,6 +69,45 @@ test('overview: filters, sorting and paging run on the server', async ({ page })
   await expect(rows.first()).toContainText('E2E Nonogramm Gross');
 });
 
+test('overview filters live in the URL, and "next" follows them', async ({ page }) => {
+  // A shared link opens the list as it was.
+  await page.goto('/nonogram-overview?difficulty=3&sort=name&order=desc');
+  const rows = page.locator('tbody tr');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('E2E Nonogramm Gross');
+  await expect(page.getByLabel('Schwierigkeit')).toHaveValue('3');
+
+  // Changing a filter updates the URL; puzzle links carry filters and sort.
+  await page.getByLabel('Schwierigkeit').selectOption('');
+  await expect(page).toHaveURL(/\/nonogram-overview\?sort=name&order=desc$/);
+  await expect(page.getByRole('link', { name: 'E2E Nonogramm', exact: true }))
+    .toHaveAttribute('href', '/puzzle/1?sort=name&order=desc');
+
+  const solve = async () => {
+    const grid = page.locator('svg.main-grid');
+    await expect(grid).toBeVisible();
+    for (const [x, y] of [[0, 0], [0, 1], [1, 1]]) {
+      const point = await cellCenter(grid, 2, 2, x, y);
+      await page.mouse.click(point.x, point.y);
+    }
+    await expect(page.locator('.success-message')).toBeVisible();
+  };
+
+  // From that list, "next" asks with the same sort and keeps it in the link.
+  const nextRequest = page.waitForRequest(r => r.url().includes('/api/puzzles/1/next') && r.url().includes('sort=name'));
+  await page.getByRole('link', { name: 'E2E Nonogramm', exact: true }).click();
+  await solve();
+  await nextRequest;
+  await expect(page.getByRole('link', { name: 'Nächstes Rätsel' })).toHaveAttribute('href', '/puzzle/4?sort=name&order=desc');
+
+  // A filter that only this puzzle matches: no next puzzle to offer.
+  await page.goto('/puzzle/1?difficulty=1');
+  const nothingNext = page.waitForResponse(r => r.url().includes('/api/puzzles/1/next') && r.url().includes('minDifficulty=1'));
+  await solve();
+  expect((await (await nothingNext).json()).id).toBeNull();
+  await expect(page.getByRole('link', { name: 'Nächstes Rätsel' })).toHaveCount(0);
+});
+
 test('linelog: drawing the path between the two numbers solves it', async ({ page }) => {
   await page.goto('/puzzle/2');
   await expect(page.getByRole('heading', { name: 'E2E Linelog' })).toBeVisible();

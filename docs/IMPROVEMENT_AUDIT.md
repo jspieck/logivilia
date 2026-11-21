@@ -18,12 +18,6 @@ Part A lists what is still open from the first audit. Part B ranks the next impr
 | A4 | Old per-type tables | After the new version has run for a while: back up, `npm run drop:legacy -w backend`, then with `-- --apply`. |
 | A5 | Not yet seen working | The MySQL CI job and real verification / reset e-mails in production. |
 
-### Code
-
-Nothing open.
-
----
-
 ## Part B – Next points
 
 Ranked by value for players and by what the work already done makes cheap. **Type:** 🏗 architecture · ✨ feature · 🎨 UX · 🔧 engineering.
@@ -55,10 +49,6 @@ Weight solves by difficulty, add weekly and monthly boards, and best-time boards
 The editors suggest a difficulty; the server does not. Compute it on save from the solver result and run it once over existing puzzles (a migration), so difficulty is consistent across authors.
 - **Effort:** S–M. Makes 5 fairer.
 
-#### 7. 🎨 Shareable overview filters
-Keep filters and sorting in the URL, and let "next puzzle" follow the current filters instead of ID order.
-- **Effort:** S.
-
 #### 8. 🔧 Production observability
 Plesk shows no Node logs. Add a log file or an error-reporting endpoint, a `/api/health` check, and a documented database backup routine.
 - **Effort:** S. Makes every later deploy safer.
@@ -86,6 +76,7 @@ Keep Node ≥ 22 on Plesk for `vue-i18n` 11; move to Sequelize 7 once it is stab
 | LogicalDisplay split (A9) | 2026-11-21 | Moved to `puzzles/logical/`: `LogicalDisplay` (state, save/restore, history, notepad) uses `LogicalIntro`, `LogicalCluesPanel`, `LogicGrid` and `LogicalSolutionTable`; grid geometry, painting and table sync are pure functions in `shared/puzzles/logicalGrid.js` with tests. |
 | Solver checks off the request thread (A10) | 2026-11-21 | `backend/utils/solvableCheck.js`: pool of up to 2 `worker_threads` for `checkSolvable`, 10 s safety timeout (`PUZZLE_TOO_COMPLEX`), at most 20 waiting checks (`RATE_LIMITED`). |
 | Leftover logging (A11) | 2026-11-21 | `console.log` calls removed from `frontend/src`, plus a dead upvote stub in `CommentSystem.vue`. |
+| Shareable overview filters (7) | 2026-11-21 | Search, filters, sort and page live in the overview URL (`frontend/src/puzzles/listQuery.mjs`); puzzle links carry the filters, and `GET /puzzles/:id/next` takes the list's filters and sort, so "next puzzle" continues in that list (ID order without them). |
 | One puzzle model (B1) | 2026-11-14 | `Puzzles`, `PuzzleRatings`, `PuzzleSolves`, comments by `PuzzleId`; old links redirect via `legacyId`; rankings counted in SQL. |
 | Plugin interface (B2) | 2026-11-14 | `shared/puzzles/<type>.js` used by backend and frontend; one `/puzzle/:id` page; shared grid engine with Pointer Events, zoom, undo/redo. |
 | No solutions in the browser (B3) | 2026-11-14 | Server sends clues, verifies every solve; public `check` endpoint. |

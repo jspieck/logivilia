@@ -242,8 +242,12 @@ module.exports = {
   },
 
   // GET /puzzles/:puzzleId/next - { id } of the next puzzle of the same type
-  // after this one (by ID, wrapping around) that the logged-in player has
-  // not solved; for guests simply the next one. { id: null } if none is left.
+  // after this one that the logged-in player has not solved (for guests
+  // simply the next one), wrapping around; { id: null } if none is left.
+  //
+  // "Next" follows the overview the player came from: the same optional
+  // filters and sort as GET /puzzles?page=... (q, author, min/max...,
+  // minRating, status, sort, order). Without them it is ID order.
   async next (req, res) {
     try {
       const puzzle = await findPuzzle(req, res);
@@ -251,17 +255,34 @@ module.exports = {
         return;
       }
       const userId = await optionalUserId(req);
-      const base = [{ type: puzzle.type }, { id: { [Op.ne]: puzzle.id } }];
-      if (userId) {
-        base.push({ id: { [Op.notIn]: sequelize.literal(solvedIdsSql(userId)) } });
-      }
-      const find = extra => Puzzle.findOne({
+      const query = { ...req.query, type: puzzle.type };
+      // The list in overview order, with this puzzle in it even if the
+      // filters leave it out (e.g. "unsolved only" right after solving it),
+      // so we know where to continue from.
+      const filtered = listWhere(query, userId);
+      const where = filtered[Op.and].length > 1
+        ? { [Op.or]: [filtered, { id: puzzle.id }] }
+        : { type: puzzle.type };
+      const rows = await Puzzle.findAll({
         attributes: ['id'],
-        where: { [Op.and]: [...base, ...extra] },
-        order: [['id', 'ASC']]
+        where,
+        order: listOrder(query, userId),
+        raw: true
       });
-      const next = await find([{ id: { [Op.gt]: puzzle.id } }]) || await find([]);
-      res.send({ id: next ? next.id : null });
+      const solved = new Set(userId
+        ? (await PuzzleSolve.findAll({ attributes: ['PuzzleId'], where: { UserId: userId }, raw: true })).map(s => s.PuzzleId)
+        : []);
+      const ids = rows.map(r => r.id);
+      const at = ids.indexOf(puzzle.id);
+      let next = null;
+      for (let k = 1; k < ids.length; k++) {
+        const id = ids[(at + k) % ids.length];
+        if (id !== puzzle.id && !solved.has(id)) {
+          next = id;
+          break;
+        }
+      }
+      res.send({ id: next });
     } catch (err) {
       console.error(err);
       sendError(res, 500, 'PUZZLE_FETCH_FAILED');

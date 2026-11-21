@@ -19,9 +19,11 @@ export default {
     return Api().get('puzzles', { params: clean });
   },
   // { id } of the next puzzle of the same type the player has not solved
-  // (for guests simply the next one), or { id: null }.
-  next (puzzleId) {
-    return Api().get(`puzzles/${puzzleId}/next`);
+  // (for guests simply the next one), or { id: null }. `params`: the
+  // overview's filters and sort (same as list), so "next" follows that list.
+  next (puzzleId, params = {}) {
+    const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== null && v !== undefined && v !== ''));
+    return Api().get(`puzzles/${puzzleId}/next`, { params: clean });
   },
   show (puzzleId) {
     return Api().get(`puzzles/${puzzleId}`);

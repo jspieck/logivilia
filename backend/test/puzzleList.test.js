@@ -146,3 +146,28 @@ test('next unsolved puzzle skips solved ones and wraps around', async () => {
   assert.equal(await next(p.logic), null, 'no other puzzle of that type');
   await api().get('/api/puzzles/99999/next').expect(404);
 });
+
+test('next puzzle follows the overview filters and sort', async () => {
+  const next = async (puzzle, query, auth) => {
+    const req = api().get(`/api/puzzles/${puzzle.id}/next`).query(query);
+    return (await (auth ? req.set('Authorization', auth) : req).expect(200)).body.id;
+  };
+  // Difficulty, hardest first: Cherry 5, Banana 3, apple_pie 2, Apple 1.
+  const hardest = { sort: 'difficulty', order: 'desc' };
+  assert.equal(await next(p['Banana 100%'], hardest), p.apple_pie.id);
+  assert.equal(await next(p.Apple, hardest), p.Cherry.id, 'wraps around in sort order');
+
+  // Only difficulty 2+ (Banana, Cherry, apple_pie, by ID).
+  const atLeast2 = { minDifficulty: 2 };
+  assert.equal(await next(p.apple_pie, atLeast2), p['Banana 100%'].id, 'wraps within the filter');
+  assert.equal(await next(p.Apple, atLeast2), p['Banana 100%'].id, 'from a puzzle outside the filter');
+  assert.equal(await next(p['Banana 100%'], { maxDifficulty: 3, minDifficulty: 3 }), null, 'nothing else matches');
+
+  // "Unsolved only" right after solving Cherry: Cherry itself no longer
+  // matches, but the list continues from where it was.
+  const unsolvedOnly = { status: 'unsolved', sort: 'id' };
+  assert.equal(await next(p.Cherry, unsolvedOnly, annaAuth), p.apple_pie.id);
+
+  // Malformed parameters are ignored (ID order), as in the list.
+  assert.equal(await next(p['Banana 100%'], { sort: 'bogus', minDifficulty: 'x' }), p.Cherry.id);
+});

@@ -40,7 +40,7 @@
             <strong v-if="newBest" class="new-best">{{ t('puzzle.newBest') }}</strong>
           </div>
           <div v-if="solvedNow || alreadySolved" class="next-puzzle">
-            <router-link v-if="nextId" :to="`/puzzle/${nextId}`" class="button is-primary">
+            <router-link v-if="nextId" :to="{ path: `/puzzle/${nextId}`, query: listQuery }" class="button is-primary">
               {{ store.isUserLoggedIn ? t('puzzle.nextUnsolved') : t('puzzle.nextPuzzle') }}
               <ion-icon name="arrow-forward-outline"></ion-icon>
             </router-link>
@@ -72,6 +72,7 @@ import CommentSystem from '@/components/CommentSystem.vue'
 import DifficultyIndicator from '@/components/DifficultyIndicator.vue'
 import StarRating from '@/components/StarRating.vue'
 import { getPuzzleType } from './index'
+import { readListQuery, listContext, toApiParams } from './listQuery'
 import { rememberPuzzle, forgetPuzzle } from './recentPuzzle'
 import { trackProgress, flushAll, localBest, recordLocalBest, formatTime } from './engine/progress'
 import { queueSolve, isOfflineError, onSolveSynced } from './engine/pendingSolves'
@@ -95,6 +96,9 @@ const offlineResult = ref(null)
 // The next puzzle of this type the player has not solved, shown once this
 // one is solved: an ID, null (none left) or undefined (not known yet).
 const nextId = ref(undefined)
+// Filters and sort of the overview the player came from (in the URL), so
+// "next puzzle" continues in that list; empty: ID order.
+const listQuery = computed(() => listContext(route.query))
 
 const puzzleType = computed(() => getPuzzleType(puzzle.value.type))
 // Admins and the author may see the stored data (e.g. a logic puzzle's rules).
@@ -265,7 +269,7 @@ const loadNext = async () => {
   if (!puzzle.value || nextId.value !== undefined) return
   const id = puzzle.value.id
   try {
-    const { data } = await PuzzleService.next(id)
+    const { data } = await PuzzleService.next(id, toApiParams(readListQuery(route.query), store.isUserLoggedIn))
     if (puzzle.value && puzzle.value.id === id) nextId.value = data.id
   } catch (error) {
     console.error('Error loading the next puzzle:', error)

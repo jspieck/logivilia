@@ -55,7 +55,9 @@
     </div>
 
     <o-table
+      :key="tableKey"
       v-model:current-page="currentPage"
+      :default-sort="tableSort"
       :data="rows"
       paginated
       backend-pagination
@@ -70,7 +72,7 @@
       @sort="onSort"
     >
       <o-table-column field="name" :label="t('overview.name')" v-slot="props" sortable>
-        <router-link :to="`/puzzle/${props.row.id}`" class="navLink">{{ props.row.name }}</router-link>
+        <router-link :to="{ path: `/puzzle/${props.row.id}`, query: linkQuery }" class="navLink">{{ props.row.name }}</router-link>
       </o-table-column>
       <o-table-column field="difficulty" :label="t('overview.difficulty')" v-slot="props" sortable>
         {{ props.row.difficulty }}
@@ -130,13 +132,20 @@
 // only holds the controls: name search, filters (size, colours, difficulty,
 // rating, author, unsolved only), sortable columns, page size (remembered
 // per browser), "x–y of n" and jump to page.
+//
+// Search, filters, sorting and page live in the URL (../puzzles/listQuery.mjs),
+// so a list can be shared and Back returns to it. Puzzle links carry the
+// filters, so "next puzzle" on the puzzle page continues in this list.
 
-import { ref, reactive, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, reactive, computed, watch, onActivated, onDeactivated } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useMainStore } from '@/store/store'
 import { usePuzzleList } from '@/puzzles/usePuzzleList'
+import {
+  SIZES, COLORS, emptyFilters, readListQuery, toRouteQuery, toApiParams, sameQuery
+} from '@/puzzles/listQuery'
 
 const props = defineProps({
   type: { type: String, required: true },
@@ -146,19 +155,11 @@ const props = defineProps({
 
 const { t, locale } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const { isUserLoggedIn } = storeToRefs(useMainStore())
 
 const PAGE_SIZES = [10, 25, 50, 100]
 const PAGE_SIZE_KEY = 'logivilia:pageSize'
-// Larger side of the grid.
-const SIZES = [
-  { value: '1-10', label: '≤ 10' },
-  { value: '11-15', label: '11–15' },
-  { value: '16-20', label: '16–20' },
-  { value: '21-30', label: '21–30' },
-  { value: '31-', label: '> 30' }
-]
-const COLORS = [1, 2, 3, 4]
 const TEXT_DELAY_MS = 300
 const jumpId = `jump-${props.type}`
 
@@ -170,17 +171,23 @@ function storedPageSize () {
   return 10
 }
 
-const emptyFilters = () => ({ size: '', colors: '', difficulty: '', rating: '', author: '', unsolved: false })
-
-const search = ref('')
-const filters = reactive(emptyFilters())
-const currentPage = ref(1)
+const initial = readListQuery(route.query)
+const search = ref(initial.q)
+const filters = reactive({ ...initial.filters })
+const currentPage = ref(initial.page)
 const perPage = ref(storedPageSize())
-const sort = ref({ field: null, order: 'asc' })
+const sort = ref({ ...initial.sort })
 const jumpTo = ref(null)
+// The sort the table shows its arrow for. Oruga reads it when the table is
+// created and re-sorts (back to page 1) whenever the prop changes, so it is
+// set only together with tableKey, which recreates the table: at the start
+// and when the sort comes from the URL (Back/Forward).
+const tableKey = ref(0)
+const sortArrow = s => (s.field ? [s.field, s.order] : undefined)
+const tableSort = ref(sortArrow(initial.sort))
 
-// Typed text reaches the server only after a short pause.
-const debounced = reactive({ q: '', author: '' })
+// Typed text reaches the server (and the URL) only after a short pause.
+const debounced = reactive({ q: initial.q, author: initial.filters.author })
 let textTimer = null
 watch([search, () => filters.author], ([q, author]) => {
   clearTimeout(textTimer)
@@ -190,33 +197,32 @@ watch([search, () => filters.author], ([q, author]) => {
   }, TEXT_DELAY_MS)
 })
 
+// Search, filters and sort as they go to the server and into the URL. The
+// page is kept apart: the filter watcher below must not see page changes.
+const listState = computed(() => ({
+  q: debounced.q,
+  filters: { ...filters, author: debounced.author },
+  sort: sort.value
+}))
+const apiParams = computed(() => toApiParams(listState.value, isUserLoggedIn.value))
+// Only the filters (a new sort resets the page in onSort).
 const filterParams = computed(() => {
-  const [minSize, maxSize] = filters.size ? filters.size.split('-') : []
-  const colors = filters.colors === '' ? null : Number(filters.colors)
-  const difficulty = filters.difficulty === '' ? null : Number(filters.difficulty)
-  return {
-    q: debounced.q,
-    author: debounced.author,
-    minSize: minSize || null,
-    maxSize: maxSize || null,
-    minColors: colors,
-    maxColors: colors !== null && colors < 4 ? colors : null,
-    minDifficulty: difficulty,
-    maxDifficulty: difficulty,
-    minRating: filters.rating || null,
-    status: filters.unsolved && isUserLoggedIn.value ? 'unsolved' : null
-  }
+  const params = { ...apiParams.value }
+  delete params.sort
+  delete params.order
+  return params
 })
 
 const query = computed(() => ({
-  ...filterParams.value,
-  sort: sort.value.field,
-  order: sort.value.order,
+  ...apiParams.value,
   page: currentPage.value,
   perPage: perPage.value
 }))
 
 const { rows, total, loading, failed } = usePuzzleList(props.type, query)
+
+// Links to a puzzle carry the list's filters and sort (not the page).
+const linkQuery = computed(() => toRouteQuery({ ...listState.value, page: 1 }, { withPage: false }))
 
 const hasFilters = computed(() => Object.entries(filters).some(([key, value]) => value !== emptyFilters()[key]))
 
@@ -225,6 +231,8 @@ function resetFilters () {
 }
 
 function onSort (column, direction) {
+  // Oruga also reports the initial sort from the URL; that is no change.
+  if (sort.value.field === column.field && sort.value.order === direction) return
   sort.value = { field: column.field, order: direction }
   currentPage.value = 1
 }
@@ -253,13 +261,40 @@ watch(perPage, (n) => {
 })
 watch(pageCount, (n) => { if (!loading.value && currentPage.value > n) currentPage.value = n })
 
-// The home page links here with ?search=...; applied at once, not debounced.
-watch(() => route.query.search, (value) => {
-  if (typeof value === 'string') {
-    search.value = value
-    debounced.q = value.trim()
-  }
+// --- URL sync --------------------------------------------------------------
+// The overview stays alive (<keep-alive> in App.vue) while a puzzle is open;
+// `route` then is the puzzle's, so the sync only runs while this page shows.
+const ownPath = route.path
+let active = true
+onActivated(() => { active = true; applyUrl(route.query) })
+onDeactivated(() => { active = false })
+const onOwnPage = () => active && route.path === ownPath
+
+const urlQuery = computed(() => toRouteQuery({ ...listState.value, page: currentPage.value }))
+
+watch(urlQuery, (wanted) => {
+  if (!onOwnPage() || sameQuery(wanted, route.query)) return
+  router.replace({ query: wanted, hash: route.hash })
 }, { immediate: true })
+
+// Back/Forward, a link with other filters, or the home page's ?search=.
+function applyUrl (routeQuery) {
+  if (sameQuery(toRouteQuery(readListQuery(routeQuery)), urlQuery.value)) return
+  const next = readListQuery(routeQuery)
+  clearTimeout(textTimer)
+  search.value = next.q
+  debounced.q = next.q
+  debounced.author = next.filters.author
+  Object.assign(filters, next.filters)
+  if (next.sort.field !== sort.value.field || next.sort.order !== sort.value.order) {
+    sort.value = next.sort
+    tableSort.value = sortArrow(next.sort)
+    tableKey.value++
+  }
+  // After the filters: their watcher has just reset the page to 1.
+  currentPage.value = next.page
+}
+watch(() => route.query, (routeQuery) => { if (onOwnPage()) applyUrl(routeQuery) })
 </script>
 
 <style lang="scss" scoped>
