@@ -1,11 +1,7 @@
 <template>
   <div v-if="oneOf" class="relation" :title="sentence" :aria-label="sentence" role="img">
     <span class="value-chip" :style="chipStyle(oneOf.a)"><span class="dot" />{{ label(oneOf.a) }}</span>
-    <span class="connector" :style="{ '--rel': NEUTRAL }">
-      <span class="op">=</span>
-      <svg width="88" height="10" viewBox="0 0 88 10" aria-hidden="true"><line x1="3" y1="5" x2="85" y2="5" /></svg>
-      <span class="sub">{{ t('relations.same') }}</span>
-    </span>
+    <span class="sign">=</span>
     <template v-for="(option, k) in oneOf.options" :key="k">
       <span v-if="k > 0" class="word or-word">{{ t('relations.or') }}</span>
       <span class="value-chip" :style="chipStyle(option)"><span class="dot" />{{ label(option) }}</span>
@@ -22,28 +18,23 @@
 
   <div v-else-if="oriented" class="relation" :title="sentence" :aria-label="sentence" role="img">
     <span class="value-chip" :style="chipStyle(oriented.left)"><span class="dot" />{{ label(oriented.left) }}</span>
-    <span class="connector compact" :style="{ '--rel': op.color }">
-      <span class="op">{{ oriented.sym ? '↔' : '<' }}</span>
-      <span class="sub">{{ op.sub }}</span>
+    <!-- Smaller -> bigger: a big arrow with the gap written on it. Without a
+         direction ("5 apart", neighbours) a double arrow, the text above. -->
+    <span v-if="oriented.sym" class="sym-arrow" :style="arrowStyle">
+      <span class="sym-text">{{ arrowText }}</span>
+      <span class="sym-shaft" />
     </span>
+    <span v-else class="arrow" :style="arrowStyle"><span class="arrow-text">{{ arrowText }}</span></span>
     <span class="value-chip" :style="chipStyle(oriented.right)"><span class="dot" />{{ label(oriented.right) }}</span>
   </div>
 
   <div v-else class="relation" :title="sentence" :aria-label="sentence" role="img">
     <span class="value-chip" :style="chipStyle(relation.a)"><span class="dot" />{{ label(relation.a) }}</span>
     <template v-if="relation.type === 'sum'">
-      <span class="word">+</span>
+      <span class="sign">+</span>
       <span class="value-chip" :style="chipStyle(relation.b)"><span class="dot" />{{ label(relation.b) }}</span>
     </template>
-    <span class="connector" :style="{ '--rel': op.color }">
-      <span class="op">{{ op.text }}</span>
-      <svg width="88" height="10" viewBox="0 0 88 10" aria-hidden="true">
-        <line x1="3" y1="5" x2="85" y2="5" :stroke-dasharray="op.dashed ? '4 4' : null" />
-        <polyline v-if="op.head" points="79,1 85,5 79,9" />
-        <polyline v-if="op.tail" points="9,1 3,5 9,9" />
-      </svg>
-      <span class="sub">{{ op.sub }}</span>
-    </span>
+    <span class="sign" :class="{ danger: relation.type === 'notSame' }">{{ relation.type === 'notSame' ? '≠' : '=' }}</span>
     <span class="value-chip" :style="chipStyle(relation.type === 'sum' ? relation.c : relation.b)"><span class="dot" />{{ label(relation.type === 'sum' ? relation.c : relation.b) }}</span>
     <template v-if="relation.type === 'eitherOr'">
       <span class="word or-word">{{ t('relations.or') }}</span>
@@ -55,14 +46,15 @@
 <script setup>
 // One formal relation of a Logikrätsel clue (logical.js publicRelations) as
 // chips. Chips take their category's colour (categoryColor). Comparisons are
-// always written smaller-first, [A] < [B], with the gap or factor as a small
-// note under the "<" (orientRelation), so clues chain: A < B, B < C.
+// always written smaller-first, [A] ──+5 Seiten──▶ [B], as a big arrow in the
+// colour of the compared category with the gap on it (orientRelation), so
+// clues chain: A → B, B → C. "Same" and "not same" are just = and ≠.
 
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { describeRule, valueLabel } from './describeRule'
 import { categoryColor } from './categoryColors'
-import { orientRelation, orientDetail, unitOf } from './orientRelation'
+import { orientRelation, orientText } from './orientRelation'
 
 defineOptions({ name: 'RelationChips' })
 
@@ -72,9 +64,6 @@ const props = defineProps({
 })
 
 const { t } = useI18n()
-
-const NEUTRAL = '#8b879e'
-const DANGER = '#c2410c'
 
 const label = ref => valueLabel(ref, props.attributes)
 const chipStyle = (ref) => {
@@ -94,23 +83,10 @@ const oneOf = computed(() => {
 })
 
 const oriented = computed(() => orientRelation(props.relation))
-
-const op = computed(() => {
-  const r = props.relation
-  const by = props.attributes[r.by]
-  const cat = by?.name?.trim() || ''
-  const color = r.by != null ? categoryColor(r.by).dot : NEUTRAL
-  if (oriented.value) {
-    const detail = orientDetail(oriented.value, unitOf(by), t)
-    return { sub: detail ? `${cat} · ${detail}` : cat, color }
-  }
-  switch (r.type) {
-    case 'same': return { text: '=', sub: t('relations.same'), color: NEUTRAL, head: false, tail: false }
-    case 'eitherOr': return { text: '=', sub: t('relations.same'), color: NEUTRAL, head: false, tail: false }
-    case 'notSame': return { text: '≠', sub: t('relations.notSame'), color: DANGER, head: false, tail: false, dashed: true }
-    case 'sum': return { text: '=', sub: cat, color, head: false, tail: false }
-    default: return { text: '?', sub: '', color: NEUTRAL }
-  }
+const arrowText = computed(() => orientText(oriented.value, props.attributes[props.relation.by], t))
+const arrowStyle = computed(() => {
+  const c = categoryColor(props.relation.by)
+  return { '--rel-bg': c.bg, '--rel-fg': c.fg, '--rel-dot': c.dot }
 })
 </script>
 
@@ -143,46 +119,74 @@ const op = computed(() => {
   }
 }
 
-.connector {
+// = and ≠ between two chips, no line needed.
+.sign {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: #8b879e;
+  padding: 0 2px;
+
+  &.danger { color: #c2410c; }
+}
+
+// Big arrow, smaller -> bigger, the gap written on it: a light body with a
+// coloured rim (the outer shape), cut to an arrow with clip-path.
+$head: 16px;
+$arrow: polygon(0 0, calc(100% - #{$head}) 0, 100% 50%, calc(100% - #{$head}) 100%, 0 100%, 7px 50%);
+
+.arrow {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  height: 32px;
+  padding: 0 $head + 6px 0 14px;
+  background: var(--rel-dot);
+  clip-path: $arrow;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 2.5px 3.5px 2.5px 2.5px;
+    background: var(--rel-bg);
+    clip-path: $arrow;
+  }
+
+  .arrow-text {
+    position: relative;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--rel-fg);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Double arrow (no direction): text above a wide two-headed shaft.
+.sym-arrow {
   display: inline-flex;
   flex-direction: column;
-  align-items: center;
-  min-width: 88px;
-  color: var(--rel);
+  align-items: stretch;
+  gap: 2px;
+  min-width: 96px;
 
-  .op {
-    font-size: 13px;
+  .sym-text {
+    padding: 0 12px;
+    text-align: center;
+    font-size: 12.5px;
     font-weight: 700;
     line-height: 1.1;
+    color: var(--rel-fg);
+    white-space: nowrap;
     font-variant-numeric: tabular-nums;
-    white-space: nowrap;
   }
 
-  .sub {
-    font-size: 11px;
-    font-weight: 600;
-    color: #6b6880;
-    line-height: 1.1;
-    white-space: nowrap;
-  }
-
-  &.compact {
-    min-width: 0;
-    padding: 0 2px;
-
-    .op {
-      font-size: 17px;
-      line-height: 1;
-    }
-  }
-
-  svg {
-    display: block;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .sym-shaft {
+    height: 16px;
+    background: var(--rel-dot);
+    clip-path: polygon(0 50%, 13px 0, 13px 34%, calc(100% - 13px) 34%, calc(100% - 13px) 0, 100% 50%, calc(100% - 13px) 100%, calc(100% - 13px) 66%, 13px 66%, 13px 100%);
   }
 }
 

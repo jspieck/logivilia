@@ -361,8 +361,15 @@
     "padShow": "Show notepad",
     "padClear": "Clear notepad",
     "padClearConfirm": "Take everything off the notepad?",
-    "padHelp": "Drag values onto the pad (on a phone: tap a value, then tap the pad). Values on one card belong together – drop a value or a card onto a card to join them. Pull a clue number onto the pad (or tap it) to add its values and draw it as arrows from smaller to bigger: green when the cards fit the clue, red when they cannot. Only a scratch pad: grid and answer stay as they are.",
-    "padHelpNoClues": "Drag values onto the pad (on a phone: tap a value, then tap the pad). Values on one card belong together – drop a value or a card onto a card to join them. Only a scratch pad: grid and answer stay as they are.",
+    "padHelpTitle": "How the notepad works",
+    "padHelpList": {
+      "values": "Drag values onto the pad (on a phone: tap a value, then tap the pad). A card stands for one thing or person: everything on a card belongs together.",
+      "join": "Drop a card or a value onto a card to join them. The seam stays visible as a dashed line, ✂ splits it again. While dragging, the pad shows where things will land.",
+      "clues": "Tap a clue number or drag it onto the pad to add its values. An \"=\" goes straight onto one card and stays together there. Comparisons are drawn as arrows that always point to the bigger value, e.g. \"+5 pages\". \"All clues\" adds all of them at once.",
+      "colors": "The colour tells whether your cards fit the clue: green = with these cards the clue holds, red = it cannot be like this, coloured/grey = still open (values missing).",
+      "notes": "✎ on a card lists the values still possible for it. Tap to cross one off; when only one is left, it turns green.",
+      "scratch": "Only a scratch pad: grid and answer stay as they are."
+    },
     "padEmpty": "Drop values or clue numbers here",
     "padRemoveCard": "Remove card",
     "padRemoveClue": "Remove clue from the notepad",
@@ -370,6 +377,19 @@
       "ok": "fits",
       "bad": "broken",
       "open": "open"
+    },
+    "padAllClues": "All clues",
+    "padSplit": "Split again",
+    "padNotes": "Note possible values",
+    "padBound": "joined by an \"=\", moves along",
+    "padElsewhere": "already on another card",
+    "padDropRemove": "Release to remove",
+    "padFullscreen": "Large view",
+    "padFullscreenClose": "Close large view",
+    "padStateHelp": {
+      "ok": "With these cards the clue holds.",
+      "bad": "These cards contradict the clue.",
+      "open": "Values are still missing on the cards to tell."
     }
   },
   "nonogram": {

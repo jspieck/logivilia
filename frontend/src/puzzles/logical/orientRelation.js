@@ -51,18 +51,43 @@ const format = n => String(n).replace('.', ',')
 
 /**
  * Short text for the extra part of an oriented relation ("4 €", "×2",
- * "direkt"), or '' for a plain "<".
+ * "direkt"), or '' for a plain "<". Without a unit the category name is the
+ * unit: "5 Seiten" (numbers read best before their unit).
  * @param {ReturnType<typeof orientRelation>} o
  * @param {string} unit
  * @param {(key: string) => string} t
+ * @param {string} [category] category name, used when there is no unit
  */
-export function orientDetail (o, unit, t) {
+export function orientDetail (o, unit, t, category = '') {
   if (!o) return ''
+  const u = unit || category
   switch (o.kind) {
     case 'directly': return t('relations.directly')
-    case 'gap': return unit ? `${format(o.n)} ${unit}` : format(o.n)
+    case 'gap': return u ? `${format(o.n)} ${u}` : format(o.n)
     case 'times': return `×${format(o.n)}`
     case 'nextTo': return t('relations.nextTo')
     default: return ''
+  }
+}
+
+/**
+ * The text written on the arrow of an oriented relation (it points from the
+ * smaller value to the bigger one): "+5 Seiten", "+2 €", "Kosten ×2",
+ * "Kosten" for a plain "<"; for one without direction "±5 Seiten", "Nachbar".
+ * @param {ReturnType<typeof orientRelation>} o
+ * @param {{ name: string, values: string[] } | undefined} attribute the `by` category
+ * @param {(key: string) => string} t
+ */
+export function orientText (o, attribute, t) {
+  if (!o) return ''
+  const cat = attribute?.name?.trim() || ''
+  const unit = unitOf(attribute)
+  const detail = orientDetail(o, unit, t, cat)
+  switch (o.kind) {
+    case 'gap': return `${o.sym ? '±' : '+'}${detail}`
+    case 'times': return cat ? `${cat} ${detail}` : detail
+    case 'directly': return cat ? `${cat} · ${detail}` : detail
+    case 'nextTo': return cat ? `${detail} (${cat})` : detail
+    default: return cat
   }
 }

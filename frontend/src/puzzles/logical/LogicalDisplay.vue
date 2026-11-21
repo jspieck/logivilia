@@ -95,6 +95,24 @@ const clearPad = () => {
   if (!window.confirm(t('logical.padClearConfirm'))) return
   pad.value = emptyPad()
 }
+const padHelpItems = computed(() => (hasRelations.value
+  ? ['values', 'join', 'clues', 'colors', 'notes', 'scratch']
+  : ['values', 'join', 'notes', 'scratch']))
+
+// Large view: the notepad fills the window, the clue texts beside it.
+const padFull = ref(false)
+watch(padFull, (on) => {
+  document.body.style.overflow = on ? 'hidden' : ''
+  if (on) padVisible.value = true
+})
+const onPadKey = (event) => {
+  if (event.key === 'Escape' && padFull.value) padFull.value = false
+}
+onMounted(() => window.addEventListener('keydown', onPadKey))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onPadKey)
+  document.body.style.overflow = ''
+})
 
 // --- State ---------------------------------------------------------------
 const reset = () => {
@@ -254,21 +272,35 @@ defineExpose({ checkSolution, tableVisible, attrInputs, saveState, restoreState 
       </KeepAlive>
     </section>
 
-    <section class="pad-section">
+    <section class="pad-section" :class="{ full: padFull }" :role="padFull ? 'dialog' : null" :aria-modal="padFull ? 'true' : null" :aria-label="padFull ? t('logical.pad') : null">
       <div class="section-head">
         <h3>{{ t('logical.pad') }}</h3>
         <div class="pad-head-tools">
           <button v-if="padVisible && !solved && (pad.cards.length || pad.clues.length)" class="tool" :title="t('logical.padClear')" :aria-label="t('logical.padClear')" @click="clearPad">
             <ion-icon name="refresh-outline"></ion-icon>
           </button>
-          <label class="toggle-container">
+          <button
+            class="tool"
+            :title="t(padFull ? 'logical.padFullscreenClose' : 'logical.padFullscreen')"
+            :aria-label="t(padFull ? 'logical.padFullscreenClose' : 'logical.padFullscreen')"
+            :aria-pressed="padFull"
+            @click="padFull = !padFull"
+          >
+            <ion-icon :name="padFull ? 'contract-outline' : 'expand-outline'"></ion-icon>
+          </button>
+          <label v-if="!padFull" class="toggle-container">
             <span>{{ t('logical.padShow') }}</span>
             <Toggle v-model="padVisible" />
           </label>
         </div>
       </div>
       <template v-if="padVisible">
-        <p v-if="!solved" class="hint-text pad-help">{{ t(hasRelations ? 'logical.padHelp' : 'logical.padHelpNoClues') }}</p>
+        <details v-if="!solved" class="pad-help">
+          <summary>{{ t('logical.padHelpTitle') }}</summary>
+          <ul>
+            <li v-for="item in padHelpItems" :key="item">{{ t(`logical.padHelpList.${item}`) }}</li>
+          </ul>
+        </details>
         <CluePad
           v-model="pad"
           :attributes="attributes"
@@ -276,6 +308,7 @@ defineExpose({ checkSolution, tableVisible, attrInputs, saveState, restoreState 
           :clues="logical.clues || []"
           :hot="hotValues"
           :disabled="solved"
+          :wide="padFull"
         />
       </template>
     </section>
@@ -307,7 +340,51 @@ defineExpose({ checkSolution, tableVisible, attrInputs, saveState, restoreState 
   }
 
   .pad-help {
-    margin: 0 0 10px;
+    margin: 0 0 12px;
+    font-size: 13.5px;
+    color: #55526a;
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: #4f46e5;
+      width: fit-content;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      line-height: 1.45;
+    }
   }
+
+  // Large view: over the whole page.
+  &.full {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    margin: 0;
+    padding: 14px 20px 24px;
+    overflow-y: auto;
+    background: #fff;
+
+    .section-head {
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      margin: -14px -20px 10px;
+      padding: 12px 20px 8px;
+      background: #fff;
+      border-bottom: 1px solid #eeebf5;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .pad-section.full { padding: 10px 12px 20px; }
+  .pad-section.full .section-head { margin: -10px -12px 10px; padding: 10px 12px 8px; }
 }
 </style>
