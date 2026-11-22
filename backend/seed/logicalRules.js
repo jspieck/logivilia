@@ -13,6 +13,10 @@
 // says, but are not stored until the puzzle is fixed), or note() for a clue
 // that only sets the scene.
 //
+// `hidden` adds categories only the rules use (see hiddenAttributes in
+// shared/puzzles/logical.js), each with its values in order (ordered
+// 'list'), such as the seats at a table.
+//
 // Used by the seed (seed/index.js), migration 20261116-01 and the tests.
 
 const X = { var: 'X' };
@@ -29,6 +33,15 @@ const diff = (a, b, by, offset) => ({ type: 'differsBy', a, b, by, offset });
 const absDiff = (a, b, by, offset) => ({ type: 'differsBy', a, b, by, offset, abs: true });
 const times = (a, b, by, factor) => ({ type: 'times', a, b, by, factor });
 const sum = (a, b, c, by) => ({ type: 'sum', a, b, c, by });
+// a's values of the categories `over` added up = b's total / a number / the
+// smallest or largest total ('min' / 'max'), plus offset.
+const total = (a, over, target, offset = 0) => ({
+  type: 'total',
+  a,
+  over,
+  ...(typeof target === 'number' ? { value: target } : ['min', 'max'].includes(target) ? { extreme: target } : { b: target }),
+  ...(offset ? { offset } : {})
+});
 const any = (...rules) => ({ type: 'anyOf', rules });
 const all = (...rules) => ({ type: 'allOf', rules });
 const exists = (...rules) => ({ type: 'exists', var: 'X', rules });
@@ -47,6 +60,7 @@ const pairs = (a, b, list) => any(...list.map(([x, y]) => all(same(a, x), same(b
 const compare = (a, b, cat, key, holds) => ({ type: '$compare', a, b, cat, key, holds });
 
 const len = s => s.trim().length;
+const BALLS = ['Rot', 'Weiß', 'Schwarz'];
 
 /* eslint-disable quote-props */
 const FORMALIZATIONS = {
@@ -87,8 +101,7 @@ const FORMALIZATIONS = {
       [after('Linde', 'Fenn', 'Jahreszeit')],
       [diff('Herbst', 'Fenn', 'Höhe', 6), after('Fenn', 'Marn', 'Höhe')],
       [not('Arndt', 'Winter')],
-      conflict('The stored Ahorn (34 m) is exactly 6 m smaller than the Birke of Marn (40 m).',
-        same('Witzek', 'Ahorn'), not('Ahorn', '52'), isNot(diff('Ahorn', 'Marn', 'Höhe', -6)))
+      [same('Witzek', 'Ahorn'), not('Ahorn', '52'), isNot(diff('Ahorn', 'Marn', 'Höhe', -6))]
     ]
   },
 
@@ -109,9 +122,8 @@ const FORMALIZATIONS = {
     clues: [
       [diff('Isabell', 'Maler', 'Alter', -4)],
       [diff('Bern', 'Daniel', 'Pilze', 2), diff('Daniel', '42', 'Pilze', 2)],
-      [not('Marie', '38')],
-      conflict('Stored: Marlen (Isabell) is 38, Leander 34, so Marlen is 4 years older.',
-        diff('Marlen', 'Leander', 'Alter', -4)),
+      [same('Isabell', '10')],
+      [diff('Marlen', 'Leander', 'Alter', 4)],
       [not('10', '34')],
       [diff('Leander', 'Ulbricht', 'Pilze', 2)]
     ]
@@ -143,10 +155,9 @@ const FORMALIZATIONS = {
   'Kaninchenzucht': {
     ordered: { Alter: 'numeric', Kaninchen: 'numeric' },
     clues: [
-      conflict('Stored: Gertje is 65, Antje 80.',
-        diff('Gertje', 'Antje', 'Alter', 5),
+      [diff('Gertje', 'Antje', 'Alter', 5),
         // A digit of Gertje's age is a digit of Roman's.
-        compare('Gertje', 'Roman', 'Alter', v => v, (a, b) => [...a].some(d => b.includes(d)))),
+        compare('Gertje', 'Roman', 'Alter', v => v, (a, b) => [...a].some(d => b.includes(d)))],
       [before('Fridolin', 'Hanna', 'Alter'),
         // Hanna's age is not divisible by Fridolin's number of rabbits.
         any(...['55', '60', '65', '70', '80'].flatMap(age => ['1', '2', '3', '4', '5']
@@ -183,9 +194,18 @@ const FORMALIZATIONS = {
   },
 
   'Kunstfertige Tiere': {
-    // With clue 8 (Andreas better than Theodor) the clues have exactly one
-    // solution (checked by brute force over the repeated grades).
-    dataError: 'The grades repeat (4, 4, 5, 5, 6, 6); the solver needs distinct values in a category.'
+    // The grades repeat (4, 4, 5, 5, 6, 6); a better grade is a smaller one.
+    ordered: { Noten: 'numeric' },
+    clues: [
+      [same('Georg', 'Rad'), diff('Georg', 'Sabine', 'Noten', -1)],
+      [same('Kaninchen', 'Hüpfen'), not('Kaninchen', '5'), absDiff('Kaninchen', 'Alina', 'Noten', 1)],
+      [absDiff('Lamm', 'Walter', 'Noten', 1)],
+      [same('Salto', '5')],
+      [same('Hamster', 'Purzeln'), same('Theodor', 'Rind'), absDiff('Hamster', 'Theodor', 'Noten', 1), not('Hamster', '4')],
+      [not('Alina', 'Purzeln'), absDiff('Alina', 'Andreas', 'Noten', 1)],
+      [same('Walter', 'Zander'), same('Zander', 'Sprechen'), absDiff('Gans', 'Walter', 'Noten', 2)],
+      [before('Andreas', 'Theodor', 'Noten')]
+    ]
   },
 
   'Kuriose Spezialitäten': {
@@ -300,20 +320,21 @@ const FORMALIZATIONS = {
   'Kugeltrikolore': {
     ordered: { Rot: 'numeric', 'Weiß': 'numeric', Schwarz: 'numeric' },
     clues: [
-      gap('Totals over several categories (red + white + black per person).'),
+      [total('Martin', BALLS, 'Martha', -1), total('Martha', BALLS, 'min', 5)],
       [diff('Santander', 'Muriel', 'Schwarz', 1)],
       [diff('Wegener', 'Martha', 'Rot', -1)],
-      gap('Totals over several categories (red + white + black per person).')
+      // "Herr Zweck": a man, so neither Ellen nor Martha.
+      [total('Zweck', BALLS, 9), ...noneOf('Zweck', ['Ellen', 'Martha'])]
     ]
   },
 
   'Fleischhasser unter sich': {
-    ordered: { Seit: 'numeric' },
+    ordered: { Jahre: 'numeric' },
     clues: [
-      [diff('Till', 'Hitz', 'Seit', -5), diff('Hitz', 'Pescetarier', 'Seit', -5)],
-      conflict('Stored: Marvin is the one with 20 years.', not('Marvin', '20'), not('Wotzek', '5')),
-      [absDiff('Frederike', 'Vegetarier', 'Seit', 5), not('Frederike', 'Hitz'), absDiff('Frederike', 'Mall', 'Seit', 5), not('Mall', '20')],
-      [diff('Fructarier', 'Vegan', 'Seit', 10), oneOf('Fructarier', ['Amalie', 'Marvin'])]
+      [diff('Till', 'Hitz', 'Jahre', -5), diff('Hitz', 'Pescetarier', 'Jahre', -5)],
+      [not('Marvin', '20'), not('Wotzek', '5')],
+      [absDiff('Frederike', 'Vegetarier', 'Jahre', 5), not('Frederike', 'Hitz'), absDiff('Frederike', 'Mall', 'Jahre', 5), not('Mall', '20')],
+      [diff('Fructarier', 'Vegan', 'Jahre', 10), oneOf('Fructarier', ['Amalie', 'Marvin'])]
     ]
   },
 
@@ -323,8 +344,8 @@ const FORMALIZATIONS = {
       [diff('Bertha', 'Severin', 'Alter', -10), diff('Severin', 'Ivonne', 'Alter', -10)],
       [diff('Marix', 'Steif', 'Titel', -2)],
       [diff('Bertha', '30', 'Titel', -2)],
-      conflict('Stored: Uta is Steif herself.', diff('Uta', 'Steif', 'Alter', -20)),
-      conflict('Stored: Ivonne has 4 titles, Peter 5.', diff('Ivonne', 'Peter', 'Titel', -2)),
+      [diff('Uta', 'Steif', 'Alter', -20)],
+      [diff('Ivonne', 'Peter', 'Titel', -2)],
       [not('50', 'Titel:5')]
     ]
   },
@@ -352,14 +373,14 @@ const FORMALIZATIONS = {
   },
 
   'Italienische Genüsse': {
-    // Clue 2 says "Enrico"; the only name it can mean is Enno.
     ordered: { 'Eröffnung': 'numeric' },
     clues: [
       [not('Angelo', 'Margherita')],
       [same('Enno', 'Funghi'), diff('Enno', 'Rom', 'Eröffnung', -2)],
       [diff('Vier-Käse', 'Florenz', 'Eröffnung', -4)],
       [diff('Neapel', 'Tagliatelle', 'Eröffnung', 2), diff('Neapel', 'Spaghetti', 'Eröffnung', -2), not('Spaghetti', 'Rom')],
-      [absDiff('Fusilli', 'Marcella', 'Eröffnung', 4)]
+      [absDiff('Fusilli', 'Marcella', 'Eröffnung', 4)],
+      [same('Angelo', 'Neapel')]
     ]
   },
 
@@ -415,9 +436,9 @@ const FORMALIZATIONS = {
     clues: [
       [not('Ilse', 'Göthe'), diff('Ilse', 'Eichendorff', 'Anzahl Gedichte', -2), not('Eichendorff', 'Martin')],
       [not('Martin', '50')],
-      conflict('Stored: Anger (Steve) reads 5 poems, Beate 1.', diff('Anger', 'Beate', 'Anzahl Gedichte', 1)),
+      [diff('Anger', 'Beate', 'Anzahl Gedichte', 1)],
       [diff('Schiller', 'Dichter:Brecht', 'Anzahl Gedichte', -1), same('Dichter:Brecht', 'Nachname:Brecht')],
-      conflict('Stored: Beate is 30, Steve 60.', diff('Beate', 'Steve', 'Alter', -20)),
+      [diff('Beate', 'Steve', 'Alter', -20)],
       [diff('Imminger', '40', 'Anzahl Gedichte', -1)]
     ]
   },
@@ -428,7 +449,8 @@ const FORMALIZATIONS = {
       [diff('Stahl', 'Ziegel', 'Waggons', -40), not('Stahl', 'Dienstag')],
       [diff('Alan', 'Schotter', 'Tag', -2), diff('Alan', 'Lucy', 'Waggons', -20)],
       [times('Mizuki', 'Holz', 'Waggons', 2), diff('Mizuki', 'Bobby', 'Tag', 1), diff('Mizuki', 'Glas', 'Tag', -1)],
-      [diff('Sam', 'Glas', 'Waggons', -60), not('Sam', 'Freitag'), not('Sam', 'Schotter')]
+      [diff('Sam', 'Glas', 'Waggons', -60), not('Sam', 'Freitag'), not('Sam', 'Schotter')],
+      [same('Bobby', '40')]
     ]
   },
 
@@ -611,23 +633,25 @@ const FORMALIZATIONS = {
   },
 
   'Strohsterne': {
+    // The seats (left to right) are not asked for, only used by the clues.
+    hidden: { Platz: ['Platz 1', 'Platz 2', 'Platz 3', 'Platz 4', 'Platz 5'] },
     clues: [
       [same('Anja', '4')],
-      gap('Seats at the table are not a category of the puzzle.'),
+      note(),
       [same('Sabine', 'Nachbarin')],
       [same('Sophie', 'blau')],
-      gap('Seats at the table are not a category of the puzzle.'),
+      [dBefore('8', '12', 'Platz')],
       [same('12', 'weiß')],
       [same('Hafer', 'Mama')],
-      gap('Seats at the table are not a category of the puzzle.'),
+      [same('Platz 3', 'silber')],
       [same('5', 'Roggen')],
-      gap('Seats at the table are not a category of the puzzle.'),
+      [same('Ines', 'Platz 1')],
       [same('Roggen', 'Oma')],
-      gap('Seats at the table are not a category of the puzzle.'),
+      [nextTo('Schwägerin', 'Roggen', 'Platz')],
       [same('Dinkel', 'gold')],
-      gap('Seats at the table are not a category of the puzzle.'),
+      [nextTo('Ines', '10', 'Platz')],
       [same('Caro', 'Gerste')],
-      gap('Seats at the table are not a category of the puzzle.')
+      [nextTo('Weizen', 'rot', 'Platz')]
     ]
   },
 
@@ -714,7 +738,7 @@ const FORMALIZATIONS = {
       [oneOf('Edmund', ['Bad-Kissinger-Hütte', 'Kemptener-Hütte', 'Stuttgarter-Hütte'])],
       [before('Erwin', 'Volz', 'Zimmer'), after('Erwin', 'Papert', 'Zimmer'), oneOf('Andrea', ['Helles', 'Weißbier'])],
       [compare('Reinhold', 'Ines', 'Nachname', len, (a, b) => a < b), compare('Reinhold', 'Edmund', 'Nachname', len, (a, b) => a < b)],
-      conflict('Stored: room 10 drinks Ski-Wasser, Ingwerlimonade is room 8.', same('10', 'Ingwerlimonade')),
+      [same('10', 'Ingwerlimonade')],
       [compare('Papert', 'Ehses', 'Vorname', len, (a, b) => a > b), compare('Papert', 'Hillary', 'Vorname', len, (a, b) => a > b)],
       [not('Stuttgarter-Hütte', '5'), oneOf('Willers-Alpe', ['8', '10']), oneOf('Bad-Kissinger-Hütte', ['5', '10'])],
       [...noneOf('Bad-Kissinger-Hütte', ['Schnitzel', 'Wurstsalat']), ...noneOf('Karwendelhaus', ['Schnitzel', 'Wurstsalat']),
@@ -723,11 +747,11 @@ const FORMALIZATIONS = {
       [not('Papert', '10')],
       [oneOf('Ehses', ['4', '6'])],
       [same('Messner', 'Stuttgarter-Hütte')],
-      conflict('Stored: Andrea has 4, and the only 8 is Ines, who has the Schnitzel.',
-        exists(times('Andrea', X, 'Zimmer', 0.5), not(X, 'Schnitzel'))),
+      [exists(times('Andrea', X, 'Zimmer', 0.5), not(X, 'Schnitzel'))],
       [not('Kemptener-Hütte', 'Wurstsalat'), not('Kemptener-Hütte', 'Erwin'), same('Erwin', 'Johannisbeerschorle')],
       [before('Helles', 'Weißbier', 'Zimmer')],
-      [before('Gemüse-Curry', 'Tofu-Würstchen', 'Zimmer')]
+      [before('Gemüse-Curry', 'Tofu-Würstchen', 'Zimmer')],
+      [same('Ines', 'Ingwerlimonade')]
     ]
   },
 
@@ -771,7 +795,10 @@ function resolveRef (attributes, text) {
     }
   }
   const found = [];
-  attributes.forEach((a, attr) => a.values.forEach(value => { if (trim(value) === trim(text)) found.push({ attr, value }); }));
+  // A value repeated within one category (grades 4, 4, 5, ...) counts once.
+  attributes.forEach((a, attr) => a.values.forEach(value => {
+    if (trim(value) === trim(text) && !found.some(f => f.attr === attr && trim(f.value) === trim(value))) found.push({ attr, value });
+  }));
   if (found.length !== 1) throw new Error(`${found.length ? 'ambiguous' : 'no'} value "${text}"`);
   return found[0];
 }
@@ -798,6 +825,7 @@ function resolveRule (attributes, rule) {
   if (rule.rules) out.rules = rule.rules.map(sub => resolveRule(attributes, sub));
   for (const key of ['a', 'b', 'c']) if (rule[key] !== undefined) out[key] = resolveRef(attributes, rule[key]);
   if (rule.by !== undefined) out.by = categoryIndex(attributes, rule.by);
+  if (rule.over !== undefined) out.over = rule.over.map(cat => categoryIndex(attributes, cat));
   return out;
 }
 
@@ -826,6 +854,12 @@ function formalize (name, data) {
     attributes[c].ordered = 'list';
     if (c === 0) solution = values.map(v => solution.find(row => row[0] === v));
   }
+  const hiddenAttributes = Object.entries(entry.hidden || {}).map(([cat, values]) => {
+    if (attributes.some(a => trim(a.name) === trim(cat))) throw new Error(`hidden category "${cat}" is also a visible one`);
+    if (values.length !== attributes[0].values.length) throw new Error(`hidden category "${cat}" needs one value per row`);
+    return { name: cat, values: [...values], ordered: 'list' };
+  });
+  const all = [...attributes, ...hiddenAttributes];
   if (entry.clues.length !== data.clues.length) {
     throw new Error(`${name}: ${entry.clues.length} clue entries for ${data.clues.length} clues`);
   }
@@ -835,13 +869,15 @@ function formalize (name, data) {
   entry.clues.forEach((clue, i) => {
     if (clue.conflict) {
       conflicts.push(i);
-      clue.rules.forEach(rule => resolveRule(attributes, rule)); // still has to resolve
+      clue.rules.forEach(rule => resolveRule(all, rule)); // still has to resolve
       return;
     }
     if (!Array.isArray(clue)) { gaps.push(i); return; }
-    for (const rule of clue) rules.push({ clue: i, ...resolveRule(attributes, rule) });
+    for (const rule of clue) rules.push({ clue: i, ...resolveRule(all, rule) });
   });
-  return { data: { ...data, attributes, solution, rules }, gaps, conflicts };
+  const out = { ...data, attributes, solution, rules };
+  if (hiddenAttributes.length) out.hiddenAttributes = hiddenAttributes;
+  return { data: out, gaps, conflicts };
 }
 
 module.exports = { FORMALIZATIONS, formalize };

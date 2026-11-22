@@ -85,7 +85,7 @@ export interface LogicalRule {
   /** Index of the clue in `clues` this rule formalises (top-level rules only). */
   clue?: number;
   type: 'same' | 'notSame' | 'eitherOr' | 'note' |
-    'before' | 'after' | 'directlyBefore' | 'directlyAfter' | 'nextTo' | 'differsBy' | 'times' | 'sum' |
+    'before' | 'after' | 'directlyBefore' | 'directlyAfter' | 'nextTo' | 'differsBy' | 'times' | 'sum' | 'total' |
     'anyOf' | 'allOf' | 'exists' | 'not';
   a?: LogicalRef | LogicalVarRef;
   b?: LogicalRef | LogicalVarRef;
@@ -93,8 +93,14 @@ export interface LogicalRule {
   c?: LogicalRef | LogicalVarRef;
   /** Ordered relations: index of the ordered category compared. */
   by?: number;
-  /** differsBy: a's value = b's value + offset. */
+  /** differsBy: a's value = b's value + offset. total: added to the target. */
   offset?: number;
+  /** total: the numeric categories whose values are added up per entity. */
+  over?: number[];
+  /** total: a's total = value + offset (instead of b's total). */
+  value?: number;
+  /** total: a's total = the smallest / largest total of all + offset. */
+  extreme?: 'min' | 'max';
   /** differsBy: the difference may go either way. */
   abs?: boolean;
   /** times: a's value = b's value x factor. */
@@ -134,6 +140,8 @@ export interface PuzzleData {
     image?: string | null;
     /** Formal clues (optional, not sent to players). */
     rules?: LogicalRule[];
+    /** Categories only the rules use, e.g. seats (index after `attributes`; not sent to players). */
+    hiddenAttributes?: LogicalAttribute[];
     /** The texts in other languages, keyed by locale (puzzles/logicalTranslation.js). */
     translations?: Record<string, LogicalTranslation>;
   };

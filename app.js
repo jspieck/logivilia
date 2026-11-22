@@ -1,6 +1,10 @@
 // Entry point (also the Plesk/Passenger startup file): builds the app,
 // checks the database connection and starts listening.
 
+// First, so that everything below (including startup errors) also lands in
+// the log file; see backend/utils/logger.js.
+require('./backend/utils/logger').install();
+
 const createApp = require('./backend/createApp');
 const { sequelize } = require('./backend/models');
 

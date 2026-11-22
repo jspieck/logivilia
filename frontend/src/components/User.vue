@@ -75,6 +75,8 @@
         </div>
       </div>
 
+      <MyPuzzles v-if="loggedIn && (store.user.id == route.params.id)" embedded />
+
       <div class="profile-edit" v-if="loggedIn && (store.user.id == route.params.id)">
         <h3>{{ t('user.edit') }}</h3>
         <div class="edit-form">
@@ -144,6 +146,7 @@ import { useMainStore } from '@/store/store';
 import { useOruga } from '@oruga-ui/oruga-next';
 import UserService from '@/services/UserService';
 import MySelect from '@/components/MySelect.vue';
+import MyPuzzles from '@/components/MyPuzzles.vue';
 
 const { t } = useI18n();
 const store = useMainStore();

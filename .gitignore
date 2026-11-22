@@ -13,6 +13,9 @@ node_modules/
 # Build output and logs
 frontend/dist/
 *.log
+logs/
+backups/
+*.log.1
 
 # Playwright output
 test-results/

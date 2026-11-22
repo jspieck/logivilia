@@ -48,7 +48,15 @@
     "AUTH_VERIFY_INVALID": "Der Bestätigungslink ist ungültig oder wurde schon benutzt.",
     "EMAIL_NOT_VERIFIED": "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse (Link in der Registrierungs-E-Mail).",
     "USER_EXPORT_FAILED": "Ihre Daten konnten nicht exportiert werden.",
-    "USER_DELETE_FAILED": "Das Konto konnte nicht gelöscht werden."
+    "USER_DELETE_FAILED": "Das Konto konnte nicht gelöscht werden.",
+    "REVIEW_INVALID": "Bitte gib beim Zurückschicken einen Hinweis für den Autor an.",
+    "REVIEW_NOT_PENDING": "Dieses Rätsel wartet nicht (mehr) auf Freigabe.",
+    "DRAFT_NOT_FOUND": "Der Entwurf wurde nicht gefunden.",
+    "DRAFT_INVALID": "Der Entwurf konnte nicht gespeichert werden (ungültig oder zu groß).",
+    "DRAFT_LIMIT": "Du hast bereits {max} Entwürfe. Lösche einen, um einen neuen anzulegen.",
+    "DRAFT_LIST_FAILED": "Die Entwürfe konnten nicht geladen werden.",
+    "DRAFT_SAVE_FAILED": "Der Entwurf konnte nicht gespeichert werden.",
+    "PUZZLE_LOCKED": "Veröffentlichte Rätsel können nur Admins ändern."
   },
   "clientErrors": {
     "NETWORK": "Der Server ist nicht erreichbar. Bitte prüfen Sie Ihre Internetverbindung.",
@@ -75,7 +83,9 @@
     "loggedOut": "Erfolgreich ausgeloggt",
     "menu": "Menü",
     "mainNav": "Hauptnavigation",
-    "language": "Sprache"
+    "language": "Sprache",
+    "myPuzzles": "Meine Rätsel",
+    "review": "Freigabe"
   },
   "banner": {
     "verify": "Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link, den wir Ihnen geschickt haben. Erst dann können Sie kommentieren und Rätsel veröffentlichen.",
@@ -109,7 +119,9 @@
     "author": "Autor",
     "unsolvedOnly": "Nur ungelöste",
     "resetFilters": "Filter zurücksetzen",
-    "failed": "Die Rätsel konnten nicht geladen werden."
+    "failed": "Die Rätsel konnten nicht geladen werden.",
+    "showDetails": "Details anzeigen",
+    "hideDetails": "Details ausblenden"
   },
   "table": {
     "perPage": "Pro Seite",
@@ -185,7 +197,8 @@
     "showPassword": "Passwort anzeigen",
     "toHome": "Zur Startseite",
     "save": "Speichern",
-    "restored": "Dein Spielstand wurde wiederhergestellt."
+    "restored": "Dein Spielstand wurde wiederhergestellt.",
+    "loading": "Wird geladen …"
   },
   "login": {
     "button": "Login",
@@ -495,7 +508,16 @@
     "importFailed": "Das Bild konnte nicht gelesen werden.",
     "needName": "Gib dem Rätsel einen Namen.",
     "needUnique": "Veröffentlichen geht, sobald das Rätsel eindeutig lösbar ist.",
-    "cannotEdit": "Dieses Rätsel kann hier nicht bearbeitet werden."
+    "cannotEdit": "Dieses Rätsel kann hier nicht bearbeitet werden.",
+    "submit": "Zur Prüfung einreichen",
+    "reviewNotice": "Neue Rätsel werden sichtbar, sobald ein Admin sie freigegeben hat.",
+    "draft": {
+      "saving": "Entwurf wird gespeichert …",
+      "saved": "Entwurf gespeichert – du findest ihn unter „Meine Rätsel“.",
+      "local": "Entwurf in diesem Browser gespeichert. Melde dich an, um ihn auf allen Geräten zu haben.",
+      "error": "Entwurf konnte nicht auf dem Server gespeichert werden; er ist vorerst in diesem Browser gesichert."
+    },
+    "locked": "Dieses Rätsel ist veröffentlicht und kann nicht mehr bearbeitet werden. Für Änderungen wende dich bitte an einen Admin."
   },
   "linelogEditor": {
     "titleCreate": "Linelog erstellen",
@@ -630,6 +652,12 @@
     "differsByAbs": "{a} unterscheidet sich bei {cat} um {n} von {b}",
     "times": "{a} hat bei {cat} das {n}-fache von {b}",
     "sum": "{a} und {b} haben bei {cat} zusammen so viel wie {c}",
+    "total": "{a} hat bei {cats} zusammen {target}",
+    "totalEqual": "so viel wie {other}",
+    "totalMore": "{n} mehr als {other}",
+    "totalLess": "{n} weniger als {other}",
+    "totalMin": "die kleinste Summe",
+    "totalMax": "die größte Summe",
     "anyOf": "mindestens eins: {list}",
     "allOf": "{list}",
     "exists": "es gibt jemanden {x}, für den gilt: {list}",
@@ -656,5 +684,56 @@
     "ordered": "Geordnete Kategorien: {list}",
     "partial": "{done} von {total} Hinweisen haben eine Regel, daher wird die Eindeutigkeit nicht geprüft.",
     "failed": "Die Regeln konnten nicht geladen werden."
+  },
+  "creator": {
+    "title": "Meine Rätsel",
+    "drafts": "Entwürfe",
+    "puzzles": "Eingereichte und veröffentlichte Rätsel",
+    "noDrafts": "Keine Entwürfe. Ein Entwurf entsteht, sobald du in einem Editor etwas zeichnest oder schreibst.",
+    "noPuzzles": "Du hast noch kein Rätsel eingereicht.",
+    "untitled": "Ohne Namen",
+    "savedAt": "gespeichert am {date}",
+    "changedAt": "geändert am {date}",
+    "continue": "Weiter bearbeiten",
+    "deleteDraft": "Löschen",
+    "confirmDelete": "Entwurf „{name}“ wirklich löschen?",
+    "edit": "Bearbeiten",
+    "reviewNote": "Hinweis vom Admin:",
+    "loginNeeded": "Melde dich an, um deine Rätsel und Entwürfe zu sehen.",
+    "pendingText": "Nur du und die Admins sehen dieses Rätsel, bis es freigegeben ist.",
+    "rejectedText": "Bitte überarbeite das Rätsel; beim Speichern wird es erneut eingereicht.",
+    "new": {
+      "nonogram": "Neues Nonogramm",
+      "logical": "Neues Logical",
+      "linelog": "Neues Linelog"
+    },
+    "status": {
+      "pending": "Wartet auf Freigabe",
+      "published": "Veröffentlicht",
+      "rejected": "Abgelehnt"
+    },
+    "type": {
+      "nonogram": "Nonogramm",
+      "logical": "Logikrätsel",
+      "linelog": "Linelog"
+    },
+    "lockedHint": "Veröffentlicht – Änderungen nur noch über einen Admin."
+  },
+  "review": {
+    "title": "Freigabe",
+    "intro": "Neue Rätsel von Nutzern. Öffne ein Rätsel, um es zu testen, und gib es dann frei oder schicke es mit einem Hinweis zurück.",
+    "empty": "Keine Rätsel warten auf Freigabe.",
+    "by": "von {name}",
+    "unknownCreator": "gelöschtes Konto",
+    "submittedAt": "eingereicht am {date}",
+    "open": "Ansehen und testen",
+    "approve": "Freigeben",
+    "reject": "Zurückschicken",
+    "notePlaceholder": "Was soll der Autor ändern? (nötig zum Zurückschicken)",
+    "previousNote": "Früherer Hinweis:",
+    "approved": "„{name}“ ist jetzt veröffentlicht.",
+    "rejected": "„{name}“ wurde zurückgeschickt.",
+    "adminOnly": "Diese Seite ist nur für Admins.",
+    "toQueue": "Zur Freigabe"
   }
 }

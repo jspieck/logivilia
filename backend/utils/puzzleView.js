@@ -4,7 +4,10 @@
 
 const { getPlugin } = require('../puzzles');
 
-const COMMON_FIELDS = ['id', 'type', 'name', 'difficulty', 'date', 'author', 'UserId', 'legacyId', 'createdAt', 'updatedAt'];
+// status and reviewNote: only the author and Admins can load an unpublished
+// puzzle, and an approval clears the note.
+const COMMON_FIELDS = ['id', 'type', 'name', 'difficulty', 'date', 'author', 'UserId', 'legacyId', 'status', 'reviewNote',
+  'createdAt', 'updatedAt'];
 
 // Columns a creator may set. The type is set on create and cannot change.
 const EDITABLE_COMMON_FIELDS = ['name', 'difficulty', 'date', 'author'];
@@ -86,6 +89,22 @@ function namesOf (puzzle) {
   return names && typeof names === 'object' ? names : null;
 }
 
+const COLOR = /^#[0-9a-f]{3,8}$/i;
+
+/**
+ * The colours a player paints with (data.colors without the background, the
+ * last one), for the overview's swatches; null for puzzles without colours
+ * or when `data` was not loaded.
+ */
+function listColors (row) {
+  if (row.data === undefined || row.data === null) return null;
+  const data = puzzleData(row);
+  if (!Array.isArray(data.colors)) return null;
+  const count = toCount(data.numColor) ?? data.colors.length - 1;
+  const colors = data.colors.slice(0, count).filter(c => typeof c === 'string' && COLOR.test(c));
+  return colors.length ? colors : null;
+}
+
 /** What the overview tables show of a puzzle: no clues, no solution. */
 function listPuzzle (puzzle, extra = {}) {
   const row = plain(puzzle);
@@ -98,6 +117,7 @@ function listPuzzle (puzzle, extra = {}) {
     width: row.width ?? null,
     height: row.height ?? null,
     numColor: row.numColor ?? null,
+    colors: listColors(row),
     date: row.date,
     author: row.author,
     ...extra

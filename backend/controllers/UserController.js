@@ -1,8 +1,9 @@
 const { Op } = require('sequelize');
-const { User, Puzzle, PuzzleSolve, PuzzleRating, PuzzleProgress, Comment, CommentUpvote, sequelize } = require('../models');
+const { User, Puzzle, PuzzleSolve, PuzzleRating, PuzzleProgress, PuzzleDraft, Comment, CommentUpvote, sequelize } = require('../models');
 const { PUZZLE_TYPES } = require('../puzzles');
 const { publicUser, ownUser } = require('../utils/userView');
 const { sendError } = require('../utils/apiError');
+const { STATUS } = require('../utils/puzzleStatus');
 
 function emptyCounts () {
   return Object.fromEntries(PUZZLE_TYPES.map(type => [type, 0]));
@@ -20,9 +21,10 @@ async function userStats (userId) {
     group: ['Puzzle.type'],
     raw: true
   });
+  // Public numbers: puzzles still in review do not count yet.
   const createdRows = await Puzzle.findAll({
     attributes: ['type', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
-    where: { UserId: userId },
+    where: { UserId: userId, status: STATUS.PUBLISHED },
     group: ['type'],
     raw: true
   });
@@ -39,17 +41,18 @@ const isOwnAccount = req => String(req.params.userId) === String(req.user.id);
 async function exportUser (user) {
   const UserId = user.id;
   const puzzleRef = { model: Puzzle, attributes: ['id', 'type', 'name'] };
-  const [solves, ratings, comments, upvotes, puzzles, progress] = await Promise.all([
+  const [solves, ratings, comments, upvotes, puzzles, progress, drafts] = await Promise.all([
     PuzzleSolve.findAll({ where: { UserId }, include: [puzzleRef], order: [['id', 'ASC']] }),
     PuzzleRating.findAll({ where: { UserId }, include: [puzzleRef], order: [['id', 'ASC']] }),
     Comment.findAll({ where: { UserId }, order: [['id', 'ASC']] }),
     CommentUpvote.findAll({ where: { UserId }, order: [['id', 'ASC']] }),
     Puzzle.findAll({
       where: { UserId },
-      attributes: ['id', 'type', 'name', 'difficulty', 'date', 'author', 'createdAt'],
+      attributes: ['id', 'type', 'name', 'difficulty', 'date', 'author', 'status', 'reviewNote', 'createdAt'],
       order: [['id', 'ASC']]
     }),
-    PuzzleProgress.findAll({ where: { UserId }, include: [puzzleRef], order: [['id', 'ASC']] })
+    PuzzleProgress.findAll({ where: { UserId }, include: [puzzleRef], order: [['id', 'ASC']] }),
+    PuzzleDraft.findAll({ where: { UserId }, order: [['id', 'ASC']] })
   ]);
   const puzzleOf = row => row.Puzzle
     ? { id: row.Puzzle.id, type: row.Puzzle.type, name: row.Puzzle.name }
@@ -62,7 +65,8 @@ async function exportUser (user) {
     ratings: ratings.map(row => ({ puzzle: puzzleOf(row), rating: row.rating, ratedAt: row.updatedAt })),
     comments: comments.map(row => ({ id: row.id, puzzleId: row.PuzzleId, replyTo: row.replyId, text: row.text, date: row.date })),
     commentUpvotes: upvotes.map(row => ({ commentId: row.CommentId, date: row.createdAt })),
-    createdPuzzles: puzzles.map(row => row.toJSON())
+    createdPuzzles: puzzles.map(row => row.toJSON()),
+    drafts: drafts.map(row => ({ id: row.id, type: row.type, name: row.name, state: row.state, savedAt: row.updatedAt }))
   };
 }
 
@@ -96,7 +100,8 @@ module.exports = {
   // DELETE /users/:userId - own account only, body { password }. Deletes the
   // account with its solves, ratings, comments and upvotes. Published
   // puzzles stay (other players solved and rated them) but lose the link to
-  // the account, and the author name if it was the username.
+  // the account, and the author name if it was the username. Drafts and
+  // puzzles that were never published are deleted.
   async destroy (req, res) {
     try {
       if (!isOwnAccount(req)) {
@@ -120,6 +125,20 @@ module.exports = {
         await PuzzleRating.destroy({ where: { UserId }, transaction });
         await PuzzleSolve.destroy({ where: { UserId }, transaction });
         await PuzzleProgress.destroy({ where: { UserId }, transaction });
+        await PuzzleDraft.destroy({ where: { UserId }, transaction });
+        // Puzzles nobody else could see yet go with the account. Solves of
+        // them are never recorded, but an Admin's saved game, rating or a
+        // comment may refer to them.
+        const unpublished = (await Puzzle.findAll({
+          where: { UserId, status: { [Op.ne]: STATUS.PUBLISHED } }, attributes: ['id'], transaction, raw: true
+        })).map(p => p.id);
+        if (unpublished.length) {
+          const where = { PuzzleId: unpublished };
+          await PuzzleProgress.destroy({ where, transaction });
+          await PuzzleRating.destroy({ where, transaction });
+          await PuzzleSolve.destroy({ where, transaction });
+          await Puzzle.destroy({ where: { id: unpublished }, transaction });
+        }
         await Puzzle.update({ author: null }, { where: { UserId, author: user.username }, transaction });
         await Puzzle.update({ UserId: null }, { where: { UserId }, transaction });
         await user.destroy({ transaction });

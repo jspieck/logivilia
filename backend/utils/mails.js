@@ -40,6 +40,29 @@ const TEXTS = {
         'Sie können sich nun mit Ihrem neuen Passwort anmelden.\n\n' +
         SIGNATURE.de
     }),
+    puzzleSubmitted: ({ name, type, author, link }) => ({
+      subject: `[Logivilia] Neues Rätsel zur Freigabe: ${name}`,
+      text: `${author} hat ein Rätsel eingereicht, das auf Freigabe wartet:\n\n` +
+        `${name} (${type})\n\n` +
+        'Hier können Sie es ansehen, testen und freigeben oder zurückschicken:\n' +
+        `${link} \n\n` +
+        SIGNATURE.de
+    }),
+    puzzleApproved: ({ name, link }) => ({
+      subject: `[Logivilia] Ihr Rätsel „${name}“ ist veröffentlicht`,
+      text: `Gute Nachricht: Ihr Rätsel „${name}“ wurde geprüft und ist jetzt für alle sichtbar.\n\n` +
+        `${link} \n\n` +
+        'Vielen Dank für Ihren Beitrag!\n\n' +
+        SIGNATURE.de
+    }),
+    puzzleRejected: ({ name, note, link }) => ({
+      subject: `[Logivilia] Ihr Rätsel „${name}“ braucht noch Änderungen`,
+      text: `Ihr Rätsel „${name}“ wurde geprüft, ist aber noch nicht veröffentlicht. Hinweis vom Admin:\n\n` +
+        `${note}\n\n` +
+        'Unter „Meine Rätsel“ können Sie es überarbeiten; beim Speichern wird es erneut eingereicht.\n' +
+        `${link} \n\n` +
+        SIGNATURE.de
+    }),
     test: () => ({
       subject: '[Logivilia] Test-E-Mail',
       text: 'Diese Test-E-Mail bestätigt, dass Logivilia E-Mails versenden kann.'
@@ -69,6 +92,29 @@ const TEXTS = {
         'You can now log in with your new password.\n\n' +
         SIGNATURE.en
     }),
+    puzzleSubmitted: ({ name, type, author, link }) => ({
+      subject: `[Logivilia] New puzzle to review: ${name}`,
+      text: `${author} submitted a puzzle that is waiting for review:\n\n` +
+        `${name} (${type})\n\n` +
+        'You can open, try and approve it or send it back here:\n' +
+        `${link} \n\n` +
+        SIGNATURE.en
+    }),
+    puzzleApproved: ({ name, link }) => ({
+      subject: `[Logivilia] Your puzzle “${name}” is published`,
+      text: `Good news: your puzzle “${name}” has been reviewed and is now visible to everyone.\n\n` +
+        `${link} \n\n` +
+        'Thank you for your contribution!\n\n' +
+        SIGNATURE.en
+    }),
+    puzzleRejected: ({ name, note, link }) => ({
+      subject: `[Logivilia] Your puzzle “${name}” needs changes`,
+      text: `Your puzzle “${name}” has been reviewed but is not published yet. Note from the admin:\n\n` +
+        `${note}\n\n` +
+        'You can revise it under “My puzzles”; saving it submits it again.\n' +
+        `${link} \n\n` +
+        SIGNATURE.en
+    }),
     test: () => ({
       subject: '[Logivilia] Test e-mail',
       text: 'This test e-mail confirms that Logivilia can send e-mails.'
@@ -78,7 +124,7 @@ const TEXTS = {
 
 /**
  * { subject, text } of one e-mail.
- * @param {'forgot'|'verify'|'resetDone'|'test'} kind
+ * @param {'forgot'|'verify'|'resetDone'|'test'|'puzzleSubmitted'|'puzzleApproved'|'puzzleRejected'} kind
  * @param {string} locale
  * @param {object} [params]
  */

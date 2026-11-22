@@ -11,6 +11,7 @@ const RankingController = require('./controllers/RankingController');
 const HomeController = require('./controllers/HomeController');
 const rateLimit = require('./policies/rateLimit');
 const AdminController = require('./controllers/AdminController');
+const DraftController = require('./controllers/DraftController');
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
 const loginLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 10 });
@@ -28,6 +29,8 @@ const deleteAccountLimiter = rateLimit({ windowMs: FIFTEEN_MINUTES, max: 5 });
 const checkLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
 // The boards save at most every few seconds; this only stops runaway clients.
 const progressLimiter = rateLimit({ windowMs: 60 * 1000, max: 120 });
+// Editors autosave drafts a few seconds after each change.
+const draftLimiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 
 module.exports = () => {
   const router = express.Router();
@@ -60,6 +63,40 @@ module.exports = () => {
   router.post('/admin/test-mail',
     isAuthenticated,
     AdminController.testMail);
+  // Admin diagnostics: tail of the server log file (utils/logger.js).
+  router.get('/admin/logs',
+    isAuthenticated,
+    AdminController.logs);
+  // Review queue: new puzzles by creators wait here until an Admin
+  // publishes or rejects them (utils/puzzleStatus.js).
+  router.get('/admin/review',
+    isAuthenticated,
+    AdminController.reviewQueue);
+  router.post('/admin/puzzles/:puzzleId/review',
+    isAuthenticated,
+    AdminController.review);
+
+  // The logged-in creator's puzzles in every status, and editor drafts.
+  router.get('/my/puzzles',
+    isAuthenticated,
+    PuzzleController.mine);
+  router.get('/drafts',
+    isAuthenticated,
+    DraftController.index);
+  router.post('/drafts',
+    draftLimiter,
+    isAuthenticated,
+    DraftController.post);
+  router.get('/drafts/:draftId',
+    isAuthenticated,
+    DraftController.show);
+  router.put('/drafts/:draftId',
+    draftLimiter,
+    isAuthenticated,
+    DraftController.put);
+  router.delete('/drafts/:draftId',
+    isAuthenticated,
+    DraftController.delete);
 
   // User Pages
   router.get('/users/:userId',

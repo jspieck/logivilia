@@ -364,9 +364,19 @@ export function addClue (pad, index, relations, x, y, freeSpot) {
     const spot = anchor ? freeSpot(next, anchor.x + dx, anchor.y + dy) : freeSpot(next, x, y)
     next = newCard(next, ref, spot.x, spot.y)
   }
-  const visit = (r) => {
+  // `definite` is false inside an "either ... or" (anyOf): its "same"s are
+  // only options, so their values get cards of their own next to each other
+  // (linked by a dashed "=?") instead of being put on one card.
+  const visit = (r, definite = true) => {
     if (!r) return
-    if (Array.isArray(r.rules) && r.type !== 'not') return r.rules.forEach(visit)
+    if (Array.isArray(r.rules) && r.type !== 'not') {
+      return r.rules.forEach(x => visit(x, definite && r.type !== 'anyOf'))
+    }
+    if (r.type === 'same' && !definite && isValueRef(r.a) && isValueRef(r.b)) {
+      place(r.a)
+      place(r.b, r.a, STEP_X)
+      return
+    }
     if (r.type === 'same' && isValueRef(r.a) && isValueRef(r.b) && r.a.attr !== r.b.attr) {
       if (!cardOf(next, r.a) && !cardOf(next, r.b)) place(r.a)
       const a = cardOf(next, r.a)

@@ -3,6 +3,27 @@
     <div v-if="loadError" class="notification is-danger">{{ loadError }}</div>
 
     <template v-else-if="puzzle">
+      <!-- Author and Admins: review status and the way back into the editor. -->
+      <div v-if="canEditHere" class="owner-bar" :class="`is-${status}`">
+        <div class="owner-status">
+          <span class="status-tag" :class="`is-${status}`">{{ t(`creator.status.${status}`) }}</span>
+          <span v-if="status === 'pending'">{{ t('creator.pendingText') }}</span>
+          <span v-else-if="status === 'rejected'">
+            {{ t('creator.rejectedText') }} <em v-if="puzzle.reviewNote">„{{ puzzle.reviewNote }}“</em>
+          </span>
+        </div>
+        <div class="owner-actions">
+          <router-link v-if="status === 'pending' && store.user.role === 'Admin'" :to="`/admin/review#review-${puzzle.id}`"
+                       class="button is-small edit-link">
+            {{ t('review.toQueue') }}
+          </router-link>
+          <router-link :to="editPath(puzzle)" class="button is-small is-primary is-outlined edit-link">
+            <ion-icon name="create-outline" aria-hidden="true"></ion-icon>
+            <span>{{ t('creator.edit') }}</span>
+          </router-link>
+        </div>
+      </div>
+
       <div v-if="puzzleType.showHeader" class="puzzle-header">
         <h1 class="puzzle-title">{{ puzzleName(puzzle) }}</h1>
         <DifficultyIndicator :difficulty="puzzle.difficulty" :maxDifficulty="5" />
@@ -20,7 +41,7 @@
 
         <component :is="puzzleType.adminPanel" v-if="puzzleType.adminPanel && canSeeSource" :puzzle-id="puzzle.id" />
 
-        <div class="rating-section">
+        <div v-if="isPublished" class="rating-section">
           <h3>{{ t('overview.rating') }}</h3>
           <StarRating v-if="store.isUserLoggedIn" :model-value="rating" :max="5" @update:model-value="saveRating" />
           <p v-else class="login-message">{{ t('puzzle.loginToRate') }}</p>
@@ -49,7 +70,7 @@
         </div>
       </div>
 
-      <CommentSystem :puzzleId="puzzle.id" />
+      <CommentSystem v-if="isPublished" :puzzleId="puzzle.id" />
     </template>
   </div>
 </template>
@@ -72,7 +93,7 @@ import UserService from '@/services/UserService'
 import CommentSystem from '@/components/CommentSystem.vue'
 import DifficultyIndicator from '@/components/DifficultyIndicator.vue'
 import StarRating from '@/components/StarRating.vue'
-import { getPuzzleType } from './index'
+import { getPuzzleType, editPath } from './index'
 import { readListQuery, listContext, toApiParams } from './listQuery'
 import { rememberPuzzle, forgetPuzzle } from './recentPuzzle'
 import { trackProgress, flushAll, localBest, recordLocalBest, formatTime } from './engine/progress'
@@ -106,6 +127,12 @@ const puzzleType = computed(() => getPuzzleType(puzzle.value.type))
 // Admins and the author may see the stored data (e.g. a logic puzzle's rules).
 const canSeeSource = computed(() => !!store.user &&
   (store.user.role === 'Admin' || (puzzle.value.UserId != null && puzzle.value.UserId === store.user.id)))
+// 'published', 'pending' (waits for an Admin) or 'rejected'. Only published
+// puzzles can be rated and commented on.
+const status = computed(() => puzzle.value?.status || 'published')
+const isPublished = computed(() => status.value === 'published')
+// Published puzzles are locked for their author; only Admins edit them.
+const canEditHere = computed(() => canSeeSource.value && (!isPublished.value || store.user.role === 'Admin'))
 
 const notify = (message, variant = 'success') =>
   oruga.notification.open({ message, duration: 3000, variant, position: 'top-right' })
@@ -298,6 +325,56 @@ onUnmounted(() => flushAll())
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.owner-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+
+  &.is-pending { background: #fffbeb; border-color: #fde68a; }
+  &.is-rejected { background: #fef2f2; border-color: #fecaca; }
+
+  .owner-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    color: #374151;
+  }
+
+  .owner-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .edit-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #ede9fe;
+  color: #5b21b6;
+
+  &.is-pending { background: #fef3c7; color: #92400e; }
+  &.is-rejected { background: #fee2e2; color: #991b1b; }
+  &.is-published { background: #dcfce7; color: #166534; }
 }
 
 .puzzle-header {

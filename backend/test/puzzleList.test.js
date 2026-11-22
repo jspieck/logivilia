@@ -87,9 +87,13 @@ test('pages come with a total and never send clues or solutions', async () => {
   const second = await list({ perPage: 3, page: 2 });
   assert.deepEqual(names(second), ['apple_pie']);
   const text = JSON.stringify(body);
-  for (const field of ['solution', 'rowClues', 'columnClues', 'colors']) {
+  for (const field of ['solution', 'rowClues', 'columnClues', 'data']) {
     assert.ok(!text.includes(`"${field}"`), `list must not send ${field}`);
   }
+  // Only the paint colours, for the swatches (no background).
+  assert.deepEqual(body.items.find(i => i.name === 'Apple').colors, ['#fff']);
+  const logic = await api().get('/api/puzzles').query({ type: 'logical', page: 1 }).expect(200);
+  assert.equal(logic.body.items[0].colors, null);
   assert.equal((await list({ perPage: 1000 })).perPage, 100);
 });
 

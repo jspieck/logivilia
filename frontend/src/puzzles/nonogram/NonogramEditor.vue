@@ -186,8 +186,10 @@
         <section class="card actions">
           <button class="button" @click="togglePlay">{{ playing ? $t('editor.stopTest') : $t('editor.test') }}</button>
           <button class="button is-primary" :disabled="!canSave || saving" @click="save">
-            {{ saving ? $t('editor.saving') : editId ? $t('editor.saveChanges') : $t('editor.publish') }}
+            {{ saving ? $t('editor.saving') : editId ? $t('editor.saveChanges') : isAdmin ? $t('editor.publish') : $t('editor.submit') }}
           </button>
+          <p v-if="!editId && !isAdmin" class="muted">{{ $t('editor.reviewNotice') }}</p>
+          <p v-if="draftStatus" class="muted draft-status">{{ $t(`editor.draft.${draftStatus}`) }}</p>
           <p v-if="!store.isUserLoggedIn" class="muted">{{ $t('editor.loginToPublish') }}</p>
           <p v-else-if="store.user && store.user.emailVerified === false" class="muted">{{ $t('editor.verifyToPublish') }}</p>
           <p v-else-if="saveBlocker" class="muted">{{ saveBlocker }}</p>
@@ -209,7 +211,7 @@
 // Nonogram editor: draw (or import) a picture, see its clues live, and let
 // the solver (in a Web Worker) check that it has exactly one solution. For an
 // ambiguous drawing it marks the cells that could differ and suggests
-// one-cell fixes. New puzzles are drafted in localStorage until published.
+// one-cell fixes. New puzzles are drafted via engine/useDraft.js.
 
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -225,6 +227,7 @@ import NonogramBoard from './NonogramBoard.vue'
 import { useGridPointer } from '../engine/useGridPointer'
 import { useHistory } from '../engine/useHistory'
 import { useZoom } from '../engine/useZoom'
+import { useDraft } from '../engine/useDraft'
 import { textColorFor } from '../engine/colors'
 
 const TOOLS = [
@@ -241,6 +244,8 @@ const router = useRouter()
 const store = useMainStore()
 const { t } = useI18n()
 const editId = computed(() => (route.params.id ? Number(route.params.id) : null))
+// Admins publish directly; everyone else submits for review.
+const isAdmin = computed(() => store.user?.role === 'Admin')
 
 const zoom = useZoom({ base: 25, min: 10, step: 3 })
 const cell = zoom.cellSize
@@ -552,23 +557,17 @@ function togglePlay () {
 // Draft and saving
 // ---------------------------------------------------------------------------
 
-function saveDraft () {
-  if (editId.value) return
-  try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({
-      name: name.value, fills: fills.value, background: background.value, grid: grid.value
-    }))
-  } catch { /* storage unavailable */ }
-}
+// On the server for logged-in creators, else in localStorage (engine/useDraft.js).
+const draft = useDraft({
+  type: 'nonogram',
+  storageKey: DRAFT_KEY,
+  editId,
+  content: () => ({ name: name.value, fills: fills.value, background: background.value, grid: grid.value }),
+  isValid: d => !!d && Array.isArray(d.grid) && d.grid.length > 0 && Array.isArray(d.fills)
+})
+const draftStatus = draft.status
+const saveDraft = draft.save
 watch(name, saveDraft)
-
-function loadDraft () {
-  try {
-    const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
-    if (draft && Array.isArray(draft.grid) && draft.grid.length && Array.isArray(draft.fills)) return draft
-  } catch { /* ignore */ }
-  return null
-}
 
 const saving = ref(false)
 const saveError = ref('')
@@ -595,10 +594,10 @@ async function save () {
   try {
     const { data } = editId.value
       ? await PuzzleService.put({ ...puzzle, id: editId.value })
-      : await PuzzleService.post({ ...puzzle, date: new Date().toISOString().slice(0, 10), author: store.user?.username })
-    if (!editId.value) {
-      try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
-    }
+      : await PuzzleService.post({
+        ...puzzle, ...draft.publishFields(), date: new Date().toISOString().slice(0, 10), author: store.user?.username
+      })
+    if (!editId.value) await draft.published()
     router.push(`/puzzle/${data.id}`)
   } catch (err) {
     saveError.value = apiErrorMessage(err)
@@ -631,6 +630,8 @@ async function load () {
     try {
       const { data } = await PuzzleService.source(editId.value)
       if (data.type !== 'nonogram') throw new Error('not a nonogram')
+      // Published puzzles are locked for their author (only Admins edit them).
+      if (data.status === 'published' && !isAdmin.value) { loadError.value = t('editor.locked'); return }
       name.value = data.name || ''
       difficulty.value = Number(data.difficulty) || 2
       difficultyTouched = true
@@ -642,13 +643,14 @@ async function load () {
       return
     }
   } else {
-    const draft = loadDraft()
-    if (draft) {
-      name.value = draft.name || ''
-      fills.value = draft.fills.length ? draft.fills : ['#000000']
-      background.value = draft.background || '#ffffff'
-      grid.value = draft.grid
+    const saved = await draft.load()
+    if (saved) {
+      name.value = saved.name || ''
+      fills.value = saved.fills.length ? saved.fills : ['#000000']
+      background.value = saved.background || '#ffffff'
+      grid.value = saved.grid
     }
+    draft.ready()
   }
   syncSizeInput()
   history.reset(grid.value)

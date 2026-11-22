@@ -9,10 +9,13 @@
 // with `clue` the index into `clues`. When every clue has at least one rule,
 // the solver checks that they lead to exactly one solution. Older puzzles
 // have only the free-text clues.
+// hiddenAttributes (optional): categories only the rules use (such as seats
+// at a table), not part of the player's table or the solution; rules refer
+// to them by index after the visible categories. Players do not get them.
 // translations (optional): the texts in other languages, see
 // logicalTranslation.js.
 
-import { solveLogical, ruleProblem, brokenRules, orderMode, orderKeys, ORDER_MODES } from './logicalSolver.js';
+import { solveLogical, ruleProblem, brokenRules, orderMode, orderKeys, allAttributes, ORDER_MODES, MAX_HIDDEN } from './logicalSolver.js';
 import { translationsProblem } from './logicalTranslation.js';
 
 // Time the uniqueness check may take when a puzzle is saved.
@@ -37,10 +40,11 @@ const SIMPLE_TYPES = ['same', 'notSame', 'eitherOr', 'before', 'after', 'directl
 const MAX_ANY_OF = 4;
 const isPlainRef = ref => !!ref && typeof ref === 'object' && Number.isInteger(ref.attr);
 
-function simpleRelation (rule) {
+function simpleRelation (rule, visible) {
   if (!rule || !SIMPLE_TYPES.includes(rule.type)) return null;
   const refs = rule.type === 'eitherOr' || rule.type === 'sum' ? ['a', 'b', 'c'] : ['a', 'b'];
-  if (!refs.every(key => isPlainRef(rule[key]))) return null;
+  if (!refs.every(key => isPlainRef(rule[key]) && rule[key].attr < visible)) return null;
+  if (Number.isInteger(rule.by) && rule.by >= visible) return null; // a hidden category
   const out = { type: rule.type };
   for (const key of refs) out[key] = { attr: rule[key].attr, value: String(rule[key].value) };
   for (const key of ['by', 'offset', 'abs', 'factor']) {
@@ -56,11 +60,12 @@ function simpleRelation (rule) {
  */
 export function publicRelations (data) {
   const relations = [];
+  const visible = Array.isArray(data.attributes) ? data.attributes.length : 0;
   for (const rule of rulesOf(data)) {
     if (!rule || !Number.isInteger(rule.clue)) continue;
-    let relation = simpleRelation(rule);
+    let relation = simpleRelation(rule, visible);
     if (!relation && rule.type === 'anyOf' && Array.isArray(rule.rules) && rule.rules.length <= MAX_ANY_OF) {
-      const options = rule.rules.map(simpleRelation);
+      const options = rule.rules.map(option => simpleRelation(option, visible));
       if (options.every(Boolean)) relation = { type: 'anyOf', rules: options };
     }
     if (relation) relations.push({ clue: rule.clue, ...relation });
@@ -73,10 +78,10 @@ const LOCAL_IMAGE = /^\/images\/logicals\/[A-Za-z0-9._\/-]+\.(?:jpe?g|png|webp|g
 /** @type {import('../index').PuzzleTypePlugin<'logical'>} */
 const logical = {
   type: 'logical',
-  dataFields: ['description', 'question', 'clues', 'attributes', 'solution', 'image', 'rules', 'translations'],
+  dataFields: ['description', 'question', 'clues', 'attributes', 'solution', 'image', 'rules', 'translations', 'hiddenAttributes'],
 
   checkData (data) {
-    const { attributes, solution, clues, rules, image, translations } = data;
+    const { attributes, solution, clues, rules, image, translations, hiddenAttributes } = data;
     const translationProblem = translationsProblem(translations);
     if (translationProblem) {
       return translationProblem;
@@ -95,7 +100,14 @@ const logical = {
       a && typeof a.name === 'string' && Array.isArray(a.values) && a.values.length === valueCount)) {
       return 'every attribute needs a name and the same number of values';
     }
-    for (const a of attributes) {
+    if (hiddenAttributes != null) {
+      if (!Array.isArray(hiddenAttributes) || hiddenAttributes.length > MAX_HIDDEN || !hiddenAttributes.every(a =>
+        a && typeof a.name === 'string' && Array.isArray(a.values) && a.values.length === valueCount &&
+        a.values.every(v => typeof v === 'string'))) {
+        return `hiddenAttributes must list at most ${MAX_HIDDEN} categories with a name and ${valueCount} values each`;
+      }
+    }
+    for (const a of allAttributes(data)) {
       if (a.ordered != null && a.ordered !== false && a.ordered !== true && !ORDER_MODES.includes(a.ordered)) {
         return `attribute ordered must be one of ${ORDER_MODES.join(', ')}`;
       }
@@ -119,7 +131,7 @@ const logical = {
         if (typeof clue !== 'number' || !Number.isInteger(clue) || clue < 0 || clue >= clues.length) {
           return 'every rule needs the index of its clue';
         }
-        const problem = ruleProblem(rule, attributes);
+        const problem = ruleProblem(rule, allAttributes(data));
         if (problem) {
           return problem;
         }
@@ -129,7 +141,7 @@ const logical = {
   },
 
   computeClues (data) {
-    const { solution, rules, ...rest } = data;
+    const { solution, rules, hiddenAttributes, ...rest } = data;
     const relations = publicRelations(data);
     return relations.length ? { ...rest, relations } : rest;
   },
@@ -157,7 +169,8 @@ const logical = {
     if (!rules.length) {
       return null;
     }
-    const broken = brokenRules({ attributes: data.attributes, solution: data.solution, rules });
+    const hiddenAttributes = data.hiddenAttributes;
+    const broken = brokenRules({ attributes: data.attributes, hiddenAttributes, solution: data.solution, rules });
     if (!broken) {
       return { code: 'PUZZLE_INVALID' };
     }
@@ -167,7 +180,7 @@ const logical = {
     if (!fullyFormalized(data)) {
       return null;
     }
-    const result = solveLogical({ attributes: data.attributes, rules }, { limit: 2, maxMillis: SOLVABLE_CHECK_MILLIS });
+    const result = solveLogical({ attributes: data.attributes, hiddenAttributes, rules }, { limit: 2, maxMillis: SOLVABLE_CHECK_MILLIS });
     if (!result.complete) {
       return { code: 'PUZZLE_TOO_COMPLEX' };
     }

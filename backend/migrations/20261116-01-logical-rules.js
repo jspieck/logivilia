@@ -37,7 +37,7 @@ async function withRules (name, data) {
 // Only rules this migration added (the same as the entry gives) are removed.
 function withoutRules (name, data) {
   if (!data || !Array.isArray(data.rules) || !data.rules.length) return null
-  const { rules, ...rest } = data
+  const { rules, hiddenAttributes, ...rest } = data
   const plain = { ...rest, attributes: rest.attributes.map(({ ordered, ...attribute }) => attribute) }
   let expected
   try {

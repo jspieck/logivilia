@@ -28,7 +28,16 @@ module.exports = (sequelize, DataTypes) => {
     numColor: DataTypes.INTEGER,
     // { [locale]: name } copied from data.translations, so the overview can
     // show translated names without loading `data`. Null when untranslated.
-    names: DataTypes.JSON
+    names: DataTypes.JSON,
+    // 'published' (public), 'pending' (waits for an Admin's review) or
+    // 'rejected' (sent back to the author with reviewNote). Only the author
+    // and Admins see puzzles that are not published (utils/puzzleStatus.js).
+    status: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: 'published'
+    },
+    reviewNote: DataTypes.TEXT
   }, {
     hooks: {
       // Not run by bulkCreate (no individualHooks), so the copy-legacy
@@ -42,6 +51,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     indexes: [
       { fields: ['type'] },
+      { fields: ['status', 'type'] },
       { unique: true, fields: ['type', 'legacyId'] }
     ]
   });

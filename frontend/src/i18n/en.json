@@ -48,7 +48,15 @@
     "AUTH_VERIFY_INVALID": "The confirmation link is invalid or has already been used.",
     "EMAIL_NOT_VERIFIED": "Please confirm your e-mail address first (link in the registration e-mail).",
     "USER_EXPORT_FAILED": "Your data could not be exported.",
-    "USER_DELETE_FAILED": "The account could not be deleted."
+    "USER_DELETE_FAILED": "The account could not be deleted.",
+    "REVIEW_INVALID": "Please add a note for the author when sending a puzzle back.",
+    "REVIEW_NOT_PENDING": "This puzzle is not (or no longer) waiting for review.",
+    "DRAFT_NOT_FOUND": "The draft was not found.",
+    "DRAFT_INVALID": "The draft could not be saved (invalid or too large).",
+    "DRAFT_LIMIT": "You already have {max} drafts. Delete one to start a new one.",
+    "DRAFT_LIST_FAILED": "The drafts could not be loaded.",
+    "DRAFT_SAVE_FAILED": "The draft could not be saved.",
+    "PUZZLE_LOCKED": "Only admins can change published puzzles."
   },
   "clientErrors": {
     "NETWORK": "The server cannot be reached. Please check your internet connection.",
@@ -75,7 +83,9 @@
     "loggedOut": "Logged out",
     "menu": "Menu",
     "mainNav": "Main navigation",
-    "language": "Language"
+    "language": "Language",
+    "myPuzzles": "My puzzles",
+    "review": "Review"
   },
   "banner": {
     "verify": "Please confirm your e-mail address using the link we sent you. Until then you cannot comment or publish puzzles.",
@@ -109,7 +119,9 @@
     "author": "Author",
     "unsolvedOnly": "Unsolved only",
     "resetFilters": "Reset filters",
-    "failed": "The puzzles could not be loaded."
+    "failed": "The puzzles could not be loaded.",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details"
   },
   "table": {
     "perPage": "Per page",
@@ -185,7 +197,8 @@
     "showPassword": "Show password",
     "toHome": "Back to the start page",
     "save": "Save",
-    "restored": "Your progress has been restored."
+    "restored": "Your progress has been restored.",
+    "loading": "Loading …"
   },
   "login": {
     "button": "Login",
@@ -495,7 +508,16 @@
     "importFailed": "The image could not be read.",
     "needName": "Give the puzzle a name.",
     "needUnique": "You can publish as soon as the puzzle is uniquely solvable.",
-    "cannotEdit": "This puzzle cannot be edited here."
+    "cannotEdit": "This puzzle cannot be edited here.",
+    "submit": "Submit for review",
+    "reviewNotice": "New puzzles become visible once an admin has approved them.",
+    "draft": {
+      "saving": "Saving draft …",
+      "saved": "Draft saved – you will find it under “My puzzles”.",
+      "local": "Draft saved in this browser. Log in to have it on all your devices.",
+      "error": "The draft could not be saved on the server; it is kept in this browser for now."
+    },
+    "locked": "This puzzle is published and can no longer be edited. Please contact an admin for changes."
   },
   "linelogEditor": {
     "titleCreate": "Create a linelog",
@@ -630,6 +652,12 @@
     "differsByAbs": "{a} differs from {b} in {cat} by {n}",
     "times": "{a} has {n} times the {cat} of {b}",
     "sum": "{a} and {b} together have the {cat} of {c}",
+    "total": "{a}'s {cats} add up to {target}",
+    "totalEqual": "the same as {other}",
+    "totalMore": "{n} more than {other}",
+    "totalLess": "{n} less than {other}",
+    "totalMin": "the smallest total",
+    "totalMax": "the largest total",
     "anyOf": "at least one: {list}",
     "allOf": "{list}",
     "exists": "there is someone {x} with: {list}",
@@ -656,5 +684,56 @@
     "ordered": "Ordered categories: {list}",
     "partial": "{done} of {total} clues have a rule, so uniqueness is not checked.",
     "failed": "Could not load the rules."
+  },
+  "creator": {
+    "title": "My puzzles",
+    "drafts": "Drafts",
+    "puzzles": "Submitted and published puzzles",
+    "noDrafts": "No drafts. A draft is created as soon as you draw or write something in an editor.",
+    "noPuzzles": "You have not submitted a puzzle yet.",
+    "untitled": "Untitled",
+    "savedAt": "saved on {date}",
+    "changedAt": "changed on {date}",
+    "continue": "Continue editing",
+    "deleteDraft": "Delete",
+    "confirmDelete": "Really delete the draft “{name}”?",
+    "edit": "Edit",
+    "reviewNote": "Note from the admin:",
+    "loginNeeded": "Log in to see your puzzles and drafts.",
+    "pendingText": "Only you and the admins can see this puzzle until it is approved.",
+    "rejectedText": "Please revise the puzzle; saving it submits it again.",
+    "new": {
+      "nonogram": "New nonogram",
+      "logical": "New logic puzzle",
+      "linelog": "New linelog"
+    },
+    "status": {
+      "pending": "Awaiting review",
+      "published": "Published",
+      "rejected": "Sent back"
+    },
+    "type": {
+      "nonogram": "Nonogram",
+      "logical": "Logic puzzle",
+      "linelog": "Linelog"
+    },
+    "lockedHint": "Published – changes only through an admin."
+  },
+  "review": {
+    "title": "Review",
+    "intro": "New puzzles by users. Open a puzzle to try it, then approve it or send it back with a note.",
+    "empty": "No puzzles are waiting for review.",
+    "by": "by {name}",
+    "unknownCreator": "deleted account",
+    "submittedAt": "submitted on {date}",
+    "open": "Open and try",
+    "approve": "Approve",
+    "reject": "Send back",
+    "notePlaceholder": "What should the author change? (required to send it back)",
+    "previousNote": "Earlier note:",
+    "approved": "“{name}” is now published.",
+    "rejected": "“{name}” was sent back.",
+    "adminOnly": "This page is for admins only.",
+    "toQueue": "To the review queue"
   }
 }

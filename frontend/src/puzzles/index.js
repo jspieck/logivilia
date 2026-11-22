@@ -56,3 +56,8 @@ export function getPuzzleType (type) {
 }
 
 export const puzzlePath = (puzzle) => `/puzzle/${puzzle.id ?? puzzle}`
+
+// The editor of a type: new puzzle, an own puzzle (by ID) or a server draft.
+export const createPath = (type) => `/${type}-create`
+export const editPath = (puzzle) => `/${puzzle.type}-create/${puzzle.id}`
+export const draftPath = (draft) => ({ path: createPath(draft.type), query: { draft: String(draft.id) } })

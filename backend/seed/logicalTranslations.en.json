@@ -237,8 +237,8 @@
   "clues": [
    "Isabell is four years younger than the mushroom hunter with the surname Maler.",
    "The friend Bern can show two mushrooms more than Daniel, who in turn has found two mushrooms more than the eldest of the group.",
-   "Marie is not 38 years old.",
-   "The proud finder with the name Marlen is four years younger than Leander.",
+   "Isabell found the most mushrooms.",
+   "The proud finder with the name Marlen is four years older than Leander.",
    "The person who found the most mushrooms is not 34 years old.",
    "Leander found two mushrooms more than the mushroom hunter Ulbricht."
   ],
@@ -392,7 +392,7 @@
   "question": "Which friend (first name) is how old, and how many rabbits has he given away?",
   "clues": [
    "Gertje is five years older than Antje. One digit of Gertje's age matches a digit of Roman's age.",
-   "Fridolin is younger than Hanna, whose age is not divisible by the number of rabbits that Fridolin has given away this year.",
+   "Fridolin is younger than Hanna, whose age is not evenly divisible by the number of rabbits that Fridolin has given away this year.",
    "Roman has given away two rabbits fewer this year than Hanna.",
    "Fridolin has given away twice as many rabbits as Antje.",
    "Gertje has not given away exactly one rabbit."
@@ -1145,12 +1145,12 @@
     ]
    },
    {
-    "name": "Duration",
+    "name": "Years",
     "values": [
+     "5",
      "10",
      "15",
-     "20",
-     "5"
+     "20"
     ]
    }
   ]
@@ -1165,7 +1165,7 @@
    "Bertha has won two fewer times than the 30-year-old person.",
    "Uta is 20 years younger than the person named Steif.",
    "Ivonne has won two fewer times than the only man in the top 4 with the first name Peter.",
-   "The 50-year-old person does not take 5th place."
+   "The 50-year-old person does not have 5 wins."
   ],
   "attributes": [
    {
@@ -1312,10 +1312,11 @@
   "question": "Who (first name) comes from which Italian city, has been running their restaurant for how long, and what is the famous pizza and pasta of each restaurant?",
   "clues": [
    "Angelo is not known for his Margherita.",
-   "Enrico says he prepares an extraordinary Funghi pizza, and he opened his restaurant 2 years earlier than the chef from Rome.",
+   "Enno says he prepares an extraordinary Funghi pizza, and he opened his restaurant 2 years earlier than the chef from Rome.",
    "The Four-Cheese pizza comes from the establishment that was founded four years before the restaurant of the Italian chef from Florence.",
-   "The enthusiastic cook from Naples celebrated the opening of his hotel 2 years after the tagliatelle chef and 2 years before the spaghetti chef, who does not come from Rome.",
-   "The fusilli chef opened his restaurant four years before or after the head chef Marcella."
+   "The enthusiastic cook from Naples celebrated the opening of his restaurant 2 years after the tagliatelle chef and 2 years before the spaghetti chef, who does not come from Rome.",
+   "The fusilli chef opened his restaurant four years before or after the head chef Marcella.",
+   "Angelo comes from Naples."
   ],
   "attributes": [
    {
@@ -1357,9 +1358,9 @@
    {
     "name": "Opening",
     "values": [
-     " 2004",
      "2000",
      "2002",
+     "2004",
      "2006"
     ]
    }
@@ -1642,7 +1643,8 @@
    "The steel supplier delivered 40 wagons fewer than the brick supplier and did not arrive on Tuesday.",
    "Alan arrived 2 days before the gravel supplier and had 20 wagons fewer than Lucy.",
    "Mizuki had twice as many wagons as the wood supplier. She delivered one day after Bobby, but one day before the glass supplier.",
-   "Sam had 60 wagons fewer than the glass supplier. He did not deliver on Friday, and he had not loaded any gravel."
+   "Sam had 60 wagons fewer than the glass supplier. He did not deliver on Friday, and he had not loaded any gravel.",
+   "Bobby delivered the fewest wagons."
   ],
   "attributes": [
    {
@@ -2788,7 +2790,8 @@
    "Andrea's hut has half as many rooms as the hut of a person who does not have the Schnitzel.",
    "The Kemptener-Hütte does not offer sausage salad. In addition, Erwin, who drinks blackcurrant spritzer, is not a guest there.",
    "The accommodation that serves Helles has fewer rooms than the one that serves wheat beer.",
-   "The accommodation with the vegetable curry has fewer rooms than the one known for its tofu sausages."
+   "The accommodation with the vegetable curry has fewer rooms than the one known for its tofu sausages.",
+   "Ines drinks ginger lemonade."
   ],
   "attributes": [
    {

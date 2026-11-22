@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 
 const createApp = require('../createApp');
-const { sequelize, Puzzle, PuzzleSolve, PuzzleRating, Comment, CommentUpvote, User } = require('../models');
+const { sequelize, Puzzle, PuzzleSolve, PuzzleRating, PuzzleDraft, Comment, CommentUpvote, User } = require('../models');
 const { resetDatabase } = require('../migrator');
 const { testOutbox } = require('../controllers/AuthenticationController');
 
@@ -121,6 +121,12 @@ describe('data export and account deletion', () => {
     const created = await api().post('/api/puzzles').set(as(fred)).send({ ...newNonogram(), name: 'Fred puzzle', author: 'fred' });
     assert.equal(created.status, 200, JSON.stringify(created.body));
     fred.puzzleId = created.body.id;
+    // An Admin approved that one; a second one still waits for review.
+    await Puzzle.update({ status: 'published' }, { where: { id: fred.puzzleId } });
+    const pending = await api().post('/api/puzzles').set(as(fred)).send({ ...newNonogram(), name: 'Fred pending' });
+    fred.pendingId = pending.body.id;
+    const draft = await api().post('/api/drafts').set(as(fred)).send({ type: 'nonogram', name: 'Half done', state: { grid: [[1]] } });
+    assert.equal(draft.status, 200, JSON.stringify(draft.body));
   });
 
   test('export is only for the own account', async () => {
@@ -141,7 +147,8 @@ describe('data export and account deletion', () => {
     assert.deepEqual(data.ratings.map(r => r.rating), [4]);
     assert.deepEqual(data.comments.map(c => c.text), ['mine']);
     assert.equal(data.commentUpvotes.length, 1);
-    assert.deepEqual(data.createdPuzzles.map(p => p.name), ['Fred puzzle']);
+    assert.deepEqual(data.createdPuzzles.map(p => [p.name, p.status]), [['Fred puzzle', 'published'], ['Fred pending', 'pending']]);
+    assert.deepEqual(data.drafts.map(d => [d.type, d.name, d.state]), [['nonogram', 'Half done', { grid: [[1]] }]]);
   });
 
   test('deleting needs the own account and the right password', async () => {
@@ -170,6 +177,8 @@ describe('data export and account deletion', () => {
     assert.ok(kept, 'published puzzle was deleted');
     assert.equal(kept.UserId, null);
     assert.equal(kept.author, null);
+    assert.equal(await Puzzle.findByPk(fred.pendingId), null, 'unpublished puzzle should go with the account');
+    assert.equal(await PuzzleDraft.count({ where: { UserId } }), 0);
 
     const login = await api().post('/api/login').send({ email: 'fred@example.com', password: PASSWORD });
     assert.equal(login.status, 403);

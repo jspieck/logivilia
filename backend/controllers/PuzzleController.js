@@ -3,13 +3,13 @@
 // plugin in shared/puzzles.
 
 const { Op } = require('sequelize');
-const { Puzzle, PuzzleRating, PuzzleSolve, PuzzleProgress, sequelize } = require('../models');
+const { Puzzle, PuzzleRating, PuzzleSolve, PuzzleProgress, PuzzleDraft, sequelize } = require('../models');
 const { getPlugin, isPuzzleType } = require('../puzzles');
 const { publicPuzzle, listPuzzle, puzzleData, pickFields, EDITABLE_COMMON_FIELDS } = require('../utils/puzzleView');
 const { sendError } = require('../utils/apiError');
 const solvableCheck = require('../utils/solvableCheck');
-
-const ADMIN_ROLE = 'Admin';
+const { STATUS, canView, canEdit, isLocked, initialStatus, statusAfterEdit } = require('../utils/puzzleStatus');
+const { notifyAdminsOfSubmission } = require('../utils/reviewMails');
 // Data fields whose text data.translations repeats in other languages.
 const TRANSLATED_FIELDS = ['description', 'question', 'clues', 'attributes'];
 // Largest saved game accepted (JSON); a 100x100 nonogram needs about 40 KB.
@@ -27,10 +27,18 @@ function parseId (value) {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+/**
+ * The puzzle of the URL if this request may see it (published, or the
+ * caller is its author or an Admin); otherwise sends 404 and returns null.
+ * Unpublished puzzles answer 404 rather than 403, so their IDs reveal nothing.
+ */
 async function findPuzzle (req, res) {
   const id = parseId(req.params.puzzleId);
   const puzzle = id && await Puzzle.findByPk(id);
-  if (!puzzle) {
+  const user = puzzle && puzzle.status !== STATUS.PUBLISHED
+    ? req.user || await optionalUser(req)
+    : null;
+  if (!puzzle || !canView(puzzle, user)) {
     sendError(res, 404, 'PUZZLE_NOT_FOUND');
     return null;
   }
@@ -109,7 +117,8 @@ function contains (column, text) {
  * never breaks the page.
  */
 function listWhere (query, userId) {
-  const and = [];
+  // Only published puzzles are listed (see utils/puzzleStatus.js).
+  const and = [{ status: STATUS.PUBLISHED }];
   if (query.type) and.push({ type: query.type });
 
   const text = queryText(query.q);
@@ -163,15 +172,21 @@ function listOrder (query, userId) {
   return first && field !== 'id' ? [first, ['id', dir]] : [['id', dir]];
 }
 
-/** The logged-in user's ID if a valid token was sent, else null. */
-function optionalUserId (req) {
+/** The logged-in user if a valid token was sent, else null. */
+function optionalUser (req) {
   if (!req.headers.authorization) return Promise.resolve(null);
   return new Promise(resolve => {
     const passport = require('../passport');
     passport.authenticate('jwt', { session: false }, (err, user) => {
-      resolve(!err && user ? user.id : null);
+      resolve(!err && user ? user : null);
     })(req, {}, () => resolve(null));
   });
+}
+
+/** The logged-in user's ID if a valid token was sent, else null. */
+async function optionalUserId (req) {
+  const user = await optionalUser(req);
+  return user ? user.id : null;
 }
 
 async function listPage (req, res) {
@@ -182,7 +197,8 @@ async function listPage (req, res) {
   const [total, rows] = await Promise.all([
     Puzzle.count({ where }),
     Puzzle.findAll({
-      attributes: ['id', 'type', 'name', 'names', 'difficulty', 'width', 'height', 'numColor', 'date', 'author'],
+      // data only for the colour swatches (listPuzzle sends nothing else of it).
+      attributes: ['id', 'type', 'name', 'names', 'difficulty', 'width', 'height', 'numColor', 'date', 'author', 'data'],
       where,
       order: listOrder(req.query, userId),
       limit: perPage,
@@ -218,8 +234,9 @@ module.exports = {
   // minDifficulty, maxDifficulty, minSize, maxSize (larger grid side),
   // minColors, maxColors, minRating (1-5), status (solved|unsolved; needs a
   // login, ignored for guests).
-  // -> { items: [{ id, name, difficulty, width, height, numColor, date,
-  //      author, avgRating, ratingCount, solved }], total, page, perPage }
+  // -> { items: [{ id, name, difficulty, width, height, numColor, colors,
+  //      date, author, avgRating, ratingCount, solved }], total, page, perPage }
+  //    (colors: the paint colours without the background, or null)
   async index (req, res) {
     try {
       const { type } = req.query;
@@ -230,7 +247,7 @@ module.exports = {
         return await listPage(req, res);
       }
       const puzzles = await Puzzle.findAll({
-        where: type ? { type } : {},
+        where: type ? { type, status: STATUS.PUBLISHED } : { status: STATUS.PUBLISHED },
         order: [['id', 'ASC']]
       });
       const ratings = await ratingSummary(puzzles.map(p => p.id));
@@ -262,9 +279,10 @@ module.exports = {
       // filters leave it out (e.g. "unsolved only" right after solving it),
       // so we know where to continue from.
       const filtered = listWhere(query, userId);
-      const where = filtered[Op.and].length > 1
-        ? { [Op.or]: [filtered, { id: puzzle.id }] }
-        : { type: puzzle.type };
+      const unfiltered = listWhere({ type: puzzle.type }, null);
+      const where = {
+        [Op.or]: [filtered[Op.and].length > unfiltered[Op.and].length ? filtered : unfiltered, { id: puzzle.id }]
+      };
       const rows = await Puzzle.findAll({
         attributes: ['id'],
         where,
@@ -311,13 +329,12 @@ module.exports = {
       if (!puzzle) {
         return;
       }
-      const isOwner = puzzle.UserId != null && puzzle.UserId === req.user.id;
-      if (!isOwner && req.user.role !== ADMIN_ROLE) {
+      if (!canEdit(puzzle, req.user)) {
         return sendError(res, 403, 'FORBIDDEN');
       }
       const row = puzzle.get({ plain: true });
       const result = { ...puzzleData(puzzle) };
-      for (const field of ['id', 'type', 'name', 'difficulty', 'date', 'author', 'UserId']) {
+      for (const field of ['id', 'type', 'name', 'difficulty', 'date', 'author', 'UserId', 'status', 'reviewNote']) {
         result[field] = row[field] === undefined ? null : row[field];
       }
       res.send(result);
@@ -366,8 +383,17 @@ module.exports = {
         ...pickFields(req.body, EDITABLE_COMMON_FIELDS),
         type,
         data,
+        status: initialStatus(req.user),
         UserId: req.user.id
       });
+      // The editor's server draft (if it came from one) is done now.
+      const draftId = parseId(req.body.draftId);
+      if (draftId) {
+        await PuzzleDraft.destroy({ where: { id: draftId, UserId: req.user.id } });
+      }
+      if (puzzle.status === STATUS.PENDING) {
+        await notifyAdminsOfSubmission(puzzle, req.user);
+      }
       res.send(publicPuzzle(puzzle));
     } catch (err) {
       if (err instanceof solvableCheck.QueueFullError) {
@@ -385,9 +411,11 @@ module.exports = {
       if (!puzzle) {
         return;
       }
-      const isOwner = puzzle.UserId != null && puzzle.UserId === req.user.id;
-      if (!isOwner && req.user.role !== ADMIN_ROLE) {
+      if (!canEdit(puzzle, req.user)) {
         return sendError(res, 403, 'FORBIDDEN');
+      }
+      if (isLocked(puzzle, req.user)) {
+        return sendError(res, 403, 'PUZZLE_LOCKED');
       }
       const plugin = getPlugin(puzzle.type);
       const changes = pickFields(req.body, plugin.dataFields);
@@ -409,7 +437,15 @@ module.exports = {
       if (unsolvable) {
         return sendError(res, 400, unsolvable.code, unsolvable.params);
       }
-      await puzzle.update({ ...pickFields(req.body, EDITABLE_COMMON_FIELDS), data });
+      const resubmitted = statusAfterEdit(puzzle, req.user) !== puzzle.status;
+      await puzzle.update({
+        ...pickFields(req.body, EDITABLE_COMMON_FIELDS),
+        data,
+        status: statusAfterEdit(puzzle, req.user)
+      });
+      if (resubmitted) {
+        await notifyAdminsOfSubmission(puzzle, req.user);
+      }
       res.send(publicPuzzle(puzzle));
     } catch (err) {
       if (err instanceof solvableCheck.QueueFullError) {
@@ -448,6 +484,11 @@ module.exports = {
         return sendError(res, 400, 'SOLUTION_INCORRECT');
       }
       const seconds = solveSeconds(req.body.seconds);
+      // The author or an Admin trying out an unpublished puzzle: correct,
+      // but nothing is recorded (no ranking points before the review).
+      if (puzzle.status !== STATUS.PUBLISHED) {
+        return res.send({ solved: true, firstSolve: false, bestSeconds: null, newBest: false, recorded: false });
+      }
       const where = { UserId: req.user.id, PuzzleId: puzzle.id };
       const [solve, created] = await PuzzleSolve.findOrCreate({ where, defaults: { bestSeconds: seconds } });
       const previousBest = created ? null : solve.bestSeconds;
@@ -534,6 +575,29 @@ module.exports = {
     }
   },
 
+  // GET /my/puzzles - the logged-in user's own puzzles in every status,
+  // most recently changed first, for "Meine Rätsel":
+  // [{ id, type, name, names, difficulty, ..., status, reviewNote, updatedAt }]
+  async mine (req, res) {
+    try {
+      const rows = await Puzzle.findAll({
+        attributes: ['id', 'type', 'name', 'names', 'difficulty', 'width', 'height', 'numColor', 'date', 'author',
+          'status', 'reviewNote', 'createdAt', 'updatedAt'],
+        where: { UserId: req.user.id },
+        order: [['updatedAt', 'DESC'], ['id', 'DESC']]
+      });
+      res.send(rows.map(p => listPuzzle(p, {
+        status: p.status,
+        reviewNote: p.reviewNote ?? null,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt
+      })));
+    } catch (err) {
+      console.error(err);
+      sendError(res, 500, 'PUZZLE_LIST_FAILED');
+    }
+  },
+
   // GET /puzzles/:puzzleId/rating - the logged-in user's rating or null.
   async myRating (req, res) {
     try {
@@ -557,6 +621,9 @@ module.exports = {
       const puzzle = await findPuzzle(req, res);
       if (!puzzle) {
         return;
+      }
+      if (puzzle.status !== STATUS.PUBLISHED) {
+        return sendError(res, 404, 'PUZZLE_NOT_FOUND');
       }
       const [entry, created] = await PuzzleRating.findOrCreate({
         where: { PuzzleId: puzzle.id, UserId: req.user.id },

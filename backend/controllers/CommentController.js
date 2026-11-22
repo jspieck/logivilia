@@ -1,5 +1,6 @@
 const {Comment, CommentUpvote, User, Puzzle} = require('../models');
 const { sendError } = require('../utils/apiError');
+const { STATUS } = require('../utils/puzzleStatus');
 
 module.exports = {
   async index (req, res) {
@@ -36,8 +37,9 @@ module.exports = {
   async post (req, res) {
     try {
       const UserId = req.user.id;
-      const puzzle = await Puzzle.findByPk(parseInt(req.params.puzzleId, 10), { attributes: ['id'] });
-      if (!puzzle) {
+      // Only published puzzles take comments (see utils/puzzleStatus.js).
+      const puzzle = await Puzzle.findByPk(parseInt(req.params.puzzleId, 10), { attributes: ['id', 'status'] });
+      if (!puzzle || puzzle.status !== STATUS.PUBLISHED) {
         return sendError(res, 404, 'PUZZLE_NOT_FOUND');
       }
       const date = new Date().toISOString();

@@ -85,6 +85,8 @@ test('a translated puzzle is checked in German and lists show its English name',
   assert.equal(create.status, 200, JSON.stringify(create.body));
   const id = create.body.id;
   assert.equal(create.body.translations.en.name, 'Pets');
+  // Lists show it once an Admin published it.
+  await Puzzle.update({ status: 'published' }, { where: { id } });
 
   const list = await request(app).get('/api/puzzles').query({ type: 'logical', page: 1 }).expect(200);
   assert.deepEqual(list.body.items.find(p => p.id === id).names, { en: 'Pets' });
@@ -98,7 +100,8 @@ test('a translated puzzle is checked in German and lists show its English name',
 });
 
 test('editing the German text drops the translation, renaming keeps it', async () => {
-  const puzzle = await Puzzle.create({ type: 'logical', name: 'Edit me', UserId: author.id, data: { ...german(), translations: { en: english() } } });
+  // Still in review, so its author may edit it.
+  const puzzle = await Puzzle.create({ type: 'logical', name: 'Edit me', status: 'pending', UserId: author.id, data: { ...german(), translations: { en: english() } } });
   let res = await request(app).put(`/api/puzzles/${puzzle.id}`).set('Authorization', auth)
     .send({ name: 'Neuer Name', ...german() }).expect(200);
   assert.equal(res.body.translations.en.name, 'Pets');

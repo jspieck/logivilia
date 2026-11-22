@@ -17,6 +17,7 @@
     "deploy": "npm ci && npm run build && npm run start",
     "seed": "npm run seed -w backend",
     "migrate": "npm run migrate -w backend",
+    "backup": "npm run backup -w backend",
     "migrate:status": "npm run migrate:status -w backend",
     "lint": "npm run lint -w frontend",
     "typecheck": "npm run typecheck --workspaces --if-present",

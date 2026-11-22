@@ -17,14 +17,14 @@
           browser identifier, referrer). The logs are used for operation and troubleshooting and are deleted by the host according to its retention periods.
         </li>
         <li>
-          <strong>Abuse protection:</strong> For login, registration, password reset and solution checks, the server counts
+          <strong>Abuse protection:</strong> For login, registration, password reset, solution checks and saving drafts, the server counts
           requests per IP address. These counters are kept in memory only and expire after at most 15 minutes.
         </li>
         <li>
           <strong>In your browser:</strong> Your login (a token and your user profile) is kept in <em>sessionStorage</em> and deleted when
           you close the tab. In <em>localStorage</em> we remember whether you have acknowledged the cookie notice, your
           language, the puzzle you opened last (number, type and name, for “Continue” on the start page), your unfinished
-          games with their time, and, without an account, your best time per puzzle. A puzzle solved without a connection
+          games with their time, and, without an account, your best time per puzzle and one editor draft per puzzle type. A puzzle solved without a connection
           is kept there (answer, time and, if logged in, your user number) until it has been sent. For offline play the
           browser also keeps a copy of the app and of the puzzles you opened (no personal data). Logivilia sets no tracking or advertising cookies and uses no analytics services.
         </li>
@@ -41,10 +41,16 @@
           (saved game and time, so you can continue on another device; deleted once the puzzle is solved or restarted), your ratings, comments and upvotes, and the
           puzzles you have published. Solved puzzles appear as numbers on your profile and in the leaderboard,
           comments appear with your username below the puzzle.</li>
+        <li><strong>Your own puzzles:</strong> drafts from the editors (content, name and time of the last save), so you can
+          continue on any device; a draft is deleted when you delete it or submit the puzzle made from it. An admin reviews
+          submitted puzzles before they are published; until then only you and the admins can see them. For this we store
+          the review status and, if an admin sends a puzzle back for revision, the admin's note.</li>
       </ul>
       <p>
-        Your e-mail address is never public. We only use it for the confirmation link, password resets and
-        confirming a password change. The e-mails are sent via Logivilia's own mail server.
+        Your e-mail address is never public. We only use it for the confirmation link, password resets,
+        confirming a password change and messages about your submitted puzzles (approved, or sent back for revision with
+        the admin's note). Admins also receive an e-mail with your username and the puzzle's name when you submit a puzzle.
+        The e-mails are sent via Logivilia's own mail server.
         The legal basis is the performance of the user agreement (Art. 6 (1) (b) GDPR); for the optional
         profile details it is your consent (Art. 6 (1) (a) GDPR), which you can withdraw by deleting the details.
       </p>
@@ -64,7 +70,8 @@
       </p>
       <ul>
         <li><strong>Download data:</strong> all data stored for your account as a JSON file.</li>
-        <li><strong>Delete account:</strong> immediately deletes your account with solved puzzles, ratings, comments and upvotes.
+        <li><strong>Delete account:</strong> immediately deletes your account with solved puzzles, ratings, comments, upvotes,
+          drafts and puzzles that were not published yet.
           Puzzles you have published remain available to other players, but are no longer linked to your account.</li>
       </ul>
       <p>For anything else, write to us at the address given in the legal notice.</p>
@@ -85,14 +92,15 @@
           Browserkennung, Referrer). Die Logs dienen dem Betrieb und der Fehlersuche und werden vom Hoster nach dessen Fristen gelöscht.
         </li>
         <li>
-          <strong>Missbrauchsschutz:</strong> Für Anmeldung, Registrierung, Passwort-Zurücksetzen und die Lösungsprüfung zählt der Server
+          <strong>Missbrauchsschutz:</strong> Für Anmeldung, Registrierung, Passwort-Zurücksetzen, die Lösungsprüfung und das Speichern von Entwürfen zählt der Server
           Anfragen pro IP-Adresse. Diese Zähler liegen nur im Arbeitsspeicher und verfallen nach höchstens 15 Minuten.
         </li>
         <li>
           <strong>Im Browser:</strong> Ihre Anmeldung (ein Token und Ihr Benutzerprofil) liegt im <em>sessionStorage</em> und wird beim
           Schließen des Tabs gelöscht. Im <em>localStorage</em> merken wir uns, ob Sie den Cookie-Hinweis bestätigt haben, Ihre
           Sprache, das zuletzt geöffnete Rätsel (Nummer, Art und Name, für „Weiterspielen“ auf der Startseite), Ihre
-          angefangenen Rätsel mit ihrer Zeit und, ohne Konto, Ihre Bestzeit je Rätsel. Ein ohne Verbindung gelöstes
+          angefangenen Rätsel mit ihrer Zeit und, ohne Konto, Ihre Bestzeit je Rätsel sowie je Rätselart einen Entwurf aus
+          dem Editor. Ein ohne Verbindung gelöstes
           Rätsel liegt dort (Lösung, Zeit und, wenn angemeldet, Ihre Benutzernummer), bis es übertragen ist. Für das
           Spielen ohne Verbindung speichert der Browser außerdem eine Kopie der App und der geöffneten Rätsel (keine
           personenbezogenen Daten). Logivilia setzt keine Tracking- oder Werbe-Cookies und nutzt keine Analysedienste.
@@ -111,10 +119,18 @@
           oder neu gestartet ist), Ihre Bewertungen, Kommentare und Upvotes sowie die
           Rätsel, die Sie veröffentlicht haben. Gelöste Rätsel erscheinen als Zahlen auf Ihrem Profil und in der Bestenliste,
           Kommentare mit Ihrem Benutzernamen unter dem Rätsel.</li>
+        <li><strong>Eigene Rätsel:</strong> Entwürfe aus den Editoren (Inhalt, Name und Zeitpunkt der letzten Speicherung),
+          damit Sie auf jedem Gerät weiterarbeiten können; ein Entwurf wird gelöscht, sobald Sie ihn löschen oder das Rätsel
+          daraus einreichen. Eingereichte Rätsel prüft ein Admin, bevor sie veröffentlicht werden; bis dahin sehen nur Sie
+          und die Admins sie. Dazu speichern wir den Prüfstatus und gegebenenfalls den Hinweis des Admins, wenn er ein Rätsel
+          zur Überarbeitung zurückschickt.</li>
       </ul>
       <p>
-        Die E-Mail-Adresse ist nie öffentlich. Wir nutzen sie nur für den Bestätigungslink, das Zurücksetzen des Passworts und
-        die Bestätigung einer Passwortänderung. Die E-Mails werden über den eigenen Mailserver von Logivilia versendet.
+        Die E-Mail-Adresse ist nie öffentlich. Wir nutzen sie nur für den Bestätigungslink, das Zurücksetzen des Passworts,
+        die Bestätigung einer Passwortänderung und Nachrichten zu Ihren eingereichten Rätseln (freigegeben oder zur
+        Überarbeitung zurückgeschickt, mit dem Hinweis des Admins). Admins erhalten außerdem eine E-Mail mit Ihrem
+        Benutzernamen und dem Namen des Rätsels, wenn Sie ein Rätsel einreichen. Die E-Mails werden über den eigenen
+        Mailserver von Logivilia versendet.
         Rechtsgrundlage ist die Erfüllung des Nutzungsverhältnisses (Art. 6 Abs. 1 lit. b DSGVO); für die freiwilligen
         Profilangaben Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die Sie durch Löschen der Angaben widerrufen können.
       </p>
@@ -134,7 +150,8 @@
       </p>
       <ul>
         <li><strong>Daten herunterladen:</strong> alle zu Ihrem Konto gespeicherten Daten als JSON-Datei.</li>
-        <li><strong>Konto löschen:</strong> löscht Ihr Konto mit gelösten Rätseln, Bewertungen, Kommentaren und Upvotes sofort.
+        <li><strong>Konto löschen:</strong> löscht Ihr Konto mit gelösten Rätseln, Bewertungen, Kommentaren, Upvotes,
+          Entwürfen und noch nicht veröffentlichten Rätseln sofort.
           Von Ihnen veröffentlichte Rätsel bleiben für andere Spieler erhalten, aber ohne Verbindung zu Ihrem Konto.</li>
       </ul>
       <p>Für alles andere schreiben Sie uns an die im Impressum genannte Adresse.</p>

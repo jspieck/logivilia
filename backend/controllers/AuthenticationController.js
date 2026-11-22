@@ -2,11 +2,11 @@ const {User} = require('../models');
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const { ownUser } = require('../utils/userView');
 const { sendError } = require('../utils/apiError');
 const { mailLocale, mailText } = require('../utils/mails');
+const { sendMail, testOutbox } = require('../utils/mailer');
 
 const ONE_WEEK = 60 * 60 * 24 * 7;
 const ONE_HOUR_S = 60 * 60;
@@ -31,44 +31,6 @@ function jwtSignUser (user) {
 // usable reset links.
 function hashToken (token) {
   return crypto.createHash('sha256').update(token).digest('hex');
-}
-
-function getTransporter () {
-  if (!config.mail.password) {
-    throw new Error('SMTP_PASSWORD is not set - cannot send e-mail.');
-  }
-  return nodemailer.createTransport({
-    host: config.mail.host,
-    port: config.mail.port,
-    secure: config.mail.secure,
-    auth: {
-      user: config.mail.user,
-      pass: config.mail.password
-    }
-  });
-}
-
-// In tests, e-mails are collected here instead of being sent.
-const testOutbox = [];
-
-function sendMail (mailOptions) {
-  if (process.env.NODE_ENV === 'test') {
-    testOutbox.push(mailOptions);
-    return;
-  }
-  try {
-    const transporter = getTransporter();
-    transporter.sendMail({ from: config.mail.from, ...mailOptions }, function (error, info) {
-      if (error) {
-        console.error('E-mail could not be sent:', error.message);
-      } else {
-        // No recipient address in the log, only that the server accepted it.
-        console.log(`E-mail "${mailOptions.subject}" accepted by ${config.mail.host}:`, info && info.response);
-      }
-    });
-  } catch (err) {
-    console.error(err.message);
-  }
 }
 
 function sendForgotPasswordEmail (userEmail, token, locale) {

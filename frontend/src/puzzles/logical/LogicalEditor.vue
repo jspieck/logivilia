@@ -100,7 +100,7 @@
                          : formal.states[rule.id] === 'incomplete' ? $t('logicalEditor.ruleIncomplete') : null">
                     <!-- Groups and sums come from stored data; shown as text. -->
                     <span v-if="rule.stored" class="rule-text" :title="$t('logicalEditor.groupRule')">
-                      {{ describeRule(rule.stored, formal.attributes, t) }}
+                      {{ describeRule(rule.stored, formal.allAttributes, t) }}
                     </span>
                     <template v-else>
                     <select v-if="rule.rel !== 'note'" v-model="rule.a" class="input rule-value" :aria-label="$t('logicalEditor.pickValue')">
@@ -212,8 +212,10 @@
         <section class="card actions">
           <button class="button" :disabled="!playable" @click="togglePlay">{{ playing ? $t('editor.stopTest') : $t('editor.test') }}</button>
           <button class="button is-primary" :disabled="!canSave || saving" @click="save">
-            {{ saving ? $t('editor.saving') : editId ? $t('editor.saveChanges') : $t('editor.publish') }}
+            {{ saving ? $t('editor.saving') : editId ? $t('editor.saveChanges') : isAdmin ? $t('editor.publish') : $t('editor.submit') }}
           </button>
+          <p v-if="!editId && !isAdmin" class="muted">{{ $t('editor.reviewNotice') }}</p>
+          <p v-if="draftStatus" class="muted draft-status">{{ $t(`editor.draft.${draftStatus}`) }}</p>
           <p v-if="!store.isUserLoggedIn" class="muted">{{ $t('editor.loginToPublish') }}</p>
           <p v-else-if="store.user && store.user.emailVerified === false" class="muted">{{ $t('editor.verifyToPublish') }}</p>
           <p v-else-if="saveBlocker" class="muted">{{ $t('logicalEditor.needFix') }}</p>
@@ -234,7 +236,7 @@
 <script setup>
 // Logical (logic grid) editor: story, categories with the solution as a
 // table (one row = values that belong together), and free-text clues. New
-// puzzles are drafted in localStorage until published.
+// puzzles are drafted via engine/useDraft.js until published.
 //
 // Players see every category's values sorted, not in the author's row order,
 // so the published value lists do not give the solution away.
@@ -250,6 +252,7 @@ import logicalPlugin from '@shared/puzzles/logical.js'
 import { ruleProblem, brokenRules, orderKeys, orderMode, ORDER_TYPES } from '@shared/puzzles/logicalSolver.js'
 import { describeRule } from './describeRule'
 import LogicalBoard from './LogicalBoard.vue'
+import { useDraft } from '../engine/useDraft'
 
 const MIN_CATEGORIES = 2
 const MAX_CATEGORIES = 6
@@ -264,6 +267,8 @@ const router = useRouter()
 const store = useMainStore()
 const { t } = useI18n()
 const editId = computed(() => (route.params.id ? Number(route.params.id) : null))
+// Admins publish directly; everyone else submits for review.
+const isAdmin = computed(() => store.user?.role === 'Admin')
 
 let nextId = 1
 const newCategory = (name = '', ordered = '') => ({ id: nextId++, name, ordered })
@@ -273,13 +278,16 @@ const newClue = (text = '') => ({ id: nextId++, text, rules: [] })
 // A group rule (anyOf, exists, ...) or a sum loaded from stored data keeps
 // its stored form in `stored` and is shown as text.
 const newRule = (fields = {}) => ({ id: nextId++, a: '', rel: 'same', b: '', c: '', offset: 1, abs: false, stored: null, ...fields })
-const KEPT_AS_STORED = ['anyOf', 'allOf', 'exists', 'not']
+const KEPT_AS_STORED = ['anyOf', 'allOf', 'exists', 'not', 'total']
 
 const name = ref('')
 const difficulty = ref(2)
 const description = ref('')
 const question = ref('')
 const image = ref('')
+// Categories only the rules use (data.hiddenAttributes, e.g. seats at a
+// table); the editor has no fields for them yet and keeps them as they are.
+const hiddenAttributes = ref([])
 const categories = ref([newCategory(), newCategory(), newCategory()])
 const rows = ref(Array.from({ length: 3 }, () => ['', '', '']))
 const clues = ref([newClue()])
@@ -466,8 +474,13 @@ function toStored (rule, clue) {
   return out
 }
 
+// Does the rule use a category after the visible ones (a hidden one)?
+const usesHidden = rule => (Array.isArray(rule.rules) ? rule.rules.some(usesHidden)
+  : ['a', 'b', 'c'].some(key => rule[key] && rule[key].attr >= categories.value.length) ||
+    rule.by >= categories.value.length || (Array.isArray(rule.over) && rule.over.some(c => c >= categories.value.length)))
+
 function fromStored (rule) {
-  if (KEPT_AS_STORED.includes(rule.type)) {
+  if (KEPT_AS_STORED.includes(rule.type) || usesHidden(rule)) {
     const stored = { ...rule }
     delete stored.clue
     return newRule({ stored })
@@ -502,7 +515,7 @@ const formal = computed(() => {
   const kept = clues.value.filter(c => c.text.trim())
   kept.forEach((clue, i) => clue.rules.forEach(rule => {
     const stored = toStored(rule, i)
-    if (ruleProblem(stored, data.attributes)) {
+    if (ruleProblem(stored, data.allAttributes)) {
       states[rule.id] = 'incomplete'
     } else {
       valid.push(stored)
@@ -515,6 +528,7 @@ const formal = computed(() => {
   const ruleCount = clues.value.reduce((n, c) => n + c.rules.length, 0)
   return {
     ...data,
+    allAttributes: data.allAttributes,
     rules: valid,
     states,
     ruleCount,
@@ -571,7 +585,7 @@ const request = computed(() => {
   const f = formal.value
   if (!f.ruleCount || f.coveredClues < f.clueCount || !tableOk.value || !f.rulesOk ||
       categories.value.some((cat, c) => orderInvalid(c))) return null
-  return JSON.stringify({ attributes: f.attributes, rules: f.rules })
+  return JSON.stringify({ attributes: f.attributes, hiddenAttributes: f.hiddenAttributes, rules: f.rules })
 })
 
 const analysis = computed(() => {
@@ -633,10 +647,11 @@ function buildData () {
   const first = attributes[0].values
   const solution = [...table].sort((a, b) => first.indexOf(a[0]) - first.indexOf(b[0]))
   const kept = clues.value.filter(c => c.text.trim())
+  const all = [...attributes, ...hiddenAttributes.value]
   const rules = kept.flatMap((clue, i) => clue.rules
     .map(rule => toStored(rule, i))
-    .filter(rule => !ruleProblem(rule, attributes)))
-  return {
+    .filter(rule => !ruleProblem(rule, all)))
+  const data = {
     description: description.value.trim(),
     question: question.value.trim(),
     clues: kept.map(c => c.text.trim()),
@@ -646,6 +661,10 @@ function buildData () {
     image: image.value,
     rules
   }
+  if (hiddenAttributes.value.length) data.hiddenAttributes = hiddenAttributes.value
+  // Not stored: what the rules are checked against.
+  Object.defineProperty(data, 'allAttributes', { value: all, enumerable: false })
+  return data
 }
 
 // ---------------------------------------------------------------------------
@@ -664,6 +683,7 @@ function togglePlay () {
   if (playing.value) { playing.value = false; return }
   const { solution, ...data } = buildData()
   delete data.rules // players never get them
+  delete data.hiddenAttributes
   playSolution = solution
   playPuzzle.value = { id: 'editor-preview', name: name.value.trim(), difficulty: difficulty.value, ...data }
   playSolved.value = false
@@ -685,14 +705,22 @@ function snapshot () {
     rows: rows.value,
     clues: clues.value.map(c => c.text),
     // Rules of every clue (empty ones too), in stored form.
-    rules: clues.value.flatMap((clue, i) => clue.rules.map(rule => toStored(rule, i)))
+    rules: clues.value.flatMap((clue, i) => clue.rules.map(rule => toStored(rule, i))),
+    hiddenAttributes: hiddenAttributes.value
   }
 }
 
-function saveDraft () {
-  if (editId.value) return
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(snapshot())) } catch { /* storage unavailable */ }
-}
+// On the server for logged-in creators, else in localStorage (engine/useDraft.js).
+const draft = useDraft({
+  type: 'logical',
+  storageKey: DRAFT_KEY,
+  editId,
+  content: snapshot,
+  isValid: d => !!d && Array.isArray(d.categories) && d.categories.length >= MIN_CATEGORIES &&
+    Array.isArray(d.rows) && d.rows.length >= MIN_ROWS && Array.isArray(d.clues)
+})
+const draftStatus = draft.status
+const saveDraft = draft.save
 watch([name, difficulty, description, question, categories, rows, clues], saveDraft, { deep: true })
 
 function apply (source) {
@@ -701,6 +729,7 @@ function apply (source) {
   description.value = source.description || ''
   question.value = source.question || ''
   image.value = typeof source.image === 'string' ? source.image : ''
+  hiddenAttributes.value = Array.isArray(source.hiddenAttributes) ? source.hiddenAttributes : []
   // Categories as names (older drafts) or { name, ordered }.
   categories.value = source.categories.map(cat => (typeof cat === 'string'
     ? newCategory(cat)
@@ -710,15 +739,6 @@ function apply (source) {
   for (const rule of Array.isArray(source.rules) ? source.rules : []) {
     clues.value[rule.clue]?.rules.push(fromStored(rule))
   }
-}
-
-function loadDraft () {
-  try {
-    const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
-    if (draft && Array.isArray(draft.categories) && draft.categories.length >= MIN_CATEGORIES &&
-        Array.isArray(draft.rows) && draft.rows.length >= MIN_ROWS && Array.isArray(draft.clues)) return draft
-  } catch { /* ignore */ }
-  return null
 }
 
 const saving = ref(false)
@@ -732,10 +752,10 @@ async function save () {
   try {
     const { data } = editId.value
       ? await PuzzleService.put({ ...puzzle, id: editId.value })
-      : await PuzzleService.post({ ...puzzle, date: new Date().toISOString().slice(0, 10), author: store.user?.username })
-    if (!editId.value) {
-      try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
-    }
+      : await PuzzleService.post({
+        ...puzzle, ...draft.publishFields(), date: new Date().toISOString().slice(0, 10), author: store.user?.username
+      })
+    if (!editId.value) await draft.published()
     router.push(`/puzzle/${data.id}`)
   } catch (err) {
     saveError.value = apiErrorMessage(err)
@@ -749,6 +769,8 @@ async function load () {
     try {
       const { data } = await PuzzleService.source(editId.value)
       if (data.type !== 'logical') throw new Error('not a logical')
+      // Published puzzles are locked for their author (only Admins edit them).
+      if (data.status === 'published' && !isAdmin.value) { loadError.value = t('editor.locked'); return }
       // A category ordered by rows stores its values in the author's row
       // order; restore that order for the rows.
       const listed = data.attributes.findIndex(a => orderMode(a) === 'list')
@@ -767,8 +789,9 @@ async function load () {
       loadError.value = err.response ? apiErrorMessage(err) : t('editor.cannotEdit')
     }
   } else {
-    const draft = loadDraft()
-    if (draft) apply(draft)
+    const saved = await draft.load()
+    if (saved) apply(saved)
+    draft.ready()
   }
 }
 

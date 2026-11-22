@@ -1,6 +1,6 @@
 // A formal Logikrätsel rule (shared/puzzles/logicalSolver.js) as a sentence,
 // for the admin view and for rules the editor cannot build with its
-// dropdowns (groups, sums). `t` is vue-i18n's translate function.
+// dropdowns (groups, sums, totals). `t` is vue-i18n's translate function.
 
 const isNumberLike = text => /^\s*[-\d.,:]+\s*\S{0,2}\s*$/.test(String(text))
 
@@ -37,6 +37,14 @@ export function describeRule (rule, attributes, t) {
       return t(rule.offset > 0 ? 'logicalRules.differsByMore' : 'logicalRules.differsByLess', { ...params, n })
     }
     case 'times': return t('logicalRules.times', { ...params, n: rule.factor })
+    case 'total': {
+      const cats = (rule.over || []).map(c => attributes[c]?.name?.trim() || '?').join(' + ')
+      const offset = rule.offset || 0
+      if (rule.value !== undefined) return t('logicalRules.total', { a: params.a, cats, target: String(rule.value + offset) })
+      const other = rule.extreme ? t(rule.extreme === 'min' ? 'logicalRules.totalMin' : 'logicalRules.totalMax') : params.b
+      const key = offset > 0 ? 'logicalRules.totalMore' : offset < 0 ? 'logicalRules.totalLess' : 'logicalRules.totalEqual'
+      return t('logicalRules.total', { a: params.a, cats, target: t(key, { n: Math.abs(offset), other }) })
+    }
     default: return t(`logicalRules.${rule.type}`, params)
   }
 }

@@ -226,7 +226,7 @@ test('seed logic puzzles get their formal rules once, edited ones stay', async (
   const rows = [
     ['Kongress der Wissenschaft', seed('Kongress der Wissenschaft')],
     ['Masternix', edited], // clue count differs: left alone
-    ['Kunstfertige Tiere', seed('Kunstfertige Tiere')] // data error: no rules
+    ['Kunstfertige Tiere', seed('Kunstfertige Tiere')] // repeated grades
   ];
   await qi.bulkInsert('Puzzles', rows.map(([name, data]) => ({
     type: 'logical', name, data: JSON.stringify(data), createdAt: now, updatedAt: now
@@ -241,13 +241,61 @@ test('seed logic puzzles get their formal rules once, edited ones stay', async (
   assert.equal(kongress.data.rules.length, 4);
   assert.equal(kongress.data.attributes[2].ordered, 'numeric');
   assert.equal(masternix.data.rules, undefined);
-  assert.equal(tiere.data.rules, undefined);
+  assert.ok(tiere.data.rules.some(r => r.clue === 7));
 
   await migration.down(qi);
   [kongress] = await read();
   assert.equal(kongress.data.rules, undefined);
   assert.equal(kongress.data.attributes[2].ordered, undefined);
   await qi.bulkDelete('Puzzles', { name: rows.map(([name]) => name) });
+});
+
+test('seed logic puzzles with a wrong solution get the right one and all their rules', async () => {
+  const migration = require('../migrations/20261122-02-fix-logical-solutions');
+  const { formalize } = require('../seed/logicalRules');
+  const logicals = require('../seed/logicals.json');
+  const now = new Date();
+  const parse = r => (typeof r.data === 'string' ? JSON.parse(r.data) : r.data);
+  // Live data: the old solution, without the rules of the clues it contradicted.
+  const fixed = migration.FIXES.map(fix => {
+    const { name, difficulty, date, UserId, ...data } = logicals.find(l => l.name === fix.name);
+    const en = require('../seed/logicalTranslations.en.json')[fix.name];
+    return { ...formalize(fix.name, data).data, translations: { en } };
+  });
+  const before = migration.FIXES.map((fix, i) => migration.undoFix(fix, fixed[i]));
+  const rows = migration.FIXES.map((fix, i) => ({
+    type: 'logical', name: fix.name, data: JSON.stringify(before[i]), createdAt: now, updatedAt: now
+  }));
+  // Same name, another solution: must not be touched.
+  const other = { ...before[0], solution: fixed[0].solution.slice().reverse() };
+  rows.push({ type: 'logical', name: migration.FIXES[0].name, data: JSON.stringify(other), createdAt: now, updatedAt: now });
+  await qi.bulkInsert('Puzzles', rows);
+  const names = migration.FIXES.map(f => f.name);
+  const read = async () => (await sequelize.query(
+    `SELECT data FROM Puzzles WHERE type = 'logical' AND name IN (${names.map(() => '?').join(',')}) ORDER BY id`,
+    { replacements: names, type: sequelize.QueryTypes.SELECT })).map(parse);
+
+  await migration.up(qi);
+  await migration.up(qi); // idempotent
+
+  let stored = await read();
+  migration.FIXES.forEach((fix, i) => {
+    assert.deepEqual(stored[i].solution, fix.to, fix.name);
+    assert.deepEqual(stored[i].rules, fixed[i].rules, fix.name);
+    for (const clue of fix.newRuleClues) assert.ok(stored[i].rules.some(r => r.clue === clue), `${fix.name}: clue ${clue + 1}`);
+    assert.deepEqual(stored[i].clues, fixed[i].clues, fix.name);
+    assert.deepEqual(stored[i].translations, fixed[i].translations, fix.name);
+  });
+  assert.deepEqual(stored[migration.FIXES.length], other);
+
+  await migration.down(qi);
+  stored = await read();
+  migration.FIXES.forEach((fix, i) => assert.deepEqual(stored[i], before[i], fix.name));
+  // The old texts really were restored.
+  const stricken = migration.FIXES.findIndex(f => f.name === 'Stricken auf Zeit');
+  assert.equal(stored[stricken].clues[5], 'Die 50 jährige Person belegt nicht Platz 5.');
+  assert.equal(stored[stricken].translations.en.clues[5], 'The 50-year-old person does not take 5th place.');
+  await qi.bulkDelete('Puzzles', { name: names });
 });
 
 test('the three broken seed logic puzzles get their fixed clues and solutions', async () => {
@@ -281,9 +329,48 @@ test('the three broken seed logic puzzles get their fixed clues and solutions', 
     assert.deepEqual(stored[i].solution, fix.to.solution, fix.name);
   });
   assert.ok(stored[0].rules.length, 'Asiatische Lektüre gets its rules');
-  assert.equal(stored[1].rules, undefined); // Kunstfertige Tiere: repeated grades, no rules
+  assert.ok(stored[1].rules.length, 'Kunstfertige Tiere gets its rules (repeated grades)');
   assert.ok(stored[2].rules.length, 'Werdende Köche gets its rules');
   assert.deepEqual(stored[3], other);
+
+  await migration.down(qi);
+  stored = await read();
+  migration.FIXES.forEach((fix, i) => assert.deepEqual(stored[i], before[i], fix.name));
+  await qi.bulkDelete('Puzzles', { name: names });
+});
+
+test('the last three seed logic puzzles get their complete rules, edited ones stay', async () => {
+  const migration = require('../migrations/20261122-03-complete-logical-rules');
+  const { formalize } = require('../seed/logicalRules');
+  const logicals = require('../seed/logicals.json');
+  const now = new Date();
+  const parse = r => (typeof r.data === 'string' ? JSON.parse(r.data) : r.data);
+  const complete = migration.FIXES.map(fix => {
+    const { name, difficulty, date, UserId, ...data } = logicals.find(l => l.name === fix.name);
+    return formalize(fix.name, data).data;
+  });
+  // Live data: what migration 20261116-01 gave them.
+  const before = migration.FIXES.map((fix, i) => migration.reverted(fix, complete[i]));
+  assert.equal(before[2].rules, undefined);
+  assert.ok(before[0].rules.length && !before[0].hiddenAttributes);
+  const rows = migration.FIXES.map((fix, i) => ({
+    type: 'logical', name: fix.name, data: JSON.stringify(before[i]), createdAt: now, updatedAt: now
+  }));
+  // Same name, rules of its own: must not be touched.
+  const own = { ...before[1], rules: [{ clue: 0, type: 'note' }] };
+  rows.push({ type: 'logical', name: migration.FIXES[1].name, data: JSON.stringify(own), createdAt: now, updatedAt: now });
+  await qi.bulkInsert('Puzzles', rows);
+  const names = migration.FIXES.map(f => f.name);
+  const read = async () => (await sequelize.query(
+    `SELECT data FROM Puzzles WHERE type = 'logical' AND name IN (${names.map(() => '?').join(',')}) ORDER BY id`,
+    { replacements: names, type: sequelize.QueryTypes.SELECT })).map(parse);
+
+  await migration.up(qi);
+  await migration.up(qi); // idempotent
+  let stored = await read();
+  migration.FIXES.forEach((fix, i) => assert.deepEqual(stored[i], complete[i], fix.name));
+  assert.equal(stored[1].hiddenAttributes[0].name, 'Platz');
+  assert.deepEqual(stored[migration.FIXES.length], own);
 
   await migration.down(qi);
   stored = await read();

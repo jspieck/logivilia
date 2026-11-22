@@ -53,6 +53,12 @@
                 <router-link class="navbar-item" :to="{ path: '/leaderboard' }">
                   {{ t('nav.leaderboard') }}
                 </router-link>
+                <router-link v-if="isLoggedIn" class="navbar-item" :to="{ path: '/my-puzzles' }">
+                  {{ t('nav.myPuzzles') }}
+                </router-link>
+                <router-link v-if="isLoggedIn && currentUser?.role === 'Admin'" class="navbar-item" :to="{ path: '/admin/review' }">
+                  {{ t('nav.review') }}
+                </router-link>
               </div>
 
               <div class="navbar-end">

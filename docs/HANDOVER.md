@@ -13,7 +13,7 @@ Logivilia is a German-language puzzle site with three puzzle types, user account
 | **Change the mailbox password for `passwortreset@logivilia.com`** | It was hardcoded in `AuthenticationController.js` and is in the GitHub history (`github.com/jspieck/logivilia`). Removing it from the code does not undo the leak. | Owner (mail hosting) |
 | ~~Set `SMTP_PASSWORD` and `JWT_SECRET` in production~~ | Done 2026-11-14 (netcup Plesk → Node.js → Umgebungsvariablen). | – |
 | ~~Commit and deploy the security fixes~~ | Done 2026-11-14 (`37f881e`, live on logivilia.de). | – |
-| Confirm password-reset e-mails arrive | The server logs `E-mail "..." accepted by <host>` or `E-mail could not be sent: ...` for every attempt (Plesk → Logs). | Owner |
+| Confirm password-reset e-mails arrive | The server logs `E-mail "..." accepted by <host>` or `E-mail could not be sent: ...` for every attempt (log file `logs/app.log`, readable via `GET /api/admin/logs`, see [OPERATIONS.md](OPERATIONS.md)). | Owner |
 | If the live DB was ever seeded: change the seed Admin's password | The old seed file contained known plain-text passwords (still in git history). | Owner |
 | **Back up the live DB before deploying the 2026-11-14 version** | On its first start the server applies the new migrations: it adds the generic puzzle tables, copies puzzles, ratings, solves and comment links into them, and adds the e-mail verification columns (existing accounts count as verified). See §7. | Owner |
 | Check the Node.js version in Plesk | `vue-i18n` 11 (security update) declares Node ≥ 22 for the build; CI uses 22. If Plesk runs 20, switch it to 22 or newer. | Owner |

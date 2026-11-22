@@ -208,8 +208,9 @@ describe('puzzles', () => {
     const created = await api().post('/api/puzzles').set('Authorization', alice.auth).send(newNonogram({ name: 'Mine' }));
     const id = created.body.id;
 
+    // While it waits for review, others cannot even see it.
     const byBob = await api().put(`/api/puzzles/${id}`).set('Authorization', bob.auth).send({ name: 'Hacked' });
-    assert.equal(byBob.status, 403);
+    assert.equal(byBob.status, 404);
 
     const byAlice = await api().put(`/api/puzzles/${id}`).set('Authorization', alice.auth)
       .send({ name: 'Renamed', solution: [[0, 1]], type: 'logical' });
@@ -222,6 +223,15 @@ describe('puzzles', () => {
     const broken = await api().put(`/api/puzzles/${id}`).set('Authorization', alice.auth).send({ width: 3 });
     assert.equal(broken.status, 400);
     assert.equal(broken.body.code, 'PUZZLE_INVALID');
+
+    // Published: others still may not edit it, and the author no longer may.
+    await Puzzle.update({ status: 'published' }, { where: { id } });
+    const byBobPublished = await api().put(`/api/puzzles/${id}`).set('Authorization', bob.auth).send({ name: 'Hacked' });
+    assert.equal(byBobPublished.status, 403);
+    assert.equal(byBobPublished.body.code, 'FORBIDDEN');
+    const byAlicePublished = await api().put(`/api/puzzles/${id}`).set('Authorization', alice.auth).send({ name: 'Later' });
+    assert.equal(byAlicePublished.status, 403);
+    assert.equal(byAlicePublished.body.code, 'PUZZLE_LOCKED');
   });
 
   test('nonograms with several solutions are rejected', async () => {
@@ -242,7 +252,7 @@ describe('puzzles', () => {
 
     // An old ambiguous puzzle can still be renamed.
     const old = await Puzzle.create({
-      type: 'nonogram', name: 'Old', UserId: alice.user.id,
+      type: 'nonogram', name: 'Old', status: 'pending', UserId: alice.user.id,
       data: { width: 2, height: 2, numColor: 1, colors: ['#ffffff', '#000000'], solution: [[1, 0], [0, 1]] }
     });
     const renamed = await api().put(`/api/puzzles/${old.id}`).set('Authorization', alice.auth).send({ name: 'Older' });
@@ -282,6 +292,10 @@ describe('puzzles', () => {
     assert.equal(own.status, 200);
     assert.deepEqual(own.body.solution, [[1, 0]]);
     assert.equal(own.body.name, 'Editable');
+    assert.equal(own.body.status, 'pending');
+    // Unpublished: hidden from others (404); published: visible but not the solution (403).
+    assert.equal((await api().get(`/api/puzzles/${id}/source`).set('Authorization', bob.auth)).status, 404);
+    await Puzzle.update({ status: 'published' }, { where: { id } });
     assert.equal((await api().get(`/api/puzzles/${id}/source`).set('Authorization', bob.auth)).status, 403);
     assert.equal((await api().get(`/api/puzzles/${id}/source`)).status, 403);
     assert.equal((await api().get('/api/puzzles/999999/source').set('Authorization', alice.auth)).status, 404);

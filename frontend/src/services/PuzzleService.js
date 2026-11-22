@@ -43,6 +43,37 @@ export default {
   put (puzzle) {
     return Api().put(`puzzles/${puzzle.id}`, puzzle);
   },
+  // The logged-in creator's own puzzles in every status ("Meine Rätsel"):
+  // [{ id, type, name, ..., status: 'pending'|'published'|'rejected', reviewNote, updatedAt }]
+  mine () {
+    return Api().get('my/puzzles');
+  },
+  // Editor drafts of the logged-in creator (see puzzles/engine/useDraft.js).
+  // List: [{ id, type, name, updatedAt }]; one: { ..., state }.
+  drafts () {
+    return Api().get('drafts');
+  },
+  draft (draftId) {
+    return Api().get(`drafts/${draftId}`);
+  },
+  // draft: { type, name, state }
+  createDraft (draft) {
+    return Api().post('drafts', draft);
+  },
+  updateDraft (draftId, draft) {
+    return Api().put(`drafts/${draftId}`, draft);
+  },
+  deleteDraft (draftId) {
+    return Api().delete(`drafts/${draftId}`);
+  },
+  // Admin: puzzles waiting for review, oldest first, with { creator }.
+  reviewQueue () {
+    return Api().get('admin/review');
+  },
+  // Admin: decision 'approve' | 'reject' (note required for reject).
+  review (puzzleId, decision, note) {
+    return Api().post(`admin/puzzles/${puzzleId}/review`, { decision, note });
+  },
   // Is this answer correct? Records nothing; works for guests.
   check (puzzleId, answer) {
     return Api().post(`puzzles/${puzzleId}/check`, { answer });

@@ -1,7 +1,8 @@
 <template>
   <div class="overviewPage">
-    <div class="overview-head">
-      <h2 class="tableTitle">{{ title }}</h2>
+    <h2 class="tableTitle">{{ title }}</h2>
+
+    <div class="overview-filters" role="group" :aria-label="t('overview.filters')">
       <input
         v-model="search"
         type="search"
@@ -10,9 +11,6 @@
         :aria-label="t('overview.search')"
         spellcheck="false"
       >
-    </div>
-
-    <div class="overview-filters" role="group" :aria-label="t('overview.filters')">
       <label v-if="showSize" class="filter">
         <span>{{ t('overview.size') }}</span>
         <select v-model="filters.size">
@@ -69,32 +67,69 @@
       :aria-previous-label="t('table.previous')"
       :aria-page-label="t('table.page')"
       :aria-current-label="t('table.current')"
+      :row-class="row => (isOpen(row) ? 'is-open' : '')"
       @sort="onSort"
     >
-      <o-table-column field="name" :label="t('overview.name')" v-slot="props" sortable>
-        <router-link :to="{ path: `/puzzle/${props.row.id}`, query: linkQuery }" class="navLink">{{ localName(props.row, locale) }}</router-link>
+      <!-- On a phone (Oruga's mobile cards) a row shows only this cell: the
+           name, the status and a chevron; the other cells (.col-extra) open
+           on a tap. -->
+      <o-table-column field="name" :label="t('overview.name')" v-slot="props" sortable :td-attrs="NAME">
+        <div class="name-cell">
+          <div class="name-main">
+            <router-link :to="{ path: `/puzzle/${props.row.id}`, query: linkQuery }" class="navLink">{{ localName(props.row, locale) }}</router-link>
+            <!-- Phone: a short summary under the name, so a closed row still says something. -->
+            <span class="mobile-only name-meta">
+              <template v-if="showSize">
+                <span v-if="props.row.width">{{ props.row.width }}×{{ props.row.height }}</span>
+                <span v-if="props.row.colors" class="swatches" aria-hidden="true">
+                  <span v-for="(c, i) in props.row.colors" :key="i" class="swatch" :style="{ background: c }"></span>
+                </span>
+              </template>
+              <span v-else>{{ t('overview.difficulty') }} {{ props.row.difficulty }}</span>
+            </span>
+          </div>
+          <span class="mobile-only name-extras">
+            <span v-if="props.row.solved" class="tag is-success">{{ t('overview.solved') }}</span>
+            <span v-else class="tag is-danger is-light">{{ t('overview.unsolved') }}</span>
+            <button
+              type="button"
+              class="row-toggle"
+              :aria-expanded="isOpen(props.row)"
+              :aria-label="t(isOpen(props.row) ? 'overview.hideDetails' : 'overview.showDetails')"
+              @click="toggle(props.row)"
+            >
+              <ion-icon name="chevron-down-outline" aria-hidden="true"></ion-icon>
+            </button>
+          </span>
+        </div>
       </o-table-column>
-      <o-table-column field="difficulty" :label="t('overview.difficulty')" v-slot="props" sortable>
+      <o-table-column field="difficulty" :label="t('overview.difficulty')" v-slot="props" sortable :td-attrs="EXTRA">
         {{ props.row.difficulty }}
       </o-table-column>
       <template v-if="showSize">
-        <o-table-column field="width" :label="t('overview.width')" v-slot="props" sortable>
+        <o-table-column field="width" :label="t('overview.width')" v-slot="props" sortable :td-attrs="EXTRA">
           {{ props.row.width }}
         </o-table-column>
-        <o-table-column field="height" :label="t('overview.height')" v-slot="props" sortable>
+        <o-table-column field="height" :label="t('overview.height')" v-slot="props" sortable :td-attrs="EXTRA">
           {{ props.row.height }}
         </o-table-column>
-        <o-table-column field="numColor" :label="t('overview.colors')" v-slot="props" sortable>
-          {{ props.row.numColor }}
+        <o-table-column field="numColor" :label="t('overview.colors')" v-slot="props" sortable :td-attrs="EXTRA">
+          <span class="color-count">
+            {{ props.row.numColor }}
+            <span v-if="props.row.colors" class="swatches" aria-hidden="true">
+              <span v-for="(c, i) in props.row.colors" :key="i" class="swatch" :style="{ background: c }"></span>
+            </span>
+          </span>
         </o-table-column>
       </template>
-      <o-table-column field="avgRating" :label="t('overview.rating')" v-slot="props" sortable>
+      <o-table-column field="avgRating" :label="t('overview.rating')" v-slot="props" sortable :td-attrs="EXTRA">
         <StarRating :model-value="props.row.avgRating || 0" :max="5" disabled />
       </o-table-column>
-      <o-table-column field="date" :label="t('overview.date')" v-slot="props" sortable>
+      <o-table-column field="date" :label="t('overview.date')" v-slot="props" sortable :td-attrs="EXTRA">
         <span class="tag is-light">{{ new Date(props.row.date).toLocaleDateString(locale) }}</span>
       </o-table-column>
-      <o-table-column field="solved" :label="t('overview.status')" v-slot="props" :sortable="isUserLoggedIn">
+      <!-- The status is in the name cell on a phone. -->
+      <o-table-column field="solved" :label="t('overview.status')" v-slot="props" :sortable="isUserLoggedIn" :td-attrs="STATUS">
         <span v-if="props.row.solved" class="tag is-success">{{ t('overview.solved') }}</span>
         <span v-else class="tag is-danger is-light">{{ t('overview.unsolved') }}</span>
       </o-table-column>
@@ -238,6 +273,19 @@ function onSort (column, direction) {
   currentPage.value = 1
 }
 
+// Phone view: which rows show their details (cleared when the rows change).
+const NAME = { class: 'col-name' }
+const EXTRA = { class: 'col-extra' }
+const STATUS = { class: 'col-status' }
+const openRows = ref(new Set())
+const isOpen = row => openRows.value.has(row.id)
+function toggle (row) {
+  const next = new Set(openRows.value)
+  if (!next.delete(row.id)) next.add(row.id)
+  openRows.value = next
+}
+watch(rows, () => { openRows.value = new Set() })
+
 const pageCount = computed(() => Math.max(1, Math.ceil(total.value / perPage.value)))
 
 const range = computed(() => {
@@ -303,22 +351,20 @@ watch(() => route.query, (routeQuery) => { if (onOwnPage()) applyUrl(routeQuery)
   padding: 28px 24px 32px;
 }
 
-.overview-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px 24px;
-  margin-bottom: 14px;
-}
-
 .tableTitle {
-  margin: 0;
+  margin: 0 0 14px;
 }
 
+// In the filter row, pushed to the right and as tall as the other boxes.
 .overview-search {
-  margin: 0;
-  max-width: 320px;
+  order: 99;
+  flex: 0 1 320px;
+  margin: 0 0 0 auto;
+  height: 2.2em;
+  padding: 0 10px 0 34px;
+  background-position: 9px center;
+  background-size: 18px;
+  font: inherit;
 }
 
 .overview-filters {
@@ -376,6 +422,119 @@ watch(() => route.query, (routeQuery) => { if (onOwnPage()) applyUrl(routeQuery)
   color: #6b7280;
 }
 
+// Page size, range and page buttons below the table.
+:deep(.o-table__pagination) {
+  margin-top: 20px;
+}
+
+// Colour swatches (the paint colours of a nonogram / linelog).
+.color-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatches {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
+// --- Phone: compact cards -----------------------------------------------------
+.mobile-only {
+  display: none;
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.name-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.row-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #4b5563;
+  font-size: 1.15rem;
+  cursor: pointer;
+
+  ion-icon {
+    transition: transform 0.15s;
+  }
+
+  &[aria-expanded="true"] ion-icon {
+    transform: rotate(180deg);
+  }
+
+  &:hover, &:focus-visible {
+    background: #f3f4f6;
+  }
+}
+
+:deep(.o-table__root--mobile) {
+  .mobile-only {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .name-cell {
+    width: 100%;
+    text-align: left;
+  }
+
+  .name-cell .navLink {
+    min-width: 0;
+    font-weight: 600;
+  }
+
+  // Overrides the extras' rule above: a line of its own, on the left.
+  .name-main .name-meta {
+    margin-left: 0;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: normal;
+    color: #6b7280;
+  }
+
+  // The name cell needs no "Name" label.
+  td.col-name::before {
+    display: none;
+  }
+
+  // (Specific enough to beat Oruga's "display: flex" for card cells.)
+  tr td.o-table__td.col-status {
+    display: none;
+  }
+
+  tr:not(.is-open) td.col-extra {
+    display: none;
+  }
+}
+
 .table-controls {
   display: flex;
   flex-wrap: wrap;
@@ -415,13 +574,16 @@ watch(() => route.query, (routeQuery) => { if (onOwnPage()) applyUrl(routeQuery)
     padding: 20px 4px;
   }
 
-  .overview-search {
-    max-width: none;
-  }
-
   .overview-filters {
     display: grid;
     grid-template-columns: 1fr 1fr;
+
+    // The search first, over the whole width.
+    .overview-search {
+      order: -1;
+      grid-column: 1 / -1;
+      margin: 0;
+    }
 
     select, .author-input {
       width: 100%;

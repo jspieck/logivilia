@@ -9,6 +9,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
+const logger = require('./utils/logger');
+const { sendError } = require('./utils/apiError');
 
 const FRONTEND_DIST = path.join(__dirname, '..', 'frontend', 'dist');
 
@@ -68,6 +70,12 @@ module.exports = function createApp () {
 
   if (env !== 'test') {
     app.use(morgan('combined'));
+    // Server errors also go to the log file (the web server's own access
+    // log already has every request).
+    app.use(morgan('combined', {
+      stream: logger.accessStream,
+      skip: (req, res) => res.statusCode < 500
+    }));
   }
   app.use(bodyParser.json({ limit: '1mb' }));
 
@@ -89,6 +97,8 @@ module.exports = function createApp () {
   // The puzzle-type plugins are an ES module loaded asynchronously; hold
   // API requests until they are available (only matters right after start).
   const puzzles = require('./puzzles');
+  // Registered before the gate below so it answers even during startup.
+  app.get('/api/health', require('./controllers/HealthController').health);
   app.use('/api', (req, res, next) => puzzles.ready.then(() => next(), next));
   app.use('/api', require('./routes')());
 
@@ -107,6 +117,23 @@ module.exports = function createApp () {
       ws: true
     }));
   }
+
+  // Last resort for errors passed to next() or thrown in synchronous
+  // handlers: log them with the request and answer without details.
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
+    // Client errors from middleware (malformed JSON, body too large) carry
+    // a 4xx status; everything else is a server error.
+    const given = err.status || err.statusCode;
+    const status = given >= 400 && given < 600 ? given : 500;
+    if (status >= 500) {
+      console.error(`Unhandled error in ${req.method} ${req.originalUrl}:`, err);
+    }
+    if (res.headersSent) {
+      return req.socket.destroy();
+    }
+    sendError(res, status, status < 500 ? 'VALIDATION_INVALID' : 'INTERNAL_ERROR');
+  });
 
   return app;
 };

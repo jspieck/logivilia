@@ -332,32 +332,120 @@ describe('group rules, times and sum', () => {
   });
 });
 
+describe('totals, repeated values and hidden categories', () => {
+  test('total: sums over several categories, against another entity, a number or the smallest total', () => {
+    const attributes = [
+      { name: 'Name', values: ['A', 'B', 'C'] },
+      { name: 'X', values: ['1', '2', '3'], ordered: 'numeric' },
+      { name: 'Y', values: ['1', '2', '3'], ordered: 'numeric' }
+    ];
+    const over = [1, 2];
+    const solve = rules => solver.solveLogical({ attributes, rules }, { limit: 100 }).solutions;
+    const all = solve([]);
+    assert.equal(all.length, 36);
+    const totalOf = (table, name) => table.filter(r => r[0] === name).reduce((s, r) => s + Number(r[1]) + Number(r[2]), 0);
+    const smallest = t => Math.min(...['A', 'B', 'C'].map(name => totalOf(t, name)));
+    const cases = [
+      // A's X + Y is 6.
+      [{ a: ref(0, 'A'), value: 6 }, t => totalOf(t, 'A') === 6],
+      // B has 2 more than C.
+      [{ a: ref(0, 'B'), b: ref(0, 'C'), offset: 2 }, t => totalOf(t, 'B') === totalOf(t, 'C') + 2],
+      // A has 2 more than the smallest total.
+      [{ a: ref(0, 'A'), extreme: 'min', offset: 2 }, t => totalOf(t, 'A') === smallest(t) + 2],
+      // The one with X 3 has the largest total.
+      [{ a: ref(1, '3'), extreme: 'max' }, t => totalOf(t, t.find(r => r[1] === '3')[0]) === Math.max(...['A', 'B', 'C'].map(n => totalOf(t, n)))]
+    ];
+    for (const [rule, holds] of cases) {
+      const found = solve([{ clue: 0, type: 'total', over, ...rule }]);
+      const expected = all.filter(holds);
+      assert.ok(expected.length > 0, JSON.stringify(rule));
+      assert.deepEqual(found.map(t => JSON.stringify(t)).sort(), expected.map(t => JSON.stringify(t)).sort(), JSON.stringify(rule));
+    }
+  });
+
+  test('total rules are checked', () => {
+    const data = {
+      attributes: [{ name: 'N', values: ['A', 'B'] }, { name: 'X', values: ['1', '2'], ordered: 'numeric' }, { name: 'Z', values: ['p', 'q'] }],
+      clues: ['c'],
+      solution: [['A', '1', 'p'], ['B', '2', 'q']]
+    };
+    const withRule = rule => ({ ...data, rules: [{ clue: 0, type: 'total', a: ref(0, 'A'), ...rule }] });
+    assert.equal(plugin.checkData(withRule({ over: [1], value: 1 })), null);
+    assert.match(plugin.checkData(withRule({ over: [2], value: 1 })), /numeric/);
+    assert.match(plugin.checkData(withRule({ over: [1] })), /exactly one/);
+    assert.match(plugin.checkData(withRule({ over: [1], value: 1, extreme: 'min' })), /exactly one/);
+    assert.match(plugin.checkData(withRule({ over: [1], extreme: 'avg' })), /extreme/);
+    assert.deepEqual(solver.brokenRules(withRule({ over: [1], value: 2 })), [0]);
+  });
+
+  test('a repeated value: copies are interchangeable, each table counts once', () => {
+    const attributes = [
+      { name: 'Name', values: ['A', 'B', 'C', 'D'] },
+      { name: 'Note', values: ['1', '1', '2', '2'], ordered: 'numeric' }
+    ];
+    const solutions = solver.solveLogical({ attributes, rules: [] }, { limit: 100 }).solutions;
+    assert.equal(solutions.length, 6); // 4! / (2! 2!)
+    assert.equal(new Set(solutions.map(t => JSON.stringify(t))).size, 6);
+    // "A got a 1", "B did not get a 1", "C's grade is better than D's".
+    const rules = [
+      { clue: 0, type: 'same', a: ref(0, 'A'), b: ref(1, '1') },
+      { clue: 0, type: 'notSame', a: ref(0, 'B'), b: ref(1, '1') },
+      { clue: 0, type: 'before', a: ref(0, 'C'), b: ref(0, 'D'), by: 1 }
+    ];
+    const solution = [['A', '1'], ['B', '2'], ['C', '1'], ['D', '2']];
+    assert.deepEqual(solver.solveLogical({ attributes, rules }, { limit: 10 }).solutions, [solution]);
+    assert.deepEqual(solver.brokenRules({ attributes, solution, rules }), []);
+    assert.deepEqual(solver.brokenRules({ attributes, solution: [['A', '2'], ['B', '1'], ['C', '1'], ['D', '2']], rules }), [0, 1]);
+    // eitherOr with a repeated value: a 2 goes to A or to B, not to both.
+    const either = [{ clue: 0, type: 'eitherOr', a: ref(1, '2'), b: ref(0, 'A'), c: ref(0, 'B') }];
+    const found = solver.solveLogical({ attributes, rules: either }, { limit: 100 }).solutions;
+    const grade = (t, name) => t.find(r => r[0] === name)[1];
+    assert.deepEqual(found.map(t => JSON.stringify(t)).sort(),
+      solutions.filter(t => (grade(t, 'A') === '2') !== (grade(t, 'B') === '2')).map(t => JSON.stringify(t)).sort());
+    // Ordered category with repeated values passes checkData.
+    assert.equal(plugin.checkData({ attributes, clues: ['c'], solution, rules }), null);
+  });
+
+  test('hidden categories: used by the rules, left out of the solutions', () => {
+    const attributes = [{ name: 'Name', values: ['A', 'B', 'C'] }, { name: 'Farbe', values: ['rot', 'blau', 'grün'] }];
+    const hiddenAttributes = [{ name: 'Platz', values: ['1', '2', '3'], ordered: 'list' }];
+    // A sits in the middle, A is next to red, B sits left of C.
+    const rules = [
+      { clue: 0, type: 'same', a: ref(0, 'A'), b: ref(2, '2') },
+      { clue: 0, type: 'nextTo', a: ref(0, 'A'), b: ref(1, 'rot'), by: 2 },
+      { clue: 0, type: 'before', a: ref(0, 'B'), b: ref(0, 'C'), by: 2 }
+    ];
+    const puzzle = { attributes, hiddenAttributes, rules };
+    const result = solver.solveLogical(puzzle, { limit: 100 });
+    // A is not red; B and C take red and one other colour each: 4 tables.
+    assert.equal(result.solutions.length, 4);
+    assert.ok(result.solutions.every(t => t.every(row => row.length === 2) && t[0][1] !== 'rot'));
+    // Without the seat order of B and C, each table can be seated two ways,
+    // but is still listed once.
+    const loose = solver.solveLogical({ ...puzzle, rules: rules.slice(0, 2) }, { limit: 100 });
+    assert.equal(loose.solutions.length, 4);
+    const data = { ...puzzle, clues: ['c'], solution: [['A', 'blau'], ['B', 'rot'], ['C', 'grün']] };
+    assert.equal(plugin.checkData(data), null);
+    assert.deepEqual(solver.brokenRules(data), []);
+    assert.deepEqual(solver.brokenRules({ ...data, solution: [['A', 'rot'], ['B', 'blau'], ['C', 'grün']] }), [1]);
+    assert.equal(plugin.computeClues(data).hiddenAttributes, undefined);
+    assert.match(plugin.checkData({ ...data, hiddenAttributes: [{ name: 'Platz', values: ['1', '2'] }] }), /hiddenAttributes/);
+    assert.match(plugin.checkData({ ...data, hiddenAttributes: undefined }), /rule/);
+    // Players see no relations about hidden categories.
+    assert.equal(plugin.computeClues(data).relations, undefined);
+  });
+});
+
 describe('seed formalisations (seed/logicalRules.js)', () => {
   // What `node scripts/checkLogicals.js` reports; a change here means a
   // formalisation or the solver changed.
-  const NOT_UNIQUE = {
-    'Kunstfertige Tiere': 'dataError',
-    'Baum des Jahres': 'conflict',
-    'Erfreuliche Pilzsuche': 'conflict',
-    'Kaninchenzucht': 'conflict',
-    'Fleischhasser unter sich': 'conflict',
-    'Stricken auf Zeit': 'conflict',
-    'Lieblingsdichter': 'conflict',
-    'Hüttenbesuch': 'conflict',
-    'Kugeltrikolore': 'partial',
-    'Strohsterne': 'partial',
-    'Italienische Genüsse': 'ambiguous',
-    'Lieferantenchaos': 'ambiguous'
-  };
-
-  test('every seed puzzle has an entry, and the rules fit the stored solutions', { timeout: 120000 }, async () => {
+  test('every seed puzzle has an entry, its rules fit the stored solution and have exactly that one solution', { timeout: 120000 }, async () => {
     const { checkLogicals } = require('../scripts/checkLogicals');
     const results = await checkLogicals();
-    const statuses = Object.fromEntries(results.map(r => [r.name, r.status]));
     for (const r of results) {
-      assert.equal(r.status, NOT_UNIQUE[r.name] || 'unique', `${r.name}: ${JSON.stringify(r)}`);
+      assert.equal(r.status, 'unique', `${r.name}: ${JSON.stringify(r)}`);
     }
-    assert.equal(Object.values(statuses).filter(s => s === 'unique').length, 42);
+    assert.equal(results.length, 54);
   });
 });
 

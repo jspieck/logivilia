@@ -31,7 +31,7 @@ Nonograms have "Tipp" and "Prüfen". Logicals now have a solver (`shared/puzzles
 - **Effort:** M. The most visible player-facing gain left from the solver work.
 - **Good moment** to split `LogicalDisplay.vue` (A9).
 
-#### 3. ✨ Finish the creator workflow
+#### 3. ✨ Finish the creator workflow — ✅ done 2026-11-22 (see the table below)
 - An "Bearbeiten" link on your own puzzles (profile and puzzle page); today the edit pages are reachable only by URL.
 - A "Meine Rätsel" list with drafts stored on the server instead of localStorage.
 - An Admin review step before a new puzzle goes public (a `status` column on `Puzzles`, an Admin queue).
@@ -49,9 +49,8 @@ Weight solves by difficulty, add weekly and monthly boards, and best-time boards
 The editors suggest a difficulty; the server does not. Compute it on save from the solver result and run it once over existing puzzles (a migration), so difficulty is consistent across authors.
 - **Effort:** S–M. Makes 5 fairer.
 
-#### 8. 🔧 Production observability
-Plesk shows no Node logs. Add a log file or an error-reporting endpoint, a `/api/health` check, and a documented database backup routine.
-- **Effort:** S. Makes every later deploy safer.
+#### 8. ✅ Production observability (done 2026-11-22)
+Log file `logs/app.log` (with crashes and 5xx requests) readable via admin-only `GET /api/admin/logs`, public `GET /api/health`, final error handler, `npm run backup` and a backup/restore routine. See [OPERATIONS.md](OPERATIONS.md). Still to do by the owner: schedule the Plesk Backup-Manager and add an uptime monitor.
 
 #### 10. 🏗 Dependency upkeep
 Keep Node ≥ 22 on Plesk for `vue-i18n` 11; move to Sequelize 7 once it is stable and drop the `uuid` override in `package.json`. Small bit: logical "Raster leeren" as a full restart with the time.
@@ -74,6 +73,7 @@ Keep Node ≥ 22 on Plesk for `vue-i18n` 11; move to Sequelize 7 once it is stab
 | Leftover logging (A11) | 2026-11-21 | `console.log` calls removed from `frontend/src`, plus a dead upvote stub in `CommentSystem.vue`. |
 | English version (9) | 2026-11-21 | `en.json` complete (one hardcoded reply placeholder moved in); Impressum/Datenschutz were already bilingual. E-mails in de/en by the UI locale (`Accept-Language` from `Api.js`, texts in `backend/utils/mails.js`). The 54 seed Logikrätsel have English texts (`seed/logicalTranslations.en.json`, drafted by machine translation) as `data.translations.en`, added by migration `20261121-04`. The browser shows the translation and maps answers and saved games back to the German values (`shared/puzzles/logicalTranslation.js`). Translated names come from the new `names` column, and editing the German text drops a translation. Nonogram/linelog names stay German. |
 | Shareable overview filters (7) | 2026-11-21 | Search, filters, sort and page live in the overview URL (`frontend/src/puzzles/listQuery.mjs`); puzzle links carry the filters, and `GET /puzzles/:id/next` takes the list's filters and sort, so "next puzzle" continues in that list (ID order without them). |
+| Creator workflow (3) | 2026-11-22 | `Puzzles.status` (`published` / `pending` / `rejected`) and `reviewNote`, migration `20261122-01`; rules in `backend/utils/puzzleStatus.js`. Creators' new puzzles are pending (Admins publish directly); only published puzzles appear in lists, home, "next", profile counts, ratings and comments, and others get 404 (author and Admins can open and test them; solves are not recorded). Admin queue at `/admin/review` (`GET /admin/review`, `POST /admin/puzzles/:id/review`, a note is required to send back); editing a rejected puzzle resubmits it; published puzzles are locked for their author (`PUZZLE_LOCKED`, only Admins edit them). E-mails (`backend/utils/reviewMails.js`, German): every Admin on a submission or resubmission, the author on approval or rejection (with the note). `/datenschutz` describes drafts, review and these mails. Editor drafts on the server (`PuzzleDrafts`, `/drafts`, autosave via `frontend/src/puzzles/engine/useDraft.js`, `?draft=<id>` in the URL; guests keep localStorage, an old local draft is uploaded once). "Meine Rätsel" at `/my-puzzles` and on the own profile; "Bearbeiten" on the puzzle page for author and Admins. Account deletion also removes drafts and never-published puzzles; the export includes both. |
 | One puzzle model (B1) | 2026-11-14 | `Puzzles`, `PuzzleRatings`, `PuzzleSolves`, comments by `PuzzleId`; old links redirect via `legacyId`; rankings counted in SQL. |
 | Plugin interface (B2) | 2026-11-14 | `shared/puzzles/<type>.js` used by backend and frontend; one `/puzzle/:id` page; shared grid engine with Pointer Events, zoom, undo/redo. |
 | No solutions in the browser (B3) | 2026-11-14 | Server sends clues, verifies every solve; public `check` endpoint. |

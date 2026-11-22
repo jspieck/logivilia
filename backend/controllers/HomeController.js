@@ -7,6 +7,7 @@ const { Puzzle, PuzzleSolve, PuzzleRating, User, sequelize } = require('../model
 const { PUZZLE_TYPES } = require('../puzzles');
 const { puzzleData, nameTranslations } = require('../utils/puzzleView');
 const { sendError } = require('../utils/apiError');
+const { STATUS } = require('../utils/puzzleStatus');
 
 const POPULAR_COUNT = 4;
 const TOP_PLAYERS = 3;
@@ -71,6 +72,7 @@ function summary (puzzle) {
 async function countsPerType () {
   const rows = await Puzzle.findAll({
     attributes: ['type', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+    where: { status: STATUS.PUBLISHED },
     group: ['type'],
     raw: true
   });
@@ -125,7 +127,11 @@ module.exports = {
   async index (req, res) {
     try {
       const key = dateKey();
-      const puzzles = await Puzzle.findAll({ attributes: ['id', 'type', 'name', 'difficulty', 'data'] });
+      // Published puzzles only; popular IDs outside this set are dropped below.
+      const puzzles = await Puzzle.findAll({
+        attributes: ['id', 'type', 'name', 'difficulty', 'data'],
+        where: { status: STATUS.PUBLISHED }
+      });
       const byId = new Map(puzzles.map(p => [p.id, p]));
 
       const dailyPuzzle = pickDaily(puzzles, key);

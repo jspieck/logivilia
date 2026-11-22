@@ -86,7 +86,10 @@ async function importLegacy (db, legacy, options = {}) {
       }
       return puzzle;
     });
-    await Puzzle.bulkCreate(rows, { transaction });
+    // Only the columns the rows set: this runs in an early migration, before
+    // later columns with model defaults (e.g. status) exist.
+    const fields = [...new Set(['createdAt', 'updatedAt', ...rows.flatMap(Object.keys)])];
+    await Puzzle.bulkCreate(rows, { transaction, fields });
     report.puzzles[type] = rows.length;
   }
 

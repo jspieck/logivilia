@@ -194,8 +194,10 @@
         <section class="card actions">
           <button class="button" :disabled="!hasPicture" @click="togglePlay">{{ playing ? $t('editor.stopTest') : $t('editor.test') }}</button>
           <button class="button is-primary" :disabled="!canSave || saving" @click="save">
-            {{ saving ? $t('editor.saving') : editId ? $t('editor.saveChanges') : $t('editor.publish') }}
+            {{ saving ? $t('editor.saving') : editId ? $t('editor.saveChanges') : isAdmin ? $t('editor.publish') : $t('editor.submit') }}
           </button>
+          <p v-if="!editId && !isAdmin" class="muted">{{ $t('editor.reviewNotice') }}</p>
+          <p v-if="draftStatus" class="muted draft-status">{{ $t(`editor.draft.${draftStatus}`) }}</p>
           <p v-if="!store.isUserLoggedIn" class="muted">{{ $t('editor.loginToPublish') }}</p>
           <p v-else-if="store.user && store.user.emailVerified === false" class="muted">{{ $t('editor.verifyToPublish') }}</p>
           <p v-else-if="saveBlocker" class="muted">{{ saveBlocker }}</p>
@@ -218,7 +220,8 @@
 // turn it into numbers, or draw paths yourself. A worker checks that the
 // numbers lead to exactly one picture; for an ambiguous draft it marks the
 // cells that could differ and offers to split the paths involved.
-// New puzzles are drafted in localStorage until published.
+// New puzzles are drafted on the server (logged in) or in localStorage until
+// published (engine/useDraft.js).
 //
 // Draft: `picture` (rows, 0 = background, k = colour k) and `paths` (lists of
 // [x, y], all on one colour). Coloured cells on no path become 1s.
@@ -240,6 +243,7 @@ import LinelogBoard from './LinelogBoard.vue'
 import { useGridPointer } from '../engine/useGridPointer'
 import { useHistory } from '../engine/useHistory'
 import { useZoom } from '../engine/useZoom'
+import { useDraft } from '../engine/useDraft'
 import { textColorFor } from '../engine/colors'
 
 const TOOLS = [
@@ -257,6 +261,8 @@ const router = useRouter()
 const store = useMainStore()
 const { t } = useI18n()
 const editId = computed(() => (route.params.id ? Number(route.params.id) : null))
+// Admins publish directly; everyone else submits for review.
+const isAdmin = computed(() => store.user?.role === 'Admin')
 
 const zoom = useZoom({ base: 25, min: 12, step: 3 })
 const cell = zoom.cellSize
@@ -684,23 +690,19 @@ function togglePlay () {
 // Draft and saving
 // ---------------------------------------------------------------------------
 
-function saveDraft () {
-  if (editId.value) return
-  try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({
-      name: name.value, fills: fills.value, background: background.value, picture: picture.value, paths: paths.value
-    }))
-  } catch { /* storage unavailable */ }
-}
+// On the server for logged-in creators, else in localStorage (engine/useDraft.js).
+const draft = useDraft({
+  type: 'linelog',
+  storageKey: DRAFT_KEY,
+  editId,
+  content: () => ({
+    name: name.value, fills: fills.value, background: background.value, picture: picture.value, paths: paths.value
+  }),
+  isValid: d => !!d && Array.isArray(d.picture) && d.picture.length > 0 && Array.isArray(d.fills)
+})
+const draftStatus = draft.status
+const saveDraft = draft.save
 watch(name, saveDraft)
-
-function loadDraft () {
-  try {
-    const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
-    if (draft && Array.isArray(draft.picture) && draft.picture.length && Array.isArray(draft.fills)) return draft
-  } catch { /* ignore */ }
-  return null
-}
 
 const saving = ref(false)
 const saveError = ref('')
@@ -729,10 +731,10 @@ async function save () {
   try {
     const { data } = editId.value
       ? await PuzzleService.put({ ...puzzle, id: editId.value })
-      : await PuzzleService.post({ ...puzzle, date: new Date().toISOString().slice(0, 10), author: store.user?.username })
-    if (!editId.value) {
-      try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
-    }
+      : await PuzzleService.post({
+        ...puzzle, ...draft.publishFields(), date: new Date().toISOString().slice(0, 10), author: store.user?.username
+      })
+    if (!editId.value) await draft.published()
     router.push(`/puzzle/${data.id}`)
   } catch (err) {
     saveError.value = apiErrorMessage(err)
@@ -774,6 +776,8 @@ async function load () {
     try {
       const { data } = await PuzzleService.source(editId.value)
       if (data.type !== 'linelog') throw new Error('not a linelog')
+      // Published puzzles are locked for their author (only Admins edit them).
+      if (data.status === 'published' && !isAdmin.value) { loadError.value = t('editor.locked'); return }
       const w = Number(data.width)
       const h = Number(data.height)
       name.value = data.name || ''
@@ -792,14 +796,15 @@ async function load () {
       return
     }
   } else {
-    const draft = loadDraft()
-    if (draft) {
-      name.value = draft.name || ''
-      fills.value = draft.fills.length ? draft.fills : ['#000000']
-      background.value = draft.background || '#ffffff'
-      picture.value = draft.picture
-      paths.value = cleanPaths(draft.picture, Array.isArray(draft.paths) ? draft.paths : [])
+    const saved = await draft.load()
+    if (saved) {
+      name.value = saved.name || ''
+      fills.value = saved.fills.length ? saved.fills : ['#000000']
+      background.value = saved.background || '#ffffff'
+      picture.value = saved.picture
+      paths.value = cleanPaths(saved.picture, Array.isArray(saved.paths) ? saved.paths : [])
     }
+    draft.ready()
   }
   syncSizeInput()
   history.reset(snapshot())

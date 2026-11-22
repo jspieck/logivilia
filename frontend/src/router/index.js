@@ -124,6 +124,18 @@ const routes = [
   legacyRedirect('linelog', '/linelog-overview'),
   legacyRedirect('logical', '/logical-overview'),
   {
+    // The creator's drafts and own puzzles with their review status
+    path: '/my-puzzles',
+    name: 'My Puzzles',
+    component: () => import('@/components/MyPuzzles.vue'),
+  },
+  {
+    // Admin: puzzles waiting for review
+    path: '/admin/review',
+    name: 'Admin Review',
+    component: () => import('@/components/AdminReview.vue'),
+  },
+  {
     path: '/leaderboard',
     name: 'leaderboard',
     component: () => import('@/components/Leaderboard.vue')
